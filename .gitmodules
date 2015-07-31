@@ -1,0 +1,3 @@
+[submodule "chaos-proto"]
+	path = chaos-proto
+	url = https://github.com/CanalTP/chaos-proto/
