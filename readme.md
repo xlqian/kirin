@@ -41,3 +41,17 @@ Kirin
               ) _.'\`-....'                   `-....'
              ('`    \
               `-.___/
+
+
+Setup
+-----
+ - Install dependencies with ``` pip instal -r requirements.txt``` (virtualenv is strongly advised)
+ - Create a configuration file by copying and editing ```kirin/default_settings.py```
+ - You have to create a database as defined in the configuration file
+ - Create a file ```.env``` with the path to you configuration file:
+ ```
+    KIRIN_CONFIG_FILE=/absolute/path/to/settings.py
+ ```
+ - Setup the database: ```honcho run ./manage.py db upgrade```
+ - Run the developement server: ```honcho start```
+ - Enjoy
