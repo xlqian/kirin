@@ -53,5 +53,6 @@ Setup
     KIRIN_CONFIG_FILE=/absolute/path/to/settings.py
  ```
  - Setup the database: ```honcho run ./manage.py db upgrade```
+ - Build the protocol buffer files: ```./setup.py build_pbf```
  - Run the developement server: ```honcho start```
  - Enjoy
