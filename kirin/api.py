@@ -27,7 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import resources
+from kirin import resources, ire
 import flask_restful
 
 from kirin import app
@@ -45,6 +45,10 @@ api.add_resource(resources.Index,
 api.add_resource(resources.Status,
                  '/status',
                  endpoint='status')
+
+api.add_resource(ire.Ire,
+                 '/ire',
+                 endpoint='ire')
 
 @app.errorhandler(Exception)
 def error_handler(exception):

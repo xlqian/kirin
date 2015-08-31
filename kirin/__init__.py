@@ -26,7 +26,6 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
 VERSION = '0.1.0-dev'
 
 #remplace blocking method by a non blocking equivalent
@@ -34,6 +33,7 @@ VERSION = '0.1.0-dev'
 from gevent import monkey
 monkey.patch_all()
 
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging.config
@@ -41,8 +41,8 @@ import sys
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
-app.config.from_envvar('KIRIN_CONFIG_FILE')
-
+if 'KIRIN_CONFIG_FILE' in os.environ:
+    app.config.from_envvar('KIRIN_CONFIG_FILE')
 
 if 'LOGGER' in app.config:
     logging.config.dictConfig(app.config['LOGGER'])
