@@ -26,29 +26,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-VERSION = '0.1.0-dev'
-
-#remplace blocking method by a non blocking equivalent
-#this enable us to use gevent for launching background task
-from gevent import monkey
-monkey.patch_all()
-
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-import logging.config
-import sys
-
-app = Flask(__name__)
-app.config.from_object('kirin.default_settings')
-app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
-
-if 'LOGGER' in app.config:
-    logging.config.dictConfig(app.config['LOGGER'])
-else:  # Default is std out
-    handler = logging.StreamHandler(stream=sys.stdout)
-    app.logger.addHandler(handler)
-    app.logger.setLevel('INFO')
 
 
-db = SQLAlchemy(app)
-import kirin.api
+class RealTimeObject(object):
+    pass
+

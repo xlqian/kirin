@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2014, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -27,9 +27,10 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import resources
 import flask_restful
 
+from kirin import resources
+from kirin.ire import ire
 from kirin import app
 
 #we always want pretty json
@@ -45,6 +46,10 @@ api.add_resource(resources.Index,
 api.add_resource(resources.Status,
                  '/status',
                  endpoint='status')
+
+api.add_resource(ire.Ire,
+                 '/ire',
+                 endpoint='ire')
 
 @app.errorhandler(Exception)
 def error_handler(exception):

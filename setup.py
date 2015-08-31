@@ -21,7 +21,7 @@ class BuildPbfCommand(Command):
 
 
 setup(
-        name='kirin',
-        cmdclass={'build_pbf': BuildPbfCommand}
+    name='kirin',
+    cmdclass={'build_pbf': BuildPbfCommand}
 )
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2014, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -28,6 +28,7 @@
 
 from flask_restful import Resource, url_for
 import kirin
+from flask import current_app
 
 class Index(Resource):
     def get(self):
@@ -38,8 +39,10 @@ class Index(Resource):
 
 class Status(Resource):
     def get(self):
-        return {'version': kirin.VERSION,
-                'db_pool_status': kirin.db.engine.pool.status(),
-                'db_version': kirin.db.engine.scalar('select version_num from alembic_version;')}, 200
-                #'navitia_url': current_app.config['NAVITIA_URL'],
-                #'rabbitmq_info': publisher.info()}, 200
+        return {
+                   'version': kirin.VERSION,
+                   'db_pool_status': kirin.db.engine.pool.status(),
+                   'db_version': kirin.db.engine.scalar('select version_num from alembic_version;'),
+                   'navitia_url': current_app.config['NAVITIA_URL'],
+                   #'rabbitmq_info': publisher.info()
+               }, 200
