@@ -26,48 +26,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
-from flask_restful import Resource
-import core
-from model import RealTimeObject
 
 
-def get_IRE(args):
-    """
-    get IRE stream 
-    """
-    # temporary mock
-    return '<InfoRetard></InfoRetard>'
-
-
-def make_kirin_objet(raw_xml):
-    """
-    parse raw xml and create a real time object for kirin
-    """
-    # temporary mock
-    return RealTimeObject()
-
-
-def persist(raw_xml):
-    """
-    Save enitre raw xml into the db	
-    """
+class RealTimeObject(object):
     pass
 
-
-class Ire(Resource):
-
-    def post(self):
-        parser = reqparse.RequestParser()
-
-        args = parser.parse_args()
-
-        raw_xml = get_IRE(args)
-
-        persist(raw_xml)
-
-        kirin_obj = make_kirin_objet(raw_xml)
-
-        res = core.handle(kirin_obj )
-
-        return res, 200
