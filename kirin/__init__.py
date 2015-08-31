@@ -41,8 +41,7 @@ import sys
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
-if 'KIRIN_CONFIG_FILE' in os.environ:
-    app.config.from_envvar('KIRIN_CONFIG_FILE')
+app.config.from_envvar('KIRIN_CONFIG_FILE')
 
 if 'LOGGER' in app.config:
     logging.config.dictConfig(app.config['LOGGER'])
