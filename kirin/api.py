@@ -27,9 +27,10 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import resources, ire
 import flask_restful
 
+from kirin import resources
+from kirin.ire import ire
 from kirin import app
 
 #we always want pretty json

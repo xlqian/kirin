@@ -26,29 +26,34 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-VERSION = '0.1.0-dev'
+from flask.ext.restful import reqparse
+from flask_restful import Resource
 
-#remplace blocking method by a non blocking equivalent
-#this enable us to use gevent for launching background task
-from gevent import monkey
-monkey.patch_all()
-
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-import logging.config
-import sys
-
-app = Flask(__name__)
-app.config.from_object('kirin.default_settings')
-app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
-
-if 'LOGGER' in app.config:
-    logging.config.dictConfig(app.config['LOGGER'])
-else:  # Default is std out
-    handler = logging.StreamHandler(stream=sys.stdout)
-    app.logger.addHandler(handler)
-    app.logger.setLevel('INFO')
+import kirin.core.handler
+from persist import persist_xml
+from model_maker import make_kirin_objet
 
 
-db = SQLAlchemy(app)
-import kirin.api
+def get_IRE(args):
+    """
+    get IRE stream 
+    """
+    # temporary mock
+    return '<InfoRetard></InfoRetard>'
+
+class Ire(Resource):
+
+    def post(self):
+        parser = reqparse.RequestParser()
+
+        args = parser.parse_args()
+
+        raw_xml = get_IRE(args)
+
+        persist_xml(raw_xml)
+
+        kirin_obj = make_kirin_objet(raw_xml)
+
+        res = kirin.core.handler.handle(kirin_obj )
+
+        return res, 200

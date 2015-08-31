@@ -26,5 +26,13 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-def handle(bo):
-    return 'OK'
+
+from kirin.core.model import RealTimeObject
+
+def make_kirin_objet(raw_xml):
+    """
+    parse raw xml and create a real time object for kirin
+    """
+    # temporary mock
+    return RealTimeObject()
+
