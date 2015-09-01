@@ -30,6 +30,14 @@ VERSION = '0.1.0-dev'
 
 #remplace blocking method by a non blocking equivalent
 #this enable us to use gevent for launching background task
+#Note: there is a conflict between py.test and gevent
+# http://stackoverflow.com/questions/8774958/keyerror-in-module-threading-after-a-successful-py-test-run
+# so we need to remove threading from the import
+import sys
+if 'threading' in sys.modules:
+    print 'deleting threading from import'
+    del sys.modules['threading']
+#end of conflict's patch
 from gevent import monkey
 monkey.patch_all()
 
