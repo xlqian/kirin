@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,35 +25,3 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
-from flask.globals import request
-from flask_restful import Resource
-
-import kirin.core.handler
-from persist import persist_xml
-from model_maker import make_kirin_objet
-
-
-def get_IRE(args):
-    """
-    get IRE stream 
-    """
-    # temporary mock
-    return '<InfoRetard></InfoRetard>'
-
-
-class Ire(Resource):
-
-    def post(self):
-        if not request.data:
-            return 'no ire data provided', 400
-
-        raw_xml = get_IRE(request.data)
-
-        persist_xml(raw_xml)
-
-        kirin_obj = make_kirin_objet(raw_xml)
-
-        res = kirin.core.handler.handle(kirin_obj)
-
-        return res, 200

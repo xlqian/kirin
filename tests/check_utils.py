@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,35 +25,35 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
-from flask.globals import request
-from flask_restful import Resource
 
-import kirin.core.handler
-from persist import persist_xml
-from model_maker import make_kirin_objet
+from kirin import app
+import json
 
 
-def get_IRE(args):
+def api_get(url, display=False, *args, **kwargs):
     """
-    get IRE stream 
+    call api, check response status code, and return json as dict
     """
-    # temporary mock
-    return '<InfoRetard></InfoRetard>'
+    tester = app.test_client()
+    resp = tester.get(url, *args, **kwargs)
+
+    assert resp.status_code == 200
+    return _to_json(resp.data, display)
 
 
-class Ire(Resource):
+def api_post(url, display=False, *args, **kwargs):
+    """
+    call api, check response status code, and return json as dict
+    """
+    tester = app.test_client()
+    resp = tester.post(url, *args, **kwargs)
 
-    def post(self):
-        if not request.data:
-            return 'no ire data provided', 400
+    assert resp.status_code == 200
+    return _to_json(resp.data, display)
 
-        raw_xml = get_IRE(request.data)
 
-        persist_xml(raw_xml)
+def _to_json(data, display):
+    assert data
+    json_response = json.loads(data)
 
-        kirin_obj = make_kirin_objet(raw_xml)
-
-        res = kirin.core.handler.handle(kirin_obj)
-
-        return res, 200
+    return json_response
