@@ -27,6 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 from flask.ext.restful import reqparse
+from flask.globals import request
 from flask_restful import Resource
 
 import kirin.core.handler
@@ -41,19 +42,19 @@ def get_IRE(args):
     # temporary mock
     return '<InfoRetard></InfoRetard>'
 
+
 class Ire(Resource):
 
     def post(self):
-        parser = reqparse.RequestParser()
+        if not request.data:
+            return 'no ire data provided', 400
 
-        args = parser.parse_args()
-
-        raw_xml = get_IRE(args)
+        raw_xml = get_IRE(request.data)
 
         persist_xml(raw_xml)
 
         kirin_obj = make_kirin_objet(raw_xml)
 
-        res = kirin.core.handler.handle(kirin_obj )
+        res = kirin.core.handler.handle(kirin_obj)
 
         return res, 200

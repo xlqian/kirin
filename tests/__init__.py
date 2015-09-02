@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,37 +25,3 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-VERSION = '0.1.0-dev'
-
-#remplace blocking method by a non blocking equivalent
-#this enable us to use gevent for launching background task
-#Note: there is a conflict between py.test and gevent
-# http://stackoverflow.com/questions/8774958/keyerror-in-module-threading-after-a-successful-py-test-run
-# so we need to remove threading from the import
-import sys
-if 'threading' in sys.modules:
-    print 'deleting threading from import'
-    del sys.modules['threading']
-#end of conflict's patch
-from gevent import monkey
-monkey.patch_all()
-
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-import logging.config
-import sys
-
-app = Flask(__name__)
-app.config.from_object('kirin.default_settings')
-app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
-
-if 'LOGGER' in app.config:
-    logging.config.dictConfig(app.config['LOGGER'])
-else:  # Default is std out
-    handler = logging.StreamHandler(stream=sys.stdout)
-    app.logger.addHandler(handler)
-    app.logger.setLevel('INFO')
-
-
-db = SQLAlchemy(app)
-import kirin.api

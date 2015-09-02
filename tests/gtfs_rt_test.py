@@ -94,7 +94,3 @@ def make_96231_20150728_0():
     stop_time.departure.time = unix_time(2015, 07, 28, 18, 39, 0)# ?
 
     return message
-
-if __name__ == "__main__":
-    message = make_96231_20150728_0()
-    print message

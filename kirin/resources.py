@@ -33,7 +33,8 @@ from flask import current_app
 class Index(Resource):
     def get(self):
         response = {
-            'status': {'href': url_for('status', _external=True)}
+            'status': {'href': url_for('status', _external=True)},
+            'ire': {'href': url_for('ire', _external=True)}
         }
         return response, 200
 
