@@ -35,11 +35,12 @@ def test_end_point():
     assert 'ire' in resp
 
 
-def test_status():
-    resp = api_get('/status')
-
-    assert 'version' in resp
-    assert 'db_pool_status' in resp
-    assert 'db_version' in resp
-    assert 'navitia_url' in resp
+# Note: for the moment it's not possible to test the /status API because we need a bdd for that
+# def test_status():
+#     resp = api_get('/status')
+#
+#     assert 'version' in resp
+#     assert 'db_pool_status' in resp
+#     assert 'db_version' in resp
+#     assert 'navitia_url' in resp
 
