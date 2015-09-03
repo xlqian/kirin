@@ -26,34 +26,23 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
-from flask.globals import request
-from flask_restful import Resource
-
-import kirin.core.handler
-from persist import persist_xml
-from model_maker import make_kirin_objet
+from werkzeug.exceptions import HTTPException
 
 
-def get_ire(request_data):
+class KirinException(HTTPException):
     """
-    get IRE stream, for the moment, it's the raw xml
+    All kirin exception must inherit from this one and define a code and a short message
     """
-    return request_data
+    def __init__(self, detailed_message=None):
+        self.data = {
+            'status': self.code,
+            'message': self.message,
+        }
+        if detailed_message:
+            self.data['error'] = detailed_message
 
 
-class Ire(Resource):
+class InvalidArguments(KirinException):
+    code = 400
+    message = 'Invalid arguments'
 
-    def post(self):
-        if not request.data:
-            return 'no ire data provided', 400
-
-        raw_xml = get_ire(request.data)
-
-        persist_xml(raw_xml)
-
-        kirin_obj = make_kirin_objet(raw_xml)
-
-        res = kirin.core.handler.handle(kirin_obj)
-
-        return res, 200

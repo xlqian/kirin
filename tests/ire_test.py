@@ -25,19 +25,42 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import os
+import pytest
 
 from check_utils import api_post
 from kirin import app
 
 
-def test_ire_post():
+def test_wrong_ire_post():
     """
     simple xml post on the api
     """
-    res = api_post('/ire', data='<bob></bob>')
+    res, status = api_post('/ire', check=False, data='<bob></bob>')
+
+    assert status == 400
+
+    print res.get('error') == 'invalid'
+
+
+@pytest.fixture
+def ire_96231():
+    """
+    py test fixture, to get the 96231 ire as a string
+    the fixture need to be given as argument to the tests that wants to use it
+    """
+    file = os.path.join(os.path.dirname(__file__), 'fixtures', 'Flux-96231_2015-07-28_0.xml')
+    with open(file, "r") as ire:
+        return ire.read()
+
+
+def test_ire_post(ire_96231):
+    """
+    simple xml post on the api
+    """
+    res = api_post('/ire', data=ire_96231)
 
     print res
-
 
 def test_ire_post_no_data():
     """
