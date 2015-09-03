@@ -52,7 +52,8 @@ app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
 app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
 
-from core.model import db
+from core import model
+db = model.db
 db.init_app(app)
 
 if 'LOGGER' in app.config:
