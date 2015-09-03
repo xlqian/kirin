@@ -47,7 +47,7 @@ def get_node(elt, node):
 
 
 def get_vj(xml_train):
-    train_number = get_node(xml_train, 'NumeroTrain')
+    train_number = get_node(xml_train, 'NumeroTrain')  # TODO handle parity in train number
     date = get_node(xml_train, 'DateCirculation')
     # TODO call navitia
     return None
@@ -76,6 +76,7 @@ def make_kirin_objet(raw_xml):
 
     vj = get_vj(get_node(root, 'Train'))
 
+    # TODO handle also root[DernierPointDeParcoursObserve] in the modification
     vj_update = get_modification(get_node(root, 'TypeModification'))
 
     # temporary mock
