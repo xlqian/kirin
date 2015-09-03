@@ -27,7 +27,36 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
+from flask_sqlalchemy import SQLAlchemy
+db = SQLAlchemy()
 
-class RealTimeObject(object):
-    pass
+
+class VehicleJourney(db.Model):
+    navitia_id = db.Column(db.Text, primary_key=True)
+
+
+class StopTime(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    modification_id = db.Column(db.Integer, db.ForeignKey('modification.id'))
+    departure = db.Column(db.DateTime, nullable=False)
+    arrival = db.Column(db.DateTime, nullable=False)
+
+
+class Modification(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    real_time_update_id = db.Column(db.Integer, db.ForeignKey('real_time_update.id'))
+    type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
+    stop_times = db.relationship('StopTime', backref='modification')
+
+
+class RealTimeUpdate(db.Model):
+    # Date
+    # vj
+    # modification
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    date = db.Column(db.DateTime, nullable=False)
+    vj = db.Column(db.Text, db.ForeignKey('vehicle_journey.navitia_id'), nullable=False)
+    modification = db.relationship('Modification', uselist=False, backref='real_time_update')
+
+
 

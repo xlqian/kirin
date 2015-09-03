@@ -27,7 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin.core.model import RealTimeObject
+from kirin.core.model import RealTimeUpdate
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
@@ -80,5 +80,5 @@ def make_kirin_objet(raw_xml):
     vj_update = get_modification(get_node(root, 'TypeModification'))
 
     # temporary mock
-    return RealTimeObject()
+    return RealTimeUpdate()
 
