@@ -27,7 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from model import RealTimeObject
+from model import RealTimeUpdate
 
-def handle(real_time_obj):
+def handle(real_time_update):
     return 'OK'

@@ -52,6 +52,10 @@ app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
 app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
 
+from core import model
+db = model.db
+db.init_app(app)
+
 if 'LOGGER' in app.config:
     logging.config.dictConfig(app.config['LOGGER'])
 else:  # Default is std out
@@ -59,6 +63,4 @@ else:  # Default is std out
     app.logger.addHandler(handler)
     app.logger.setLevel('INFO')
 
-
-db = SQLAlchemy(app)
 import kirin.api
