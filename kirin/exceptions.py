@@ -3,6 +3,7 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
+# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -25,48 +26,23 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import os
-import pytest
-
-from check_utils import api_post
-from kirin import app
+from werkzeug.exceptions import HTTPException
 
 
-def test_wrong_ire_post():
+class KirinException(HTTPException):
     """
-    simple xml post on the api
+    All kirin exception must inherit from this one and define a code and a short message
     """
-    res, status = api_post('/ire', check=False, data='<bob></bob>')
-
-    assert status == 400
-
-    print res.get('error') == 'invalid'
-
-
-@pytest.fixture
-def ire_96231():
-    """
-    py test fixture, to get the 96231 ire as a string
-    the fixture need to be given as argument to the tests that wants to use it
-    """
-    file = os.path.join(os.path.dirname(__file__), 'fixtures', 'Flux-96231_2015-07-28_0.xml')
-    with open(file, "r") as ire:
-        return ire.read()
+    def __init__(self, detailed_message=None):
+        self.data = {
+            'status': self.code,
+            'message': self.message,
+        }
+        if detailed_message:
+            self.data['error'] = detailed_message
 
 
-def test_ire_post(ire_96231):
-    """
-    simple xml post on the api
-    """
-    res = api_post('/ire', data=ire_96231)
+class InvalidArguments(KirinException):
+    code = 400
+    message = 'Invalid arguments'
 
-    print res
-
-def test_ire_post_no_data():
-    """
-    when no data is given, we got a 400 error
-    """
-    tester = app.test_client()
-    resp = tester.post('/ire')
-
-    assert resp.status_code == 400

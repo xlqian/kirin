@@ -28,11 +28,57 @@
 # www.navitia.io
 
 from kirin.core.model import RealTimeObject
+# For perf benches:
+# http://effbot.org/zone/celementtree.htm
+import xml.etree.cElementTree as ElementTree
+from kirin.exceptions import InvalidArguments
+
+
+def get_node(elt, node):
+    """
+    get a unique element in an xml node
+    raise an exception if the element does not exists
+    """
+    res = elt.find(node)
+    if res is None:
+        raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
+            node=node, elt=elt.tag))
+    return res
+
+
+def get_vj(xml_train):
+    train_number = get_node(xml_train, 'NumeroTrain')  # TODO handle parity in train number
+    date = get_node(xml_train, 'DateCirculation')
+    # TODO call navitia
+    return None
+
+
+def get_modification(xml_modification):
+    """
+    All ire knowledge will go here ;)
+    """
+
+    # TODO call navitia
+    return None
+
 
 def make_kirin_objet(raw_xml):
     """
     parse raw xml and create a real time object for kirin
     """
+    try:
+        root = ElementTree.fromstring(raw_xml)
+    except ElementTree.ParseError as e:
+        raise InvalidArguments("invalid xml: {}".format(e.message))
+
+    if root.tag != 'InfoRetard':
+        raise InvalidArguments('{} is not a valid xml root, it must be {}'.format(root.tag, 'InfoRetard'))
+
+    vj = get_vj(get_node(root, 'Train'))
+
+    # TODO handle also root[DernierPointDeParcoursObserve] in the modification
+    vj_update = get_modification(get_node(root, 'TypeModification'))
+
     # temporary mock
     return RealTimeObject()
 

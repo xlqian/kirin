@@ -27,29 +27,28 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 from flask.ext.restful import reqparse
-from flask.globals import request
+import flask
 from flask_restful import Resource
 
 import kirin.core.handler
+from kirin.exceptions import InvalidArguments
 from persist import persist_xml
 from model_maker import make_kirin_objet
 
 
-def get_IRE(args):
+def get_ire(req):
     """
-    get IRE stream 
+    get IRE stream, for the moment, it's the raw xml
     """
-    # temporary mock
-    return '<InfoRetard></InfoRetard>'
+    if not req.data:
+        raise InvalidArguments('no ire data provided')
+    return req.data
 
 
 class Ire(Resource):
 
     def post(self):
-        if not request.data:
-            return 'no ire data provided', 400
-
-        raw_xml = get_IRE(request.data)
+        raw_xml = get_ire(flask.globals.request)
 
         persist_xml(raw_xml)
 

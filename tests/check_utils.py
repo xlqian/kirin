@@ -41,15 +41,18 @@ def api_get(url, display=False, *args, **kwargs):
     return _to_json(resp.data, display)
 
 
-def api_post(url, display=False, *args, **kwargs):
+def api_post(url, display=False, check=True, *args, **kwargs):
     """
     call api, check response status code, and return json as dict
     """
     tester = app.test_client()
     resp = tester.post(url, *args, **kwargs)
 
-    assert resp.status_code == 200
-    return _to_json(resp.data, display)
+    if check:
+        assert resp.status_code == 200
+        return _to_json(resp.data, display)
+    else:
+        return _to_json(resp.data, display), resp.status_code
 
 
 def _to_json(data, display):

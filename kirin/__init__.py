@@ -26,6 +26,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from kirin import exceptions
+
 VERSION = '0.1.0-dev'
 
 #remplace blocking method by a non blocking equivalent
