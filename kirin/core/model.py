@@ -46,7 +46,7 @@ class VehicleJourney(db.Model):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_id = db.Column(db.Text, nullable=False)
-
+    circulation_date = db.Column(db.Date, nullable=False)
 
 class StopTime(db.Model):
     """
@@ -73,6 +73,6 @@ class RealTimeUpdate(db.Model):
     Real time update
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    date = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
     modification = db.relationship('Modification', uselist=False, backref='real_time_update')
