@@ -27,6 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
+from sqlalchemy.dialects import postgresql
 from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
@@ -43,7 +44,7 @@ class VehicleJourney(db.Model):
     """
     Vehicle Journey
     """
-    id = db.Column(db.Text, primary_key=True, default=gen_uuid, onupdate=gen_uuid)
+    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_id = db.Column(db.Text, nullable=False)
 
 
@@ -51,8 +52,8 @@ class StopTime(db.Model):
     """
     Stop time
     """
-    id = db.Column(db.Text, primary_key=True, default=gen_uuid, onupdate=gen_uuid)
-    modification_id = db.Column(db.Integer, db.ForeignKey('modification.id'))
+    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
+    modification_id = db.Column(postgresql.UUID, db.ForeignKey('modification.id'))
     departure = db.Column(db.DateTime, nullable=False)
     arrival = db.Column(db.DateTime, nullable=False)
 
@@ -61,8 +62,8 @@ class Modification(db.Model):
     """
     Modification
     """
-    id = db.Column(db.Text, primary_key=True, default=gen_uuid, onupdate=gen_uuid)
-    real_time_update_id = db.Column(db.Text, db.ForeignKey('real_time_update.id'))
+    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
+    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'))
     type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
     stop_times = db.relationship('StopTime', backref='modification')
 
@@ -71,7 +72,7 @@ class RealTimeUpdate(db.Model):
     """
     Real time update
     """
-    id = db.Column(db.Text, primary_key=True, default=gen_uuid, onupdate=gen_uuid)
+    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     date = db.Column(db.DateTime, nullable=False)
-    vj_id = db.Column(db.Text, db.ForeignKey('vehicle_journey.id'), nullable=False)
+    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
     modification = db.relationship('Modification', uselist=False, backref='real_time_update')
