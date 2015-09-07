@@ -75,7 +75,7 @@ class Modification(db.Model):
     Modification
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'))
+    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'))
     type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
     stop_times = db.relationship('StopTime', backref='modification')
 
@@ -84,36 +84,49 @@ class Modification(db.Model):
         self.type = modification_type
         self.stop_times = stop_times
 
-class RealTimeUpdate(db.Model):
+class VjUpdate(db.Model):
     """
-    Real time update
+    Update information for Vehicule Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     created_at = db.Column(db.DateTime, nullable=False)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
     modification = db.relationship('Modification', uselist=False, backref='real_time_update')
-    raw_ire_id = db.Column(postgresql.UUID, db.ForeignKey('raw_ire.id'), nullable=False)
+    raw_data_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'), nullable=False)
 
-    def __init__(self, created_at, vj_id, modification, raw_ire_id):
+    def __init__(self, created_at, vj_id, modification, raw_data_id):
         self.id = gen_uuid()
         self.created_at = created_at
         self.vj_id = vj_id
         self.modification = modification
-        self.raw_ire_id = raw_ire_id
+        self.raw_data_id = raw_data_id
 
-class RawIre(db.Model):
+
+class RealTimeUpdate(db.Model):
     """
-    IRE received from POST request
+    Real Time Update received from POST request
 
-    This model is used to persist the raw_xml. A real time update object will be constructed from the raw_xml then the
-    constructed real_time_update's id should be affected to IRE's real_time_update_id
+    This model is used to persist the raw_data: .
+    A real time update object will be constructed from the raw_xml then the
+    constructed real_time_update's id should be affected to VjUpdate's real_time_update_id
+
+    There is a one-to-many relationship between RealTimeUpdate and VjUpdate.
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
-    raw_xml = db.Column(db.Text, nullable=False)
+    contributor = db.Column(db.Text, nullable=False)
+    connector = db.Column(db.Enum('ire', 'gtfsrt', name='connector_type'))
+    status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=False)
+    error = db.Column(db.Text, nullable=True)
+    raw_data = db.Column(db.Text, nullable=False)
+    vj_updates = db.relationship('VjUpdate')
 
-    def __init__(self, raw_xml, received_at=datetime.datetime.now()):
+    def __init__(self, raw_data, contributor, connector, status, error='', received_at=datetime.datetime.now()):
         self.id = gen_uuid()
+        self.raw_data = raw_data
+        self.contributor = contributor
+        self.connector = connector
+        self.status = status
+        self.error = error
         self.received_at = received_at
-        self.raw_xml = raw_xml
 

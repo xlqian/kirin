@@ -30,11 +30,11 @@
 import kirin
 
 
-def persist_xml(raw_xml):
+def persist_ire(raw_xml):
     """
     Save the whole raw xml into the db
     """
-    raw_ire_obj = kirin.core.model.RawIre(raw_xml)
+    raw_ire_obj = kirin.core.model.RealTimeUpdate(raw_xml, 'TODO??', 'ire', 'pending')
     kirin.core.model.db.session.add(raw_ire_obj)
     kirin.core.model.db.session.commit()
     return raw_ire_obj.id
