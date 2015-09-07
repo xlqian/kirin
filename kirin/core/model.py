@@ -29,6 +29,7 @@
 
 from sqlalchemy.dialects import postgresql
 from flask_sqlalchemy import SQLAlchemy
+import datetime
 db = SQLAlchemy()
 
 
@@ -48,6 +49,12 @@ class VehicleJourney(db.Model):
     navitia_id = db.Column(db.Text, nullable=False)
     circulation_date = db.Column(db.Date, nullable=False)
 
+    def __init__(self, navitia_id, circulation_date):
+        self.id = gen_uuid()
+        self.navitia_id = navitia_id
+        self.circulation_date = circulation_date
+
+
 class StopTime(db.Model):
     """
     Stop time
@@ -57,22 +64,71 @@ class StopTime(db.Model):
     departure = db.Column(db.DateTime, nullable=False)
     arrival = db.Column(db.DateTime, nullable=False)
 
+    def __init__(self, departure, arrival):
+        self.id = gen_uuid()
+        self.departure = departure
+        self.arrival = arrival
+
 
 class Modification(db.Model):
     """
     Modification
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'))
+    vj_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'))
     type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
     stop_times = db.relationship('StopTime', backref='modification')
+
+    def __init__(self, modification_type, stop_times):
+        self.id = gen_uuid()
+        self.type = modification_type
+        self.stop_times = stop_times
+
+class VJUpdate(db.Model):
+    """
+    Update information for Vehicule Journey
+    """
+    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
+    updated_at = db.Column(db.DateTime, nullable=False)
+    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
+    modification = db.relationship('Modification', uselist=False, backref='real_time_update')
+    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'), nullable=False)
+
+    def __init__(self, created_at, vj_id, modification, raw_data_id):
+        self.id = gen_uuid()
+        self.created_at = created_at
+        self.vj_id = vj_id
+        self.modification = modification
+        self.raw_data_id = raw_data_id
 
 
 class RealTimeUpdate(db.Model):
     """
-    Real time update
+    Real Time Update received from POST request
+
+    This model is used to persist the raw_data: .
+    A real time update object will be constructed from the raw_xml then the
+    constructed real_time_update's id should be affected to VJUpdate's real_time_update_id
+
+    There is a one-to-many relationship between RealTimeUpdate and VJUpdate.
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    created_at = db.Column(db.DateTime, nullable=False)
-    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
-    modification = db.relationship('Modification', uselist=False, backref='real_time_update')
+    received_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=True)
+    contributor = db.Column(db.Text, nullable=True)
+    connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
+    status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
+    error = db.Column(db.Text, nullable=True)
+    raw_data = db.Column(db.Text, nullable=True)
+    vj_updates = db.relationship('VJUpdate')
+
+    def __init__(self, raw_data, connector,
+                 contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
+        self.id = gen_uuid()
+        self.raw_data = raw_data
+        self.contributor = contributor
+        self.connector = connector
+        self.status = status
+        self.error = error
+        self.received_at = received_at
+

@@ -32,7 +32,7 @@ from kirin.core.model import RealTimeUpdate
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments
-
+import datetime
 
 def get_node(elt, node):
     """
@@ -62,7 +62,7 @@ def get_modification(xml_modification):
     return None
 
 
-def make_kirin_objet(raw_xml):
+def make_kirin_objet(raw_xml, raw_ire_id):
     """
     parse raw xml and create a real time object for kirin
     """
@@ -80,5 +80,8 @@ def make_kirin_objet(raw_xml):
     vj_update = get_modification(get_node(root, 'TypeModification'))
 
     # temporary mock
-    return RealTimeUpdate()
+    created_at = datetime.datetime.now()
+    vj_id = None
+    modification = None
+    return RealTimeUpdate(created_at, vj_id, modification, raw_ire_id)
 
