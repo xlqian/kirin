@@ -37,4 +37,4 @@ def persist_ire(raw_xml):
     raw_ire_obj = kirin.core.model.RealTimeUpdate(raw_xml, 'TODO??', 'ire', 'pending')
     kirin.core.model.db.session.add(raw_ire_obj)
     kirin.core.model.db.session.commit()
-    return raw_ire_obj.id
+    return raw_ire_obj
