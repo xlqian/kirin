@@ -84,15 +84,15 @@ class Modification(db.Model):
         self.type = modification_type
         self.stop_times = stop_times
 
-class VjUpdate(db.Model):
+class VJUpdate(db.Model):
     """
     Update information for Vehicule Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
     modification = db.relationship('Modification', uselist=False, backref='real_time_update')
-    raw_data_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'), nullable=False)
+    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'), nullable=False)
 
     def __init__(self, created_at, vj_id, modification, raw_data_id):
         self.id = gen_uuid()
@@ -108,20 +108,22 @@ class RealTimeUpdate(db.Model):
 
     This model is used to persist the raw_data: .
     A real time update object will be constructed from the raw_xml then the
-    constructed real_time_update's id should be affected to VjUpdate's real_time_update_id
+    constructed real_time_update's id should be affected to VJUpdate's real_time_update_id
 
-    There is a one-to-many relationship between RealTimeUpdate and VjUpdate.
+    There is a one-to-many relationship between RealTimeUpdate and VJUpdate.
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
-    contributor = db.Column(db.Text, nullable=False)
-    connector = db.Column(db.Enum('ire', 'gtfsrt', name='connector_type'))
-    status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=True)
+    contributor = db.Column(db.Text, nullable=True)
+    connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
+    status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
-    raw_data = db.Column(db.Text, nullable=False)
-    vj_updates = db.relationship('VjUpdate')
+    raw_data = db.Column(db.Text, nullable=True)
+    vj_updates = db.relationship('VJUpdate')
 
-    def __init__(self, raw_data, contributor, connector, status, error='', received_at=datetime.datetime.now()):
+    def __init__(self, raw_data, connector,
+                 contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
         self.id = gen_uuid()
         self.raw_data = raw_data
         self.contributor = contributor

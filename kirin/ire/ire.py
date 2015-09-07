@@ -32,9 +32,18 @@ from flask_restful import Resource
 
 import kirin.core.handler
 from kirin.exceptions import InvalidArguments
-from persist import persist_ire
 from model_maker import make_kirin_objet
+import kirin
 
+
+def _persist_ire(raw_xml):
+    """
+    Save the whole raw xml into the db
+    """
+    raw_ire_obj = kirin.core.model.RealTimeUpdate(raw_xml, connector='ire')
+    kirin.core.model.db.session.add(raw_ire_obj)
+    kirin.core.model.db.session.commit()
+    return raw_ire_obj
 
 def get_ire(req):
     """
@@ -51,7 +60,7 @@ class Ire(Resource):
         raw_xml = get_ire(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
-        raw_update = persist_ire(raw_xml)
+        raw_update = _persist_ire(raw_xml)
 
         # raw_xml is  interpreted
         kirin_obj = make_kirin_objet(raw_xml, raw_update.id)
