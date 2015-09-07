@@ -50,9 +50,12 @@ class Ire(Resource):
     def post(self):
         raw_xml = get_ire(flask.globals.request)
 
-        persist_xml(raw_xml)
+        # create a raw ire obj, save the raw_xml into the db
+        raw_ire_id = persist_xml(raw_xml)
 
-        kirin_obj = make_kirin_objet(raw_xml)
+        # raw_xml is  interpreted
+        kirin_obj = make_kirin_objet(raw_xml, raw_ire_id)
+        # TODO: commit the kirin obj? and where?
 
         res = kirin.core.handler.handle(kirin_obj)
 

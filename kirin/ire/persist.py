@@ -27,9 +27,14 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
+import kirin
+
 
 def persist_xml(raw_xml):
     """
-    Save enitre raw xml into the db
+    Save the whole raw xml into the db
     """
-    pass
+    raw_ire_obj = kirin.core.model.RawIre(raw_xml)
+    kirin.core.model.db.session.add(raw_ire_obj)
+    kirin.core.model.db.session.commit()
+    return raw_ire_obj.id
