@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,46 +25,18 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
-import flask
-from flask_restful import Resource
 
-from kirin.core import handle
-from kirin.exceptions import InvalidArguments
-import kirin
-from model_maker import KirinModelBuilder
+import xml.etree.cElementTree as ElementTree
+from kirin.ire.model_maker import get_node, get_value
 
 
-def _persist_ire(raw_xml):
-    """
-    Save the whole raw xml into the db
-    """
-    raw_ire_obj = kirin.core.model.RealTimeUpdate(raw_xml, connector='ire')
-    kirin.core.model.db.session.add(raw_ire_obj)
-    kirin.core.model.db.session.commit()
-    return raw_ire_obj
+def test_get_nodes():
+    """test get_nodes() and get_value helpers"""
+    xml = ElementTree.fromstring('<root>'
+                                 '<bob>'
+                                 '<bobette>42</bobette>'
+                                 '</bob>'
+                                 '</root>')
 
-def get_ire(req):
-    """
-    get IRE stream, for the moment, it's the raw xml
-    """
-    if not req.data:
-        raise InvalidArguments('no ire data provided')
-    return req.data
-
-
-class Ire(Resource):
-
-    def post(self):
-        raw_xml = get_ire(flask.globals.request)
-
-        # create a raw ire obj, save the raw_xml into the db
-        raw_update = _persist_ire(raw_xml)
-
-        # raw_xml is  interpreted
-        kirin_obj = KirinModelBuilder().build(raw_xml, raw_update.id)
-        # TODO: commit the kirin obj? and where?
-
-        handle(kirin_obj)
-
-        return 'OK', 200
+    assert get_node(xml, 'bob').tag == 'bob'
+    assert get_value(xml, 'bob', 'bobette') == '42'

@@ -26,62 +26,133 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import logging
+from datetime import timedelta
+from flask.globals import current_app
+from dateutil import parser
+from kirin.core import model
 
 from kirin.core.model import RealTimeUpdate
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
-from kirin.exceptions import InvalidArguments
 import datetime
+from kirin.exceptions import InvalidArguments, ObjectNotFound
+import navitia_wrapper
 
-def get_node(elt, node):
+
+def get_node(elt, *nodes):
     """
     get a unique element in an xml node
     raise an exception if the element does not exists
     """
-    res = elt.find(node)
-    if res is None:
-        raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
-            node=node, elt=elt.tag))
+    if not nodes:
+        return None
+
+    current_elt = elt
+    for node in nodes:
+        res = current_elt.find(node)
+        if res is None:
+            raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
+                node=node, elt=elt.tag))
+        current_elt = res
     return res
 
 
-def get_vj(xml_train):
-    train_number = get_node(xml_train, 'NumeroTrain')  # TODO handle parity in train number
-    date = get_node(xml_train, 'DateCirculation')
-    # TODO call navitia
-    return None
+def get_value(elt, *nodes):
+    node = get_node(elt, *nodes)
+    return node.text if node is not None else None
 
 
-def get_modification(xml_modification):
+def as_date(str):
+    if str is None:
+        return None
+    return parser.parse(str, dayfirst=False, yearfirst=True)
+
+
+def to_str(date):
+    return date.strftime("%Y%m%dT%H%M%S")
+
+
+def headsign(str):
     """
-    All ire knowledge will go here ;)
+    we remove leading 0 for the headsigns
     """
-
-    # TODO call navitia
-    return None
+    return str.lstrip('0')
 
 
-def make_kirin_objet(raw_xml, raw_ire_id):
-    """
-    parse raw xml and create a real time object for kirin
-    """
-    try:
-        root = ElementTree.fromstring(raw_xml)
-    except ElementTree.ParseError as e:
-        raise InvalidArguments("invalid xml: {}".format(e.message))
+class KirinModelBuilder(object):
 
-    if root.tag != 'InfoRetard':
-        raise InvalidArguments('{} is not a valid xml root, it must be {}'.format(root.tag, 'InfoRetard'))
+    def __init__(self):
+        url = current_app.config['NAVITIA_URL']
+        token = current_app.config.get('NAVITIA_TOKEN')
+        instance = current_app.config['NAVITIA_INSTANCE']
+        self.navitia = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
 
-    vj = get_vj(get_node(root, 'Train'))
+    def build(self, raw_xml, raw_ire_id):
+        """
+        parse raw xml and create a real time object for kirin
+        """
+        created_at = datetime.datetime.now()
 
-    # TODO handle also root[DernierPointDeParcoursObserve] in the modification
-    vj_update = get_modification(get_node(root, 'TypeModification'))
+        try:
+            root = ElementTree.fromstring(raw_xml)
+        except ElementTree.ParseError as e:
+            raise InvalidArguments("invalid xml: {}".format(e.message))
 
-    # temporary mock
-    created_at = datetime.datetime.now()
-    vj_id = None
-    modification = None
-    return RealTimeUpdate(created_at, vj_id, modification, raw_ire_id)
+        if root.tag != 'InfoRetard':
+            raise InvalidArguments('{} is not a valid xml root, it must be {}'.format(root.tag, 'InfoRetard'))
 
+        vjs = self.get_vjs(get_node(root, 'Train'))
+
+        # for vj in vjs:
+
+        # TODO handle also root[DernierPointDeParcoursObserve] in the modification
+        vj_update = self.get_modification(get_node(root, 'TypeModification'))
+
+        # temporary mock
+        return RealTimeUpdate(created_at, vjs, vj_update, raw_ire_id)
+
+    def get_vjs(self, xml_train):
+        log = logging.getLogger(__name__)
+        train_number = headsign(get_value(xml_train, 'NumeroTrain'))  # TODO handle parity in train number
+
+        # to get the date of the vj we need to get the start of the vj
+        vj_start_str = get_value(xml_train, 'OrigineTheoriqueTrain', 'DateHeureDepart')
+
+        if not vj_start_str:
+            raise InvalidArguments('no start date for the train {}'.format(train_number))
+
+        vj_start = as_date(vj_start_str)
+        since = vj_start - timedelta(hours=1)
+        until = vj_start + timedelta(hours=1)
+
+        log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
+
+        navitia_vjs = self.navitia.vehicle_journeys(q={
+            'headsign': train_number,
+            'since': to_str(since),
+            'until': to_str(until)
+        })
+
+        if not navitia_vjs:
+            raise ObjectNotFound(
+                'impossible to find train {t} on [{s}, {u}['.format(t=train_number,
+                                                                    s=since,
+                                                                    u=until))
+
+        vjs = []
+        for nav_vj in navitia_vjs:
+            vj = model.VehicleJourney()
+            vj.id = nav_vj['id']
+            vjs.append(vj)
+
+        return vjs
+
+    def get_modification(self, xml_modification):
+        """
+        All ire knowledge will go here ;)
+        """
+
+        # TODO call navitia
+        return None

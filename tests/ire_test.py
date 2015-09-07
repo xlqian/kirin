@@ -51,37 +51,6 @@ def ire_96231():
 
 class Test_Ire(object):
 
-    @classmethod
-    def setup_class(cls):
-        """
-        Pop a temporary docker with an empty database DBNAME, we upgrade its schemas,
-        then initialize the flask app with the new db adresse
-        """
-        cls.docker = PostgresDocker(user=USER, pwd=PWD, dbname=DBNAME)
-
-        import os
-        db_url = 'postgresql://{user}:{pwd}@{host}/{dbname}'.format(
-                user=USER,
-                pwd=PWD,
-                host=cls.docker.ip_addr,
-                dbname=DBNAME)
-        # re-init the db by overriding the db_url
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-        db.init_app(app)
-
-        import flask_migrate
-        app.app_context().push()
-        flask_migrate.Migrate(app, db)
-        migration_dir = os.path.join(os.path.dirname(__file__), '..',  'migrations')
-        flask_migrate.upgrade(directory=migration_dir)
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Remove the temporary docker
-        """
-        cls.docker.exit()
-
 
     def test_wrong_ire_post(self):
         """
@@ -106,5 +75,5 @@ class Test_Ire(object):
         """
         tester = app.test_client()
         resp = tester.post('/ire')
-
         assert resp.status_code == 400
+

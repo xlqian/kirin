@@ -6,13 +6,18 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://navitia:navitia@localhost/kirin'
 DEBUG = True
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
-RABBITMQ_CONNECTION_STRING='pyamqp://guest:guest@localhost:5672//?heartbeat=60'
+RABBITMQ_CONNECTION_STRING = 'pyamqp://guest:guest@localhost:5672//?heartbeat=60'
 
 #amqp exhange used for sending disruptions
-EXCHANGE='navitia'
+EXCHANGE = 'navitia'
 
-ENABLE_RABBITMQ=True
+ENABLE_RABBITMQ = True
 
+NAVITIA_URL = 'http://navitia2-ws.ctp.dev.canaltp.fr/'
+
+NAVITIA_TOKEN = '0e3517e5-fd38-47f9-83f5-63837b34c9bf'
+
+NAVITIA_INSTANCE = 'sncfnational'
 #Log Level available
 # - DEBUG
 # - INFO
