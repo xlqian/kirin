@@ -75,7 +75,7 @@ class Modification(db.Model):
     Modification
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'))
+    vj_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'))
     type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
     stop_times = db.relationship('StopTime', backref='modification')
 
