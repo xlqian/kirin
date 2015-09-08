@@ -32,6 +32,13 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 db = SQLAlchemy()
 
+#force the server to use UTC time for each connection
+import sqlalchemy
+def set_utc_on_connect(dbapi_con, con_record):
+    c = dbapi_con.cursor()
+    c.execute("SET timezone='utc'")
+    c.close()
+sqlalchemy.event.listen(sqlalchemy.pool.Pool, 'connect', set_utc_on_connect)
 
 def gen_uuid():
     """
@@ -39,6 +46,12 @@ def gen_uuid():
     """
     import uuid
     return str(uuid.uuid4())
+
+class TimestampMixin(object):
+    created_at = db.Column(db.DateTime(), default=datetime.datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(), default=None, onupdate=datetime.datetime.utcnow)
+
+ModificationType = db.Enum('add', 'delete', 'update', 'none', name='modification_type')
 
 
 class VehicleJourney(db.Model):
@@ -55,14 +68,20 @@ class VehicleJourney(db.Model):
         self.circulation_date = circulation_date
 
 
-class StopTime(db.Model):
+class StopTime(db.Model, TimestampMixin):
     """
     Stop time
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    modification_id = db.Column(postgresql.UUID, db.ForeignKey('modification.id'))
-    departure = db.Column(db.DateTime, nullable=False)
-    arrival = db.Column(db.DateTime, nullable=False)
+    vj_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'), nullable=False)
+
+    stop_id = db.Column(db.Text, nullable=False)
+
+    departure = db.Column(db.DateTime, nullable=True)
+    departure_status = db.Column(ModificationType, nullable=False, default='none')
+
+    arrival = db.Column(db.DateTime, nullable=True)
+    arrival_status = db.Column(ModificationType, nullable=False, default='none')
 
     def __init__(self, departure, arrival):
         self.id = gen_uuid()
@@ -70,39 +89,29 @@ class StopTime(db.Model):
         self.arrival = arrival
 
 
-class Modification(db.Model):
-    """
-    Modification
-    """
-    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    vj_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'))
-    type = db.Column(db.Enum('add', 'delete', name='modification_type'), nullable=False)
-    stop_times = db.relationship('StopTime', backref='modification')
 
-    def __init__(self, modification_type, stop_times):
-        self.id = gen_uuid()
-        self.type = modification_type
-        self.stop_times = stop_times
+associate_realtimeupdate_vjupdate = db.Table('associate_realtimeupdate_vjupdate',
+                                    db.metadata,
+                                    db.Column('real_time_update_id', postgresql.UUID, db.ForeignKey('real_time_update.id')),
+                                    db.Column('vj_update_id', postgresql.UUID, db.ForeignKey('vj_update.id')),
+                                    db.PrimaryKeyConstraint('real_time_update_id', 'vj_update_id', name='associate_realtimeupdate_vjupdate_pkey')
+)
 
-class VJUpdate(db.Model):
+class VJUpdate(db.Model, TimestampMixin):
     """
     Update information for Vehicule Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    updated_at = db.Column(db.DateTime, nullable=False)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
-    modification = db.relationship('Modification', uselist=False, backref='real_time_update')
-    real_time_update_id = db.Column(postgresql.UUID, db.ForeignKey('real_time_update.id'), nullable=False)
+    vj = db.relationship('VehicleJourney', backref='vj_update', uselist=False)
+    stop_times = db.relationship('StopTime', backref='vj_update')
 
-    def __init__(self, created_at, vj_id, modification, raw_data_id):
+    def __init__(self, vj_id=None):
         self.id = gen_uuid()
-        self.created_at = created_at
+        self.created_at = datetime.datetime.utcnow()
         self.vj_id = vj_id
-        self.modification = modification
-        self.raw_data_id = raw_data_id
 
-
-class RealTimeUpdate(db.Model):
+class RealTimeUpdate(db.Model, TimestampMixin):
     """
     Real Time Update received from POST request
 
@@ -114,13 +123,13 @@ class RealTimeUpdate(db.Model):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
     connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
-    vj_updates = db.relationship('VJUpdate')
+
+    vj_updates = db.relationship("VJUpdate", secondary=associate_realtimeupdate_vjupdate)
 
     def __init__(self, raw_data, connector,
                  contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
