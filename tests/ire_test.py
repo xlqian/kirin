@@ -29,8 +29,17 @@
 import pytest
 
 from check_utils import api_post
-from kirin import app, db
-from docker_wrapper import PostgresDocker
+from kirin import app
+import mock_navitia
+
+
+@pytest.fixture(scope='function')
+def navitia(monkeypatch):
+    """
+    Mock all calls to navitia for this fixture
+    """
+    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
+
 
 
 USER = 'postgres'
@@ -51,8 +60,7 @@ def ire_96231():
 
 class Test_Ire(object):
 
-
-    def test_wrong_ire_post(self):
+    def test_wrong_ire_post(self, navitia):
         """
         simple xml post on the api
         """
@@ -62,18 +70,20 @@ class Test_Ire(object):
 
         print res.get('error') == 'invalid'
 
-    def test_ire_post(self, ire_96231):
+    def test_ire_post(self, navitia, ire_96231):
         """
         simple xml post on the api
         """
         res = api_post('/ire', data=ire_96231)
-        print res
 
-    def test_ire_post_no_data(self):
+        assert res == 'OK'
+
+    def test_ire_post_no_data(self, navitia):
         """
         when no data is given, we got a 400 error
         """
         tester = app.test_client()
         resp = tester.post('/ire')
         assert resp.status_code == 400
+
 
