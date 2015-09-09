@@ -30,7 +30,8 @@ import flask
 from flask.globals import current_app
 from flask_restful import Resource
 
-from kirin.core import handle
+import kirin.core.handler
+from kirin.core import model
 from kirin.exceptions import InvalidArguments
 import kirin
 from model_maker import KirinModelBuilder
@@ -41,10 +42,10 @@ def _make_rt_update(data):
     """
     Create an RealTimeUpdate object for the query and persist it
     """
-    rt_update = kirin.core.model.RealTimeUpdate(data, connector='ire')
+    rt_update = model.RealTimeUpdate(data, connector='ire')
 
-    kirin.core.model.db.session.add(rt_update)
-    kirin.core.model.db.session.commit()
+    model.db.session.add(rt_update)
+    model.db.session.commit()
     return rt_update
 
 
