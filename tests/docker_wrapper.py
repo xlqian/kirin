@@ -33,7 +33,6 @@ from retrying import retry
 
 # postgres image
 POSTGRES_IMAGE = 'postgres:9.4'
-POSTGRES_IMAGE_TAG = '9.4'
 POSTGRES_CONTAINER_NAME = 'kirin_test_postgres'
 
 
