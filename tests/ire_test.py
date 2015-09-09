@@ -58,7 +58,6 @@ class Test_Ire(object):
         then initialize the flask app with the new db adresse
         """
         cls.docker = PostgresDocker(user=USER, pwd=PWD, dbname=DBNAME)
-        cls.docker.__enter__()
 
         import os
         db_url = 'postgresql://{user}:{pwd}@{host}/{dbname}'.format(
