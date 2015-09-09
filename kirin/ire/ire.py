@@ -30,7 +30,7 @@ from flask.ext.restful import reqparse
 import flask
 from flask_restful import Resource
 
-import kirin.core.handler
+from kirin.core import handle
 from kirin.exceptions import InvalidArguments
 from model_maker import make_kirin_objet
 import kirin
@@ -66,6 +66,6 @@ class Ire(Resource):
         kirin_obj = make_kirin_objet(raw_xml, raw_update.id)
         # TODO: commit the kirin obj? and where?
 
-        res = kirin.core.handler.handle(kirin_obj)
+        handle(kirin_obj)
 
-        return res, 200
+        return 'OK', 200

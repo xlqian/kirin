@@ -30,4 +30,28 @@
 from model import RealTimeUpdate
 
 def handle(real_time_update):
-    return 'OK'
+    """
+    receive a RealTimeUpdate with at least one VehicleJourneyUpdate filled with the data received
+    by the connector. each VehicleJourneyUpdate is associated with the VehicleJourney returned by jormugandr
+    """
+    if not real_time_update or not hasattr(real_time_update, 'vj_updates'):
+        raise TypeError()
+
+    for vj_update in real_time_update.vj_updates:
+        pass
+        #find if there already a row in db
+
+        #merge the theoric, the current realtime, and the new relatime
+
+        #produce a gtfs from that and send it
+
+    feed = convert_to_gtfsrt(real_time_update)
+    publish(feed)
+    return real_time_update
+
+
+def convert_to_gtfsrt(real_time_update):
+    return None
+
+def publish(feed):
+    pass
