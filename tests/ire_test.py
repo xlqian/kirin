@@ -25,23 +25,17 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import os
+
 import pytest
 
 from check_utils import api_post
-from kirin import app
+from kirin import app, db
+from docker_wrapper import PostgresDocker
 
 
-def test_wrong_ire_post():
-    """
-    simple xml post on the api
-    """
-    res, status = api_post('/ire', check=False, data='<bob></bob>')
-
-    assert status == 400
-
-    print res.get('error') == 'invalid'
-
+USER = 'postgres'
+PWD = 'postgres'
+DBNAME = 'kirin_test'
 
 @pytest.fixture
 def ire_96231():
@@ -49,24 +43,68 @@ def ire_96231():
     py test fixture, to get the 96231 ire as a string
     the fixture need to be given as argument to the tests that wants to use it
     """
+    import os
     file = os.path.join(os.path.dirname(__file__), 'fixtures', 'Flux-96231_2015-07-28_0.xml')
     with open(file, "r") as ire:
         return ire.read()
 
 
-def test_ire_post(ire_96231):
-    """
-    simple xml post on the api
-    """
-    res = api_post('/ire', data=ire_96231)
+class Test_Ire(object):
 
-    print res
+    @classmethod
+    def setup_class(cls):
+        """
+        Pop a temporary docker with an empty database DBNAME, we upgrade its schemas,
+        then initialize the flask app with the new db adresse
+        """
+        cls.docker = PostgresDocker(user=USER, pwd=PWD, dbname=DBNAME)
 
-def test_ire_post_no_data():
-    """
-    when no data is given, we got a 400 error
-    """
-    tester = app.test_client()
-    resp = tester.post('/ire')
+        import os
+        db_url = 'postgresql://{user}:{pwd}@{host}/{dbname}'.format(
+                user=USER,
+                pwd=PWD,
+                host=cls.docker.ip_addr,
+                dbname=DBNAME)
+        # re-init the db by overriding the db_url
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        db.init_app(app)
 
-    assert resp.status_code == 400
+        import flask_migrate
+        app.app_context().push()
+        flask_migrate.Migrate(app, db)
+        migration_dir = os.path.join(os.path.dirname(__file__), '..',  'migrations')
+        flask_migrate.upgrade(directory=migration_dir)
+
+    @classmethod
+    def teardown_class(cls):
+        """
+        Remove the temporary docker
+        """
+        cls.docker.exit()
+
+
+    def test_wrong_ire_post(self):
+        """
+        simple xml post on the api
+        """
+        res, status = api_post('/ire', check=False, data='<bob></bob>')
+
+        assert status == 400
+
+        print res.get('error') == 'invalid'
+
+    def test_ire_post(self, ire_96231):
+        """
+        simple xml post on the api
+        """
+        res = api_post('/ire', data=ire_96231)
+        print res
+
+    def test_ire_post_no_data(self):
+        """
+        when no data is given, we got a 400 error
+        """
+        tester = app.test_client()
+        resp = tester.post('/ire')
+
+        assert resp.status_code == 400
