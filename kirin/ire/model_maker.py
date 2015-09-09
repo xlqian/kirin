@@ -32,7 +32,6 @@ from flask.globals import current_app
 from dateutil import parser
 from kirin.core import model
 
-from kirin.core.model import RealTimeUpdate
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
@@ -64,10 +63,10 @@ def get_value(elt, *nodes):
     return node.text if node is not None else None
 
 
-def as_date(str):
-    if str is None:
+def as_date(s):
+    if s is None:
         return None
-    return parser.parse(str, dayfirst=False, yearfirst=True)
+    return parser.parse(s, dayfirst=False, yearfirst=True)
 
 
 def to_str(date):
@@ -81,22 +80,21 @@ def headsign(str):
     return str.lstrip('0')
 
 
+def as_bool(s):
+    return s == 'true'
+
+
 class KirinModelBuilder(object):
 
-    def __init__(self):
-        url = current_app.config['NAVITIA_URL']
-        token = current_app.config.get('NAVITIA_TOKEN')
-        instance = current_app.config['NAVITIA_INSTANCE']
-        self.navitia = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
+    def __init__(self, nav):
+        self.navitia = nav
 
-    def build(self, raw_xml, raw_ire_id):
+    def build(self, rt_update):
         """
-        parse raw xml and create a real time object for kirin
+        parse raw xml and change the rt_update object with all the IRE data
         """
-        created_at = datetime.datetime.now()
-
         try:
-            root = ElementTree.fromstring(raw_xml)
+            root = ElementTree.fromstring(rt_update.raw_data)
         except ElementTree.ParseError as e:
             raise InvalidArguments("invalid xml: {}".format(e.message))
 
@@ -105,13 +103,10 @@ class KirinModelBuilder(object):
 
         vjs = self.get_vjs(get_node(root, 'Train'))
 
-        # for vj in vjs:
-
-        # TODO handle also root[DernierPointDeParcoursObserve] in the modification
-        vj_update = self.get_modification(get_node(root, 'TypeModification'))
-
-        # temporary mock
-        return RealTimeUpdate(created_at, vjs, vj_update, raw_ire_id)
+        for vj in vjs:
+            # TODO handle also root[DernierPointDeParcoursObserve] in the modification
+            vj_update = self.make_vj_update(vj, get_node(root, 'TypeModification'))
+            rt_update.vj_updates.append(vj_update)
 
     def get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
@@ -143,15 +138,55 @@ class KirinModelBuilder(object):
 
         vjs = []
         for nav_vj in navitia_vjs:
-            vj = model.VehicleJourney(nav_vj['id'], vj_start.date)
+            vj = model.VehicleJourney(nav_vj, vj_start.date)
             vjs.append(vj)
 
         return vjs
 
-    def get_modification(self, xml_modification):
+    def make_vj_update(self, vj, xml_modification):
         """
-        All ire knowledge will go here ;)
+        create the VJUpdate object
         """
+        vj_update = model.VJUpdate(vj=vj)
 
-        # TODO call navitia
-        return None
+        delay = xml_modification.find('HoraireProjete')
+        if delay:
+            for point_aval in delay.iter('PointAval'):
+                # we need only to consider the station
+                if not as_bool(get_value(point_aval, 'IndicateurPRGare')):
+                    continue
+                stop_id = self.get_navitia_stop_id(point_aval)
+
+                departure = None
+                arrival = None
+                st = model.StopTime(stop_id, departure, arrival)
+                vj_update.stop_times.append(st)
+
+        return vj_update
+
+    def get_navitia_stop_id(self, xml_node):
+        """
+        get a navitia stop from an xml node
+        the xml node MUST contains a CR, CI, CH tags
+
+        it searchs in navitia for a stop_area with the external code
+        CR-CI-CH
+        """
+        cr = get_value(xml_node, 'CRPR')
+        ci = get_value(xml_node, 'CIPR')
+        ch = get_value(xml_node, 'CHPR')
+
+        nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
+
+        nav_stops = self.navitia.stop_areas(q={'filter': 'stop_area.has_code(CRCICH, {code})'
+            .format(code=nav_external_code)})
+
+        if not nav_stops:
+            raise InvalidArguments('impossible to find stop "{}" in navitia'.format(nav_external_code))
+
+        if len(nav_stops) > 1:
+            raise InvalidArguments('too many stops found for code "{}" in navitia'.format(nav_external_code))
+
+        stop_area = nav_stops[0]
+
+        return stop_area['id']

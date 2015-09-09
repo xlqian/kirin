@@ -25,6 +25,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import os
 
 from kirin import app
 import json
@@ -60,3 +61,13 @@ def _to_json(data, display):
     json_response = json.loads(data)
 
     return json_response
+
+
+def get_ire_data(name):
+    """
+    return an IRE input as string
+    the name must be the name of a file in kirin/tests/fixtures
+    """
+    file = os.path.join(os.path.dirname(__file__), 'fixtures', name)
+    with open(file, "r") as ire:
+        return ire.read()

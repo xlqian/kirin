@@ -26,24 +26,27 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from flask.ext.restful import reqparse
 import flask
+from flask.globals import current_app
 from flask_restful import Resource
 
 from kirin.core import handle
 from kirin.exceptions import InvalidArguments
 import kirin
 from model_maker import KirinModelBuilder
+import navitia_wrapper
 
 
-def _persist_ire(raw_xml):
+def _make_rt_update(data):
     """
-    Save the whole raw xml into the db
+    Create an RealTimeUpdate object for the query and persist it
     """
-    raw_ire_obj = kirin.core.model.RealTimeUpdate(raw_xml, connector='ire')
-    kirin.core.model.db.session.add(raw_ire_obj)
+    rt_update = kirin.core.model.RealTimeUpdate(data, connector='ire')
+
+    kirin.core.model.db.session.add(rt_update)
     kirin.core.model.db.session.commit()
-    return raw_ire_obj
+    return rt_update
+
 
 def get_ire(req):
     """
@@ -54,18 +57,29 @@ def get_ire(req):
     return req.data
 
 
+def make_navitia_wrapper():
+    """
+    return a navitia wrapper to call the navitia API
+    """
+    url = current_app.config['NAVITIA_URL']
+    token = current_app.config.get('NAVITIA_TOKEN')
+    instance = current_app.config['NAVITIA_INSTANCE']
+    return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
+
+
 class Ire(Resource):
 
     def post(self):
         raw_xml = get_ire(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
-        raw_update = _persist_ire(raw_xml)
+        rt_update = _make_rt_update(raw_xml)
 
-        # raw_xml is  interpreted
-        kirin_obj = KirinModelBuilder().build(raw_xml, raw_update.id)
-        # TODO: commit the kirin obj? and where?
+        # raw_xml is interpreted
+        KirinModelBuilder(make_navitia_wrapper()).build(rt_update)
 
         handle(kirin_obj)
+
+        res = kirin.core.handler.handle(rt_update)
 
         return 'OK', 200

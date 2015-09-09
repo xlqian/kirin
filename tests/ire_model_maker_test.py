@@ -25,12 +25,11 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
 import pytest
-
-from check_utils import api_post
-from kirin import app
+import kirin
+from kirin.ire.model_maker import KirinModelBuilder
 import mock_navitia
+import navitia_wrapper
 from tests.check_utils import get_ire_data
 
 
@@ -42,39 +41,26 @@ def navitia(monkeypatch):
     monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
 
+def dumb_nav_wrapper():
+    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
+    return navitia_wrapper.Navitia(url='').instance('')
 
-USER = 'postgres'
-PWD = 'postgres'
-DBNAME = 'kirin_test'
 
+def test_train_delayed(navitia):
+    """
+    test the import of train_96231_delayed.xml
+    """
+    input_train_delayed = get_ire_data('train_96231_delayed.xml')
 
-class Test_Ire(object):
+    rt_update = kirin.core.model.RealTimeUpdate(input_train_delayed, connector='ire')
 
-    def test_wrong_ire_post(self, navitia):
-        """
-        simple xml post on the api
-        """
-        res, status = api_post('/ire', check=False, data='<bob></bob>')
+    KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
 
-        assert status == 400
+    assert len(rt_update.vj_updates) == 1
+    vj_up = rt_update.vj_updates[0]
+    assert vj_up.vj.navitia_id == 'vehicle_journey:SCFOCETrainTER87212027850001093:46155'
+    assert vj_up.vj_id == vj_up.vj_id
 
-        print res.get('error') == 'invalid'
-
-    def test_ire_post(self, navitia):
-        """
-        simple xml post on the api
-        """
-        ire_96231 = get_ire_data('train_96231_delayed.xml')
-        res = api_post('/ire', data=ire_96231)
-
-        assert res == 'OK'
-
-    def test_ire_post_no_data(self, navitia):
-        """
-        when no data is given, we got a 400 error
-        """
-        tester = app.test_client()
-        resp = tester.post('/ire')
-        assert resp.status_code == 400
-
+    # 5 stop times must have been created
+    assert len(vj_up.stop_times) == 5
 
