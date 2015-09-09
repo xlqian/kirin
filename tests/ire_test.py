@@ -80,7 +80,7 @@ class Test_Ire(object):
         """
         Remove the temporary docker
         """
-        cls.docker.__exit__()
+        cls.docker.exit()
 
 
     def test_wrong_ire_post(self):

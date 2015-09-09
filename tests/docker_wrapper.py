@@ -56,15 +56,12 @@ class PostgresDocker(object):
 
         if not self.ip_addr:
             log.error("temporary docker {} not started".format(self.container_id))
-            exit(1)
+            assert False
 
-        # we create an empty to prepare for the test
+        # we create an empty database to prepare for the test
         self._create_db(user, pwd, dbname)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args, **kwargs):
+    def exit(self, *args, **kwargs):
         logging.getLogger(__name__).info("stoping the temporary docker")
         self.docker.stop(container=self.container_id)
 
