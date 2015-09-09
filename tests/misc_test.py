@@ -39,4 +39,4 @@ def test_get_nodes():
                                  '</root>')
 
     assert get_node(xml, 'bob').tag == 'bob'
-    assert get_value(xml, 'bob', 'bobette') == '42'
+    assert get_value(xml, 'bob/bobette') == '42'

@@ -35,31 +35,24 @@ from kirin.core import model
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
-import datetime
 from kirin.exceptions import InvalidArguments, ObjectNotFound
 import navitia_wrapper
 
 
-def get_node(elt, *nodes):
+def get_node(elt, xpath):
     """
     get a unique element in an xml node
     raise an exception if the element does not exists
     """
-    if not nodes:
-        return None
-
-    current_elt = elt
-    for node in nodes:
-        res = current_elt.find(node)
-        if res is None:
-            raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
-                node=node, elt=elt.tag))
-        current_elt = res
+    res = elt.find(xpath)
+    if res is None:
+        raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
+            node=xpath, elt=elt.tag))
     return res
 
 
-def get_value(elt, *nodes):
-    node = get_node(elt, *nodes)
+def get_value(elt, xpath):
+    node = get_node(elt, xpath)
     return node.text if node is not None else None
 
 
@@ -84,6 +77,19 @@ def as_bool(s):
     return s == 'true'
 
 
+def get_navitia_stop_time(navitia_vj, stop_id):
+    nav_st = next((st for st in navitia_vj['stop_times']
+                  if st.get('journey_pattern_point', {})
+                       .get('stop_point', {})
+                       .get('id') == stop_id), None)
+
+    # if a VJ pass several times at the same stop, we cannot know
+    # perfectly which stop time to impact
+    # as a first version, we only impact the first
+
+    return nav_st
+
+
 class KirinModelBuilder(object):
 
     def __init__(self, nav):
@@ -99,7 +105,7 @@ class KirinModelBuilder(object):
             raise InvalidArguments("invalid xml: {}".format(e.message))
 
         if root.tag != 'InfoRetard':
-            raise InvalidArguments('{} is not a valid xml root, it must be {}'.format(root.tag, 'InfoRetard'))
+            raise InvalidArguments('{} is not a valid xml root, it must be "InfoRetard"'.format(root.tag))
 
         vjs = self.get_vjs(get_node(root, 'Train'))
 
@@ -112,22 +118,21 @@ class KirinModelBuilder(object):
         log = logging.getLogger(__name__)
         train_number = headsign(get_value(xml_train, 'NumeroTrain'))  # TODO handle parity in train number
 
-        # to get the date of the vj we need to get the start of the vj
-        vj_start_str = get_value(xml_train, 'OrigineTheoriqueTrain', 'DateHeureDepart')
-
-        if not vj_start_str:
-            raise InvalidArguments('no start date for the train {}'.format(train_number))
-
-        vj_start = as_date(vj_start_str)
+        # to get the date of the vj we use the start/end of the vj + some tolerance
+        # since the ire data and navitia data might not be synchronized
+        vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
         since = vj_start - timedelta(hours=1)
-        until = vj_start + timedelta(hours=1)
+        vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
+        until = vj_end + timedelta(hours=1)
 
         log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
 
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'headsign': train_number,
             'since': to_str(since),
-            'until': to_str(until)
+            'until': to_str(until),
+            'depth': '3',  # we need this depth to get the stoptime's stop_point
+            'show_codes': 'true'  # we need the stop_points CRCICH codes
         })
 
         if not navitia_vjs:
@@ -151,42 +156,51 @@ class KirinModelBuilder(object):
 
         delay = xml_modification.find('HoraireProjete')
         if delay:
-            for point_aval in delay.iter('PointAval'):
+            for downstream_point in delay.iter('PointAval'):
                 # we need only to consider the station
-                if not as_bool(get_value(point_aval, 'IndicateurPRGare')):
+                if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
                     continue
-                stop_id = self.get_navitia_stop_id(point_aval)
+                nav_st = self.get_navitia_stop_time(downstream_point, vj.navitia_vj)
+
+                if nav_st is None:
+                    continue
+
+                nav_stop = nav_st.get('journey_pattern_point', {}).get('stop_point', {})
 
                 departure = None
                 arrival = None
-                st = model.StopTime(stop_id, departure, arrival)
+                st = model.StopTime(nav_stop, departure, arrival)
                 vj_update.stop_times.append(st)
 
         return vj_update
 
-    def get_navitia_stop_id(self, xml_node):
+    def get_navitia_stop_time(self, downstream_point, nav_vj):
         """
         get a navitia stop from an xml node
         the xml node MUST contains a CR, CI, CH tags
 
-        it searchs in navitia for a stop_area with the external code
+        it searchs in the vj's stops for a stop_area with the external code
         CR-CI-CH
         """
-        cr = get_value(xml_node, 'CRPR')
-        ci = get_value(xml_node, 'CIPR')
-        ch = get_value(xml_node, 'CHPR')
+        cr = get_value(downstream_point, 'CRPR')
+        ci = get_value(downstream_point, 'CIPR')
+        ch = get_value(downstream_point, 'CHPR')
 
         nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
 
-        nav_stops = self.navitia.stop_areas(q={'filter': 'stop_area.has_code(CRCICH, {code})'
-            .format(code=nav_external_code)})
+        nav_stop_times = [s for s in nav_vj.get('stop_times', [])
+                          if s.get('journey_pattern_point', {})
+                              .get('stop_point', {})
+                              .get('codes', {})
+                              .get('CRCICH') == nav_external_code]
 
-        if not nav_stops:
-            raise InvalidArguments('impossible to find stop "{}" in navitia'.format(nav_external_code))
+        if not nav_stop_times:
+            logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
+                                             .format(nav_external_code))
+            return None
 
-        if len(nav_stops) > 1:
-            raise InvalidArguments('too many stops found for code "{}" in navitia'.format(nav_external_code))
+        if len(nav_stop_times) > 1:
+            logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, we take the first one'
+                                             .format(nav_external_code))
 
-        stop_area = nav_stops[0]
-
-        return stop_area['id']
+        return nav_stop_times[0]

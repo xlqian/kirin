@@ -87,9 +87,10 @@ class StopTime(db.Model, TimestampMixin):
     arrival = db.Column(db.DateTime, nullable=True)
     arrival_status = db.Column(ModificationType, nullable=False, default='none')
 
-    def __init__(self, navitia_stop_id, departure, arrival):
+    def __init__(self, navitia_stop, departure, arrival):
         self.id = gen_uuid()
-        self.stop_id = navitia_stop_id
+        self.navitia_stop = navitia_stop
+        self.stop_id = navitia_stop['id']
         self.departure = departure
         self.arrival = arrival
 
