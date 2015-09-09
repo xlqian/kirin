@@ -32,7 +32,7 @@ import logging
 from retrying import retry
 
 # postgres image
-POSTGRES_IMAGE = 'postgres'
+POSTGRES_IMAGE = 'postgres:9.4'
 POSTGRES_IMAGE_TAG = '9.4'
 POSTGRES_CONTAINER_NAME = 'kirin_test_postgres'
 
@@ -45,7 +45,7 @@ class PostgresDocker(object):
         log = logging.getLogger(__name__)
         self.docker = docker.Client(base_url='unix://var/run/docker.sock')
 
-        self.docker.pull('{0}:{1}'.format(POSTGRES_IMAGE, POSTGRES_IMAGE_TAG))
+        self.docker.pull(POSTGRES_IMAGE)
         self.container_id = self.docker.create_container(POSTGRES_IMAGE, name=POSTGRES_CONTAINER_NAME).get('Id')
 
         log.info("docker id is {}".format(self.container_id))
