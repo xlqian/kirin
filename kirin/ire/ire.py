@@ -29,8 +29,7 @@
 import flask
 from flask.globals import current_app
 from flask_restful import Resource
-
-import kirin.core.handler
+from kirin import core
 from kirin.core import model
 from kirin.exceptions import InvalidArguments
 import kirin
@@ -79,7 +78,7 @@ class Ire(Resource):
         # raw_xml is interpreted
         KirinModelBuilder(make_navitia_wrapper()).build(rt_update)
 
-        handle(kirin_obj)
+        core.handle(rt_update)
 
         res = kirin.core.handler.handle(rt_update)
 

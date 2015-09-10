@@ -131,7 +131,7 @@ class KirinModelBuilder(object):
             'headsign': train_number,
             'since': to_str(since),
             'until': to_str(until),
-            'depth': '3',  # we need this depth to get the stoptime's stop_point
+            'depth': '2',  # we need this depth to get the stoptime's stop_area
             'show_codes': 'true'  # we need the stop_points CRCICH codes
         })
 
