@@ -49,7 +49,7 @@ class PostgresDocker(object):
         log = logging.getLogger(__name__)
         self.docker = docker.Client(base_url='unix://var/run/docker.sock')
 
-        self.docker.build(POSTGRES_IMAGE, tag=POSTGRES_CONTAINER_NAME, rm=True)
+        self.docker.build(POSTGRES_IMAGE, tag='postgres', rm=True)
 
         self.container_id = self.docker.create_container('postgres', name=POSTGRES_CONTAINER_NAME).get('Id')
 
