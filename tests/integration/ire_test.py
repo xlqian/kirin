@@ -28,13 +28,13 @@
 
 import pytest
 
-from check_utils import api_post
+from tests.check_utils import api_post
 from kirin import app
-import mock_navitia
+from tests import mock_navitia
 from tests.check_utils import get_ire_data
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function', autouse=True)
 def navitia(monkeypatch):
     """
     Mock all calls to navitia for this fixture
@@ -42,39 +42,33 @@ def navitia(monkeypatch):
     monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
 
+def test_wrong_ire_post():
+    """
+    simple xml post on the api
+    """
+    res, status = api_post('/ire', check=False, data='<bob></bob>')
 
-USER = 'postgres'
-PWD = 'postgres'
-DBNAME = 'kirin_test'
+    assert status == 400
+
+    print res.get('error') == 'invalid'
 
 
-class Test_Ire(object):
+def test_ire_post():
+    """
+    simple xml post on the api
+    """
+    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    res = api_post('/ire', data=ire_96231)
 
-    def test_wrong_ire_post(self, navitia):
-        """
-        simple xml post on the api
-        """
-        res, status = api_post('/ire', check=False, data='<bob></bob>')
+    assert res == 'OK'
 
-        assert status == 400
 
-        print res.get('error') == 'invalid'
-
-    def test_ire_post(self, navitia):
-        """
-        simple xml post on the api
-        """
-        ire_96231 = get_ire_data('train_96231_delayed.xml')
-        res = api_post('/ire', data=ire_96231)
-
-        assert res == 'OK'
-
-    def test_ire_post_no_data(self, navitia):
-        """
-        when no data is given, we got a 400 error
-        """
-        tester = app.test_client()
-        resp = tester.post('/ire')
-        assert resp.status_code == 400
+def test_ire_post_no_data():
+    """
+    when no data is given, we got a 400 error
+    """
+    tester = app.test_client()
+    resp = tester.post('/ire')
+    assert resp.status_code == 400
 
 

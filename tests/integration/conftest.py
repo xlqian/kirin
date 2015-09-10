@@ -25,43 +25,38 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import os
+from kirin import app, db
 import pytest
-
-from kirin.core import model
-from kirin.ire.model_maker import KirinModelBuilder
-import mock_navitia
-import navitia_wrapper
-from tests.check_utils import get_ire_data
+import flask_migrate
 
 
-@pytest.fixture(scope='function')
-def navitia(monkeypatch):
+@pytest.yield_fixture(scope="module", autouse=True)
+def bdd(init_flask_db):
     """
-    Mock all calls to navitia for this fixture
+    All tests under this module will have a database
+     with an up to date scheme
+
+    At the end of the module the database scheme will be downgraded and upgraded again
+    in the next module to test the database migrations
     """
-    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
+    with app.app_context():
+        flask_migrate.Migrate(app, db)
+        migration_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'migrations')
+        flask_migrate.upgrade(directory=migration_dir)
+
+    yield
+
+    with app.app_context():
+        flask_migrate.downgrade(revision='base', directory=migration_dir)
 
 
-def dumb_nav_wrapper():
-    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
-    return navitia_wrapper.Navitia(url='').instance('')
-
-
-def test_train_delayed(navitia):
+@pytest.fixture(scope='function', autouse=True)
+def clean_db():
     """
-    test the import of train_96231_delayed.xml
+    before all tests the database is cleared
     """
-    input_train_delayed = get_ire_data('train_96231_delayed.xml')
-
-    rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
-
-    KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
-
-    assert len(rt_update.vj_updates) == 1
-    vj_up = rt_update.vj_updates[0]
-    # assert vj_up.vj.navitia_id == 'vehicle_journey:SCFOCETrainTER87212027850001093:46155'
-    assert vj_up.vj_id == vj_up.vj_id
-
-    # 5 stop times must have been created
-    # assert len(vj_up.stop_times) == 5
-
+    with app.app_context():
+        tables = [str(table) for table in db.metadata.sorted_tables]
+        db.session.execute('TRUNCATE {} CASCADE;'.format(', '.join(tables)))
+        db.session.commit()

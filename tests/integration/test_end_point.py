@@ -26,7 +26,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from check_utils import api_get
+from tests.check_utils import api_get
 
 
 def test_end_point():
@@ -36,11 +36,11 @@ def test_end_point():
 
 
 # Note: for the moment it's not possible to test the /status API because we need a bdd for that
-# def test_status():
-#     resp = api_get('/status')
-#
-#     assert 'version' in resp
-#     assert 'db_pool_status' in resp
-#     assert 'db_version' in resp
-#     assert 'navitia_url' in resp
+def test_status():
+    resp = api_get('/status')
+
+    assert 'version' in resp
+    assert 'db_pool_status' in resp
+    assert 'db_version' in resp
+    assert 'navitia_url' in resp
 

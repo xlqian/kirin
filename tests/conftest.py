@@ -25,43 +25,34 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import os
+from kirin import app, db
 import pytest
 
-from kirin.core import model
-from kirin.ire.model_maker import KirinModelBuilder
-import mock_navitia
-import navitia_wrapper
-from tests.check_utils import get_ire_data
+from tests.docker_wrapper import PostgresDocker
 
 
-@pytest.fixture(scope='function')
-def navitia(monkeypatch):
+@pytest.yield_fixture(scope="session", autouse=True)
+def docker():
     """
-    Mock all calls to navitia for this fixture
+    a docker providing a database is started once for all tests
     """
-    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
+    with PostgresDocker() as database:
+        yield database
 
 
-def dumb_nav_wrapper():
-    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
-    return navitia_wrapper.Navitia(url='').instance('')
 
-
-def test_train_delayed(navitia):
+@pytest.fixture(scope="session", autouse=True)
+def init_flask_db(docker):
     """
-    test the import of train_96231_delayed.xml
+    when the docker is started, we init flask once for the new database
     """
-    input_train_delayed = get_ire_data('train_96231_delayed.xml')
+    db_url = 'postgresql://{user}:{pwd}@{host}/{dbname}'.format(
+                user=docker.USER,
+                pwd=docker.PWD,
+                host=docker.ip_addr,
+                dbname=docker.DBNAME)
 
-    rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
-
-    KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
-
-    assert len(rt_update.vj_updates) == 1
-    vj_up = rt_update.vj_updates[0]
-    # assert vj_up.vj.navitia_id == 'vehicle_journey:SCFOCETrainTER87212027850001093:46155'
-    assert vj_up.vj_id == vj_up.vj_id
-
-    # 5 stop times must have been created
-    # assert len(vj_up.stop_times) == 5
-
+    # re-init the db by overriding the db_url
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    db.init_app(app)
