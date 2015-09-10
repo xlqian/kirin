@@ -45,13 +45,13 @@ def test_handle_basic():
 def test_handle_new_vj():
     pass
     #an easy one: we have one vj with only one stop time updated
-    vj_update = VJUpdate()
-    vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    vj_update.vj = vj
-    st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    real_time_update.vj_updates.append(vj_update)
-    res = handle(real_time_update)
+    # vj_update = VJUpdate()
+    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
+    # vj_update.vj = vj
+    # st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
+    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
+    # real_time_update.vj_updates.append(vj_update)
+    # res = handle(real_time_update)
 
 
 
