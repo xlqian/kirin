@@ -31,6 +31,7 @@ import pytest
 from kirin.core.handler import handle
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 import datetime
+from kirin import app
 
 def test_handle_basic():
     with pytest.raises(TypeError):
@@ -42,16 +43,33 @@ def test_handle_basic():
     assert res == real_time_update
 
 
-def test_handle_new_trip():
-    pass
-    #an easy one: we have one vj with only one stop time updated
-    # trip_update = TripUpdate()
-    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    # trip_update.vj = vj
-    # st_update = StopTimeUpdate(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    # real_time_update.trip_updates.append(trip_update)
-    # res = handle(real_time_update)
+def test_handle_new_vj():
+    """an easy one: we have one vj with only one stop time updated"""
+    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
+        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        ]}
+    with app.app_context():
+        trip_update = TripUpdate()
+        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        trip_update.vj = vj
+        st = StopTimeUpdate({'id': 'sa:1'}, departure=datetime.datetime(2015, 9, 8, 8, 15), arrival=None)
+        real_time_update = RealTimeUpdate(raw_data=None, connector='test')
+        real_time_update.trip_updates.append(trip_update)
+        trip_update.stop_time_updates.append(st)
+        res = handle(real_time_update)
+
+        assert len(res.trip_updates) == 1
+        trip_update = res.trip_updates[0]
+        assert len(trip_update.stop_time_updates) == 2
+        assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
+        assert trip_update.stop_time_updates[0].departure == datetime.datetime(2015, 9, 8, 8, 15)
+        assert trip_update.stop_time_updates[0].arrival == None
+
+        assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
+        assert trip_update.stop_time_updates[1].departure == None
+        assert trip_update.stop_time_updates[1].arrival == datetime.datetime(2015, 9, 8, 9, 10)
+
 
 
 
