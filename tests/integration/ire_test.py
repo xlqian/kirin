@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -28,30 +27,48 @@
 # www.navitia.io
 
 import pytest
-from kirin.core.handler import handle
-from kirin.core.model import RealTimeUpdate, VJUpdate, VehicleJourney, StopTime
-import datetime
 
-def test_handle_basic():
-    with pytest.raises(TypeError):
-        handle(None)
-
-    #a RealTimeUpdate without any VJUpdate doesn't do anything
-    real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    res = handle(real_time_update)
-    assert res == real_time_update
+from tests.check_utils import api_post
+from kirin import app
+from tests import mock_navitia
+from tests.check_utils import get_ire_data
 
 
-def test_handle_new_vj():
-    pass
-    #an easy one: we have one vj with only one stop time updated
-    # vj_update = VJUpdate()
-    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    # vj_update.vj = vj
-    # st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    # real_time_update.vj_updates.append(vj_update)
-    # res = handle(real_time_update)
+@pytest.fixture(scope='function', autouse=True)
+def navitia(monkeypatch):
+    """
+    Mock all calls to navitia for this fixture
+    """
+    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
+
+def test_wrong_ire_post():
+    """
+    simple xml post on the api
+    """
+    res, status = api_post('/ire', check=False, data='<bob></bob>')
+
+    assert status == 400
+
+    print res.get('error') == 'invalid'
+
+
+def test_ire_post():
+    """
+    simple xml post on the api
+    """
+    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    res = api_post('/ire', data=ire_96231)
+
+    assert res == 'OK'
+
+
+def test_ire_post_no_data():
+    """
+    when no data is given, we got a 400 error
+    """
+    tester = app.test_client()
+    resp = tester.post('/ire')
+    assert resp.status_code == 400
 
 

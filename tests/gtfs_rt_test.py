@@ -42,7 +42,7 @@ def unix_time(y, m, d, h, min, s):
     return calendar.timegm(d.utctimetuple())
 
 def make_96231_20150728_0():
-    """gtfs rt feed corresponding to Flux-96231_2015-07-28_0.xml"""
+    """gtfs rt feed corresponding to train_96231_delayed.xml"""
 
     message = gtfs_realtime_pb2.FeedMessage()
 

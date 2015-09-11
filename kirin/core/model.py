@@ -30,15 +30,17 @@
 from sqlalchemy.dialects import postgresql
 from flask_sqlalchemy import SQLAlchemy
 import datetime
+import sqlalchemy
 db = SQLAlchemy()
 
+
 #force the server to use UTC time for each connection
-import sqlalchemy
 def set_utc_on_connect(dbapi_con, con_record):
     c = dbapi_con.cursor()
     c.execute("SET timezone='utc'")
     c.close()
 sqlalchemy.event.listen(sqlalchemy.pool.Pool, 'connect', set_utc_on_connect)
+
 
 def gen_uuid():
     """
@@ -46,6 +48,7 @@ def gen_uuid():
     """
     import uuid
     return str(uuid.uuid4())
+
 
 class TimestampMixin(object):
     created_at = db.Column(db.DateTime(), default=datetime.datetime.utcnow, nullable=False)
@@ -62,10 +65,11 @@ class VehicleJourney(db.Model):
     navitia_id = db.Column(db.Text, nullable=False)
     circulation_date = db.Column(db.Date, nullable=False)
 
-    def __init__(self, navitia_id, circulation_date):
+    def __init__(self, navitia_vj, circulation_date):
         self.id = gen_uuid()
-        self.navitia_id = navitia_id
+        self.navitia_id = navitia_vj['id']
         self.circulation_date = circulation_date
+        self.navitia_vj = navitia_vj  # Not persisted
 
 
 class StopTime(db.Model, TimestampMixin):
@@ -83,8 +87,10 @@ class StopTime(db.Model, TimestampMixin):
     arrival = db.Column(db.DateTime, nullable=True)
     arrival_status = db.Column(ModificationType, nullable=False, default='none')
 
-    def __init__(self, departure, arrival):
+    def __init__(self, navitia_stop, departure, arrival):
         self.id = gen_uuid()
+        self.navitia_stop = navitia_stop
+        self.stop_id = navitia_stop['id']
         self.departure = departure
         self.arrival = arrival
 
@@ -97,6 +103,7 @@ associate_realtimeupdate_vjupdate = db.Table('associate_realtimeupdate_vjupdate'
                                     db.PrimaryKeyConstraint('real_time_update_id', 'vj_update_id', name='associate_realtimeupdate_vjupdate_pkey')
 )
 
+
 class VJUpdate(db.Model, TimestampMixin):
     """
     Update information for Vehicule Journey
@@ -106,10 +113,11 @@ class VJUpdate(db.Model, TimestampMixin):
     vj = db.relationship('VehicleJourney', backref='vj_update', uselist=False)
     stop_times = db.relationship('StopTime', backref='vj_update')
 
-    def __init__(self, vj_id=None):
+    def __init__(self, vj=None):
         self.id = gen_uuid()
         self.created_at = datetime.datetime.utcnow()
-        self.vj_id = vj_id
+        self.vj = vj
+
 
 class RealTimeUpdate(db.Model, TimestampMixin):
     """
@@ -140,4 +148,3 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.status = status
         self.error = error
         self.received_at = received_at
-

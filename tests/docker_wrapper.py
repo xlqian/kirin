@@ -25,6 +25,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import os
 
 import docker
 import psycopg2
@@ -36,15 +37,34 @@ POSTGRES_IMAGE = 'postgres:9.4'
 POSTGRES_CONTAINER_NAME = 'kirin_test_postgres'
 
 
+def _get_docker_file():
+    """
+    Return a dumb DockerFile
+    
+    The best way to get the image would be to get postgres:9.4 it from dockerhub,
+    but with this dumb wrapper the runtime time of the unit tests
+    is reduced by 10s
+    """
+    from io import BytesIO
+    return BytesIO('FROM ' + POSTGRES_IMAGE)
+
+
 class PostgresDocker(object):
+    USER = 'postgres'
+    PWD = 'postgres'
+    DBNAME = 'kirin_test'
     """
     launch a temporary docker with a postgresql db
     """
-    def __init__(self, user, pwd, dbname):
+    def __init__(self, user=USER, pwd=PWD, dbname=DBNAME):
         log = logging.getLogger(__name__)
         self.docker = docker.Client(base_url='unix://var/run/docker.sock')
 
-        self.docker.pull(POSTGRES_IMAGE)
+        log.info('building docker image')
+        for build_output in self.docker.build(fileobj=_get_docker_file(),
+                                              tag=POSTGRES_IMAGE, rm=True):
+            log.debug(build_output)
+
         self.container_id = self.docker.create_container(POSTGRES_IMAGE, name=POSTGRES_CONTAINER_NAME).get('Id')
 
         log.info("docker id is {}".format(self.container_id))
@@ -60,7 +80,10 @@ class PostgresDocker(object):
         # we create an empty database to prepare for the test
         self._create_db(user, pwd, dbname)
 
-    def exit(self, *args, **kwargs):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
         logging.getLogger(__name__).info("stoping the temporary docker")
         self.docker.stop(container=self.container_id)
 

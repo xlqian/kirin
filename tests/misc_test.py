@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -27,31 +26,17 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import pytest
-from kirin.core.handler import handle
-from kirin.core.model import RealTimeUpdate, VJUpdate, VehicleJourney, StopTime
-import datetime
-
-def test_handle_basic():
-    with pytest.raises(TypeError):
-        handle(None)
-
-    #a RealTimeUpdate without any VJUpdate doesn't do anything
-    real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    res = handle(real_time_update)
-    assert res == real_time_update
+import xml.etree.cElementTree as ElementTree
+from kirin.ire.model_maker import get_node, get_value
 
 
-def test_handle_new_vj():
-    pass
-    #an easy one: we have one vj with only one stop time updated
-    # vj_update = VJUpdate()
-    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    # vj_update.vj = vj
-    # st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    # real_time_update.vj_updates.append(vj_update)
-    # res = handle(real_time_update)
+def test_get_nodes():
+    """test get_nodes() and get_value helpers"""
+    xml = ElementTree.fromstring('<root>'
+                                 '<bob>'
+                                 '<bobette>42</bobette>'
+                                 '</bob>'
+                                 '</root>')
 
-
-
+    assert get_node(xml, 'bob').tag == 'bob'
+    assert get_value(xml, 'bob/bobette') == '42'

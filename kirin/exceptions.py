@@ -46,3 +46,8 @@ class InvalidArguments(KirinException):
     code = 400
     message = 'Invalid arguments'
 
+
+class ObjectNotFound(KirinException):
+    code = 404
+    message = 'object not found'
+

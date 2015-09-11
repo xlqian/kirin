@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,32 +25,38 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
+import os
+from kirin import app, db
 import pytest
-from kirin.core.handler import handle
-from kirin.core.model import RealTimeUpdate, VJUpdate, VehicleJourney, StopTime
-import datetime
-
-def test_handle_basic():
-    with pytest.raises(TypeError):
-        handle(None)
-
-    #a RealTimeUpdate without any VJUpdate doesn't do anything
-    real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    res = handle(real_time_update)
-    assert res == real_time_update
+import flask_migrate
 
 
-def test_handle_new_vj():
-    pass
-    #an easy one: we have one vj with only one stop time updated
-    # vj_update = VJUpdate()
-    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    # vj_update.vj = vj
-    # st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    # real_time_update.vj_updates.append(vj_update)
-    # res = handle(real_time_update)
+@pytest.yield_fixture(scope="module", autouse=True)
+def bdd(init_flask_db):
+    """
+    All tests under this module will have a database
+     with an up to date scheme
+
+    At the end of the module the database scheme will be downgraded and upgraded again
+    in the next module to test the database migrations
+    """
+    with app.app_context():
+        flask_migrate.Migrate(app, db)
+        migration_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'migrations')
+        flask_migrate.upgrade(directory=migration_dir)
+
+    yield
+
+    with app.app_context():
+        flask_migrate.downgrade(revision='base', directory=migration_dir)
 
 
-
+@pytest.fixture(scope='function', autouse=True)
+def clean_db():
+    """
+    before all tests the database is cleared
+    """
+    with app.app_context():
+        tables = [str(table) for table in db.metadata.sorted_tables]
+        db.session.execute('TRUNCATE {} CASCADE;'.format(', '.join(tables)))
+        db.session.commit()

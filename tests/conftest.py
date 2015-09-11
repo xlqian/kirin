@@ -3,7 +3,6 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
-# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -26,32 +25,34 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
+import os
+from kirin import app, db
 import pytest
-from kirin.core.handler import handle
-from kirin.core.model import RealTimeUpdate, VJUpdate, VehicleJourney, StopTime
-import datetime
 
-def test_handle_basic():
-    with pytest.raises(TypeError):
-        handle(None)
-
-    #a RealTimeUpdate without any VJUpdate doesn't do anything
-    real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    res = handle(real_time_update)
-    assert res == real_time_update
+from tests.docker_wrapper import PostgresDocker
 
 
-def test_handle_new_vj():
-    pass
-    #an easy one: we have one vj with only one stop time updated
-    # vj_update = VJUpdate()
-    # vj = VehicleJourney('vehicle_journey:1', datetime.date(2015, 9, 8))
-    # vj_update.vj = vj
-    # st = StopTime(datetime.datetime(2015, 9, 8, 15, 2), datetime.datetime(2015, 9, 8, 15, 0))
-    # real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-    # real_time_update.vj_updates.append(vj_update)
-    # res = handle(real_time_update)
+@pytest.yield_fixture(scope="session", autouse=True)
+def docker():
+    """
+    a docker providing a database is started once for all tests
+    """
+    with PostgresDocker() as database:
+        yield database
 
 
 
+@pytest.fixture(scope="session", autouse=True)
+def init_flask_db(docker):
+    """
+    when the docker is started, we init flask once for the new database
+    """
+    db_url = 'postgresql://{user}:{pwd}@{host}/{dbname}'.format(
+                user=docker.USER,
+                pwd=docker.PWD,
+                host=docker.ip_addr,
+                dbname=docker.DBNAME)
+
+    # re-init the db by overriding the db_url
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    db.init_app(app)

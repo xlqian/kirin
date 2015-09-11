@@ -26,7 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from kirin import exceptions
+import os
 
 VERSION = '0.1.0-dev'
 
@@ -50,7 +50,8 @@ import sys
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
-app.config.from_envvar('KIRIN_CONFIG_FILE', silent=True)
+if 'KIRIN_CONFIG_FILE' in os.environ:
+    app.config.from_envvar('KIRIN_CONFIG_FILE')
 
 from core import model
 db = model.db
