@@ -80,6 +80,4 @@ class Ire(Resource):
 
         core.handle(rt_update)
 
-        res = kirin.core.handler.handle(rt_update)
-
         return 'OK', 200

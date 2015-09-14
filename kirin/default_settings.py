@@ -10,12 +10,12 @@ NAVITIA_INSTANCE = 'sncf'
 DEBUG = True
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
-RABBITMQ_CONNECTION_STRING='pyamqp://guest:guest@localhost:5672//?heartbeat=60'
+RABBITMQ_CONNECTION_STRING = 'pyamqp://guest:guest@localhost:5672//?heartbeat=60'
 
 #amqp exhange used for sending disruptions
-EXCHANGE='navitia'
+EXCHANGE = 'navitia'
 
-ENABLE_RABBITMQ=True
+ENABLE_RABBITMQ = True
 
 #Log Level available
 # - DEBUG

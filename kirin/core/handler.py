@@ -26,8 +26,9 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import kirin
+from kirin import gtfs_realtime_pb2
 
-from model import RealTimeUpdate
 
 def handle(real_time_update):
     """
@@ -46,12 +47,23 @@ def handle(real_time_update):
         #produce a gtfs from that and send it
 
     feed = convert_to_gtfsrt(real_time_update)
-    publish(feed)
+
+    publish(feed, real_time_update)
+
     return real_time_update
 
 
 def convert_to_gtfsrt(real_time_update):
-    return None
+    feed = gtfs_realtime_pb2.FeedMessage()
 
-def publish(feed):
-    pass
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+    feed.header.gtfs_realtime_version = '42'  # TODO
+
+    return feed
+
+
+def publish(feed, rt_update):
+    """
+    send RT feed to navitia
+    """
+    kirin.rabbitmq_handler.publish(feed.SerializeToString(), rt_update.contributor)
