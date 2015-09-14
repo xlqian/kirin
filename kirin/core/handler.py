@@ -50,6 +50,8 @@ def handle(real_time_update):
 
     publish(feed, real_time_update)
 
+    return real_time_update
+
 
 def convert_to_gtfsrt(real_time_update):
     feed = gtfs_realtime_pb2.FeedMessage()
