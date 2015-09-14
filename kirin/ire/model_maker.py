@@ -111,8 +111,8 @@ class KirinModelBuilder(object):
 
         for vj in vjs:
             # TODO handle also root[DernierPointDeParcoursObserve] in the modification
-            vj_update = self.make_vj_update(vj, get_node(root, 'TypeModification'))
-            rt_update.vj_updates.append(vj_update)
+            trip_update = self.make_trip_update(vj, get_node(root, 'TypeModification'))
+            rt_update.trip_updates.append(trip_update)
 
     def get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
@@ -148,11 +148,11 @@ class KirinModelBuilder(object):
 
         return vjs
 
-    def make_vj_update(self, vj, xml_modification):
+    def make_trip_update(self, vj, xml_modification):
         """
         create the VJUpdate object
         """
-        vj_update = model.VJUpdate(vj=vj)
+        trip_update = model.TripUpdate(vj=vj)
 
         delay = xml_modification.find('HoraireProjete')
         if delay:
@@ -169,10 +169,10 @@ class KirinModelBuilder(object):
 
                 departure = None
                 arrival = None
-                st = model.StopTime(nav_stop, departure, arrival)
-                vj_update.stop_times.append(st)
+                st_update = model.StopTimeUpdate(nav_stop, departure, arrival)
+                trip_update.stop_time_updates.append(st_update)
 
-        return vj_update
+        return trip_update
 
     def get_navitia_stop_time(self, downstream_point, nav_vj):
         """

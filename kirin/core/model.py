@@ -72,12 +72,12 @@ class VehicleJourney(db.Model):
         self.navitia_vj = navitia_vj  # Not persisted
 
 
-class StopTime(db.Model, TimestampMixin):
+class StopTimeUpdate(db.Model, TimestampMixin):
     """
     Stop time
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    vj_update_id = db.Column(postgresql.UUID, db.ForeignKey('vj_update.id'), nullable=False)
+    trip_update_id = db.Column(postgresql.UUID, db.ForeignKey('trip_update.id'), nullable=False)
 
     stop_id = db.Column(db.Text, nullable=False)
 
@@ -96,27 +96,28 @@ class StopTime(db.Model, TimestampMixin):
 
 
 
-associate_realtimeupdate_vjupdate = db.Table('associate_realtimeupdate_vjupdate',
+associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
                                     db.Column('real_time_update_id', postgresql.UUID, db.ForeignKey('real_time_update.id')),
-                                    db.Column('vj_update_id', postgresql.UUID, db.ForeignKey('vj_update.id')),
-                                    db.PrimaryKeyConstraint('real_time_update_id', 'vj_update_id', name='associate_realtimeupdate_vjupdate_pkey')
+                                    db.Column('trip_update_id', postgresql.UUID, db.ForeignKey('trip_update.id')),
+                                    db.PrimaryKeyConstraint('real_time_update_id', 'trip_update_id', name='associate_realtimeupdate_tripupdate_pkey')
 )
 
 
-class VJUpdate(db.Model, TimestampMixin):
+class TripUpdate(db.Model, TimestampMixin):
     """
     Update information for Vehicule Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
-    vj = db.relationship('VehicleJourney', backref='vj_update', uselist=False)
-    stop_times = db.relationship('StopTime', backref='vj_update')
+    vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
+    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update')
 
     def __init__(self, vj=None):
         self.id = gen_uuid()
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
+        self.vj_id = vj.id
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
@@ -125,9 +126,9 @@ class RealTimeUpdate(db.Model, TimestampMixin):
 
     This model is used to persist the raw_data: .
     A real time update object will be constructed from the raw_xml then the
-    constructed real_time_update's id should be affected to VJUpdate's real_time_update_id
+    constructed real_time_update's id should be affected to TripUpdate's real_time_update_id
 
-    There is a one-to-many relationship between RealTimeUpdate and VJUpdate.
+    There is a one-to-many relationship between RealTimeUpdate and TripUpdate.
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
@@ -137,7 +138,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
 
-    vj_updates = db.relationship("VJUpdate", secondary=associate_realtimeupdate_vjupdate)
+    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate)
 
     def __init__(self, raw_data, connector,
                  contributor=None, status=None, error=None, received_at=datetime.datetime.now()):

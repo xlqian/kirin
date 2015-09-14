@@ -35,7 +35,7 @@ from tests.check_utils import get_ire_data
 
 
 @pytest.fixture(scope='function')
-def navitia(monkeypatch):
+def mock_navitia_fixture(monkeypatch):
     """
     Mock all calls to navitia for this fixture
     """
@@ -47,7 +47,7 @@ def dumb_nav_wrapper():
     return navitia_wrapper.Navitia(url='').instance('')
 
 
-def test_train_delayed(navitia):
+def test_train_delayed(mock_navitia_fixture):
     """
     test the import of train_96231_delayed.xml
     """
@@ -57,11 +57,11 @@ def test_train_delayed(navitia):
 
     KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
 
-    assert len(rt_update.vj_updates) == 1
-    vj_up = rt_update.vj_updates[0]
-    # assert vj_up.vj.navitia_id == 'vehicle_journey:SCFOCETrainTER87212027850001093:46155'
-    assert vj_up.vj_id == vj_up.vj_id
+    assert len(rt_update.trip_updates) == 1
+    trip_up = rt_update.trip_updates[0]
+    assert trip_up.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
+    assert trip_up.vj_id == trip_up.vj.id
 
     # 5 stop times must have been created
-    # assert len(vj_up.stop_times) == 5
+    #assert len(trip_up.stop_time_updates) == 5
 
