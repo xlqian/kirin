@@ -34,11 +34,7 @@ import gevent
 
 
 class RabbitMQHandler(object):
-    def __init__(self, connection_string, exchange, is_active=True):
-        self._is_active = is_active
-        if not is_active:
-            return
-
+    def __init__(self, connection_string, exchange):
         self._connection = BrokerConnection(connection_string)
         self._connections = set([self._connection])  # set of connection for the heartbeat
         self._exchange = Exchange(exchange, durable=True, delivry_mode=2, type='topic')
@@ -51,9 +47,6 @@ class RabbitMQHandler(object):
         return producer
 
     def publish(self, item, contributor):
-        if not self._is_active:
-            return
-
         with self._get_producer() as producer:
             producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
 

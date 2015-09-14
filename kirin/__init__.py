@@ -67,7 +67,6 @@ else:  # Default is std out
     app.logger.setLevel('INFO')
 
 rabbitmq_handler = RabbitMQHandler(app.config['RABBITMQ_CONNECTION_STRING'],
-                                   app.config['EXCHANGE'],
-                                   app.config.get('ENABLE_RABBITMQ', True))
+                                   app.config['EXCHANGE'])
 
 import kirin.api
