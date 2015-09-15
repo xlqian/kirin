@@ -27,6 +27,8 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import os
+from kirin import exceptions
+from kirin.rabbitmq_handler import RabbitMQHandler
 
 VERSION = '0.1.0-dev'
 
@@ -63,5 +65,8 @@ else:  # Default is std out
     handler = logging.StreamHandler(stream=sys.stdout)
     app.logger.addHandler(handler)
     app.logger.setLevel('INFO')
+
+rabbitmq_handler = RabbitMQHandler(app.config['RABBITMQ_CONNECTION_STRING'],
+                                   app.config['EXCHANGE'])
 
 import kirin.api

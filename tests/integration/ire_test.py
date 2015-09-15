@@ -42,6 +42,19 @@ def navitia(monkeypatch):
     monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
 
+@pytest.fixture(scope='function')
+def mock_rabbitmq(monkeypatch):
+    """
+    Mock all calls to navitia for this fixture
+    """
+    from mock import MagicMock
+
+    mock_amqp = MagicMock()
+    monkeypatch.setattr('kombu.messaging.Producer.publish', mock_amqp)
+
+    return mock_amqp
+
+
 def test_wrong_ire_post():
     """
     simple xml post on the api
@@ -53,7 +66,7 @@ def test_wrong_ire_post():
     print res.get('error') == 'invalid'
 
 
-def test_ire_post():
+def test_ire_post(mock_rabbitmq):
     """
     simple xml post on the api
     """
@@ -61,6 +74,9 @@ def test_ire_post():
     res = api_post('/ire', data=ire_96231)
 
     assert res == 'OK'
+
+    # the rabbit mq has to have been called only once
+    assert mock_rabbitmq.call_count == 1
 
 
 def test_ire_post_no_data():
