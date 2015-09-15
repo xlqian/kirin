@@ -58,19 +58,22 @@ def merge(trip_update, old_trip_update):
     if old_trip_update:
         old_trip_update.merge(trip_update)
         current = trip_update
+        #we have to link the old vj_update with the new real_time_update
+        rtu = trip_update.real_time_updates.pop()
+        old_trip_update.real_time_updates.append(rtu)
     else:
         current = trip_update
         merge_realtime_theoric(current, trip_update.vj.navitia_vj)
     return current
 
 def merge_realtime_theoric(trip_update, navitia_vj):
-    for navitia_stop in navitia_vj.get('stop_times', []):
-        stop_id = navitia_stop.get('stop_point', {}).get('id', None)
+    for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
+        stop_id = navitia_stop.get('stop_point', {}).get('id')
         stop = trip_update.find_stop(stop_id)
         #TODO: order is important...
         if not stop:
-            departure_time = navitia_stop.get('departure_time', None)
-            arrival_time = navitia_stop.get('arrival_time', None)
+            departure_time = navitia_stop.get('departure_time')
+            arrival_time = navitia_stop.get('arrival_time')
             departure = arrival = None
             #TODO handle past midnigth
             if departure_time:
@@ -79,13 +82,8 @@ def merge_realtime_theoric(trip_update, navitia_vj):
                 arrival = datetime.datetime.combine(trip_update.vj.circulation_date, arrival_time)
 
             st = StopTimeUpdate(navitia_stop['stop_point'], departure, arrival)
-            trip_update.stop_time_updates.append(st)
-
-
-def merge_realtime(trip_update, old_trip_update):
-    if not old_trip_update:
-        return trip_update
-    return old_trip_update
+            #we want to keep the order
+            trip_update.stop_time_updates.insert(idx, st)
 
 
 def convert_to_gtfsrt(real_time_update):
