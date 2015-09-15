@@ -42,7 +42,7 @@ def handle(real_time_update):
 
     for trip_update in real_time_update.trip_updates:
         #find if there already a row in db
-        old = TripUpdate.find_by_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
+        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
         merge(trip_update, old)
 

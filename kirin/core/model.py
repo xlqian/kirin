@@ -132,7 +132,7 @@ class TripUpdate(db.Model, TimestampMixin):
 
 
     @classmethod
-    def find_by_vj(cls, vj_navitia_id, vj_circulation_date):
+    def find_by_dated_vj(cls, vj_navitia_id, vj_circulation_date):
         return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_id == vj_navitia_id,
                                               VehicleJourney.circulation_date == vj_circulation_date).first()
 

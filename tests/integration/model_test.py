@@ -53,12 +53,12 @@ def setup_database():
 
 def test_find_by_vj(setup_database):
     with app.app_context():
-        assert TripUpdate.find_by_vj('vehicle_journey:1', datetime.date(2015, 9, 9)) is None
-        row = TripUpdate.find_by_vj('vehicle_journey:1', datetime.date(2015, 9, 8))
+        assert TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.date(2015, 9, 9)) is None
+        row = TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.date(2015, 9, 8))
         assert row is not None
         assert row.id == '70866ce8-0638-4fa1-8556-1ddfa22d09d3'
 
-        row = TripUpdate.find_by_vj('vehicle_journey:2', datetime.date(2015, 9, 8))
+        row = TripUpdate.find_by_dated_vj('vehicle_journey:2', datetime.date(2015, 9, 8))
         assert row is not None
         assert row.id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
 
