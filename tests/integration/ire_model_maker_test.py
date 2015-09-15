@@ -27,19 +27,11 @@
 # www.navitia.io
 import pytest
 
+from kirin import db, app
 from kirin.core import model
 from kirin.ire.model_maker import KirinModelBuilder
-import mock_navitia
 import navitia_wrapper
 from tests.check_utils import get_ire_data
-
-
-@pytest.fixture(scope='function')
-def mock_navitia_fixture(monkeypatch):
-    """
-    Mock all calls to navitia for this fixture
-    """
-    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
 
 def dumb_nav_wrapper():
@@ -51,17 +43,20 @@ def test_train_delayed(mock_navitia_fixture):
     """
     test the import of train_96231_delayed.xml
     """
+
     input_train_delayed = get_ire_data('train_96231_delayed.xml')
 
-    rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
+    with app.app_context():
+        rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
+        KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+        db.session.add(rt_update)
+        db.session.commit()
 
-    KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+        assert len(rt_update.trip_updates) == 1
+        trip_up = rt_update.trip_updates[0]
+        assert trip_up.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
+        assert trip_up.vj_id == trip_up.vj.id
 
-    assert len(rt_update.trip_updates) == 1
-    trip_up = rt_update.trip_updates[0]
-    assert trip_up.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
-    assert trip_up.vj_id == trip_up.vj.id
-
-    # 5 stop times must have been created
-    #assert len(trip_up.stop_time_updates) == 5
+        # 5 stop times must have been created
+        #assert len(trip_up.stop_time_updates) == 5
 

@@ -60,3 +60,12 @@ def clean_db():
         tables = [str(table) for table in db.metadata.sorted_tables]
         db.session.execute('TRUNCATE {} CASCADE;'.format(', '.join(tables)))
         db.session.commit()
+
+
+@pytest.fixture(scope='function')
+def mock_navitia_fixture(monkeypatch):
+    from .. import mock_navitia
+    """
+    Mock all calls to navitia for this fixture
+    """
+    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)

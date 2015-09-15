@@ -143,7 +143,7 @@ class KirinModelBuilder(object):
 
         vjs = []
         for nav_vj in navitia_vjs:
-            vj = model.VehicleJourney(nav_vj, vj_start.date)
+            vj = model.VehicleJourney(nav_vj, vj_start.date())
             vjs.append(vj)
 
         return vjs

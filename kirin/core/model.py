@@ -117,7 +117,6 @@ class TripUpdate(db.Model, TimestampMixin):
         self.id = gen_uuid()
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
-        self.vj_id = vj.id
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
