@@ -1,13 +1,13 @@
 """init of models
 
-Revision ID: 1f741b0fd7ef
+Revision ID: bb47e3fc587
 Revises: None
-Create Date: 2015-09-08 12:07:27.233376
+Create Date: 2015-09-14 16:21:09.686549
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '1f741b0fd7ef'
+revision = 'bb47e3fc587'
 down_revision = None
 
 from alembic import op
@@ -33,7 +33,7 @@ def upgrade():
     sa.Column('circulation_date', sa.Date(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('vj_update',
+    op.create_table('trip_update',
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('id', postgresql.UUID(), nullable=False),
@@ -41,32 +41,32 @@ def upgrade():
     sa.ForeignKeyConstraint(['vj_id'], ['vehicle_journey.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('associate_realtimeupdate_vjupdate',
+    op.create_table('associate_realtimeupdate_tripupdate',
     sa.Column('real_time_update_id', postgresql.UUID(), nullable=False),
-    sa.Column('vj_update_id', postgresql.UUID(), nullable=False),
+    sa.Column('trip_update_id', postgresql.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['real_time_update_id'], ['real_time_update.id'], ),
-    sa.ForeignKeyConstraint(['vj_update_id'], ['vj_update.id'], ),
-    sa.PrimaryKeyConstraint('real_time_update_id', 'vj_update_id', name='associate_realtimeupdate_vjupdate_pkey')
+    sa.ForeignKeyConstraint(['trip_update_id'], ['trip_update.id'], ),
+    sa.PrimaryKeyConstraint('real_time_update_id', 'trip_update_id', name='associate_realtimeupdate_tripupdate_pkey')
     )
-    op.create_table('stop_time',
+    op.create_table('stop_time_update',
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('id', postgresql.UUID(), nullable=False),
-    sa.Column('vj_update_id', postgresql.UUID(), nullable=False),
+    sa.Column('trip_update_id', postgresql.UUID(), nullable=False),
     sa.Column('stop_id', sa.Text(), nullable=False),
     sa.Column('departure', sa.DateTime(), nullable=True),
     sa.Column('departure_status', sa.Enum('add', 'delete', 'update', 'none', name='modification_type'), nullable=False),
     sa.Column('arrival', sa.DateTime(), nullable=True),
     sa.Column('arrival_status', sa.Enum('add', 'delete', 'update', 'none', name='modification_type'), nullable=False),
-    sa.ForeignKeyConstraint(['vj_update_id'], ['vj_update.id'], ),
+    sa.ForeignKeyConstraint(['trip_update_id'], ['trip_update.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
 
 
 def downgrade():
-    op.drop_table('stop_time')
-    op.drop_table('associate_realtimeupdate_vjupdate')
-    op.drop_table('vj_update')
+    op.drop_table('stop_time_update')
+    op.drop_table('associate_realtimeupdate_tripupdate')
+    op.drop_table('trip_update')
     op.drop_table('vehicle_journey')
     op.drop_table('real_time_update')
     sa.Enum('', name='modification_type').drop(op.get_bind())

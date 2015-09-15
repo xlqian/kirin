@@ -32,13 +32,13 @@ from kirin import gtfs_realtime_pb2
 
 def handle(real_time_update):
     """
-    receive a RealTimeUpdate with at least one VehicleJourneyUpdate filled with the data received
-    by the connector. each VehicleJourneyUpdate is associated with the VehicleJourney returned by jormugandr
+    receive a RealTimeUpdate with at least one TripUpdate filled with the data received
+    by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
     """
-    if not real_time_update or not hasattr(real_time_update, 'vj_updates'):
+    if not real_time_update or not hasattr(real_time_update, 'trip_updates'):
         raise TypeError()
 
-    for vj_update in real_time_update.vj_updates:
+    for trip_update in real_time_update.trip_updates:
         pass
         #find if there already a row in db
 
