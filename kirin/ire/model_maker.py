@@ -59,7 +59,7 @@ def get_value(elt, xpath):
 def as_date(s):
     if s is None:
         return None
-    return parser.parse(s, dayfirst=False, yearfirst=True)
+    return parser.parse(s, dayfirst=True, yearfirst=False)
 
 
 def to_str(date):
@@ -150,12 +150,13 @@ class KirinModelBuilder(object):
 
     def make_trip_update(self, vj, xml_modification):
         """
-        create the VJUpdate object
+        create the TripUpdate object
         """
         trip_update = model.TripUpdate(vj=vj)
 
         delay = xml_modification.find('HoraireProjete')
         if delay:
+            trip_update.trip_status = 'update'
             for downstream_point in delay.iter('PointAval'):
                 # we need only to consider the station
                 if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
@@ -171,6 +172,13 @@ class KirinModelBuilder(object):
                 arrival = None
                 st_update = model.StopTimeUpdate(nav_stop, departure, arrival)
                 trip_update.stop_time_updates.append(st_update)
+
+        removal = xml_modification.find('Suppression')
+        if removal:
+            if get_value(removal, 'TypeSuppression') == 'T':
+                trip_update.trip_status = 'delete'
+            elif get_value(removal, 'TypeSuppression') == 'P':
+                trip_update.trip_status = 'update'
 
         return trip_update
 

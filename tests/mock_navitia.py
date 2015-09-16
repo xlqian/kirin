@@ -494,151 +494,344 @@ _mock_navitia_call = {
                 }
               ]
             }""", 200),
-    'stop_areas/?filter=stop_area.has_code(CRCICH, 0087-214056-00)':
+    'vehicle_journeys/?depth=2&since=20151006T121600&headsign=6113&show_codes=true&until=20151006T173400':
         ("""
-    {"stop_areas": [
-        {
-            "administrative_regions": [
-                {
-                    "coord": {
-                        "lat": "48.259438",
-                        "lon": "7.454216"
+        {"vehicle_journeys":[
+            {
+                "codes":[
+                    {
+                        "type":"external_code",
+                        "value":"OCESN006113F02009"
+                    }
+                ],
+                "name":"6113",
+                "journey_pattern":{
+                    "route":{
+                        "direction":{
+                            "embedded_type":"stop_area",
+                            "quality":0,
+                            "stop_area":{
+                                "codes":[
+                                    {
+                                        "type":"external_code",
+                                        "value":"OCE87751008"
+                                    }
+                                ],
+                                "name":"gare de Marseille-St-Charles",
+                                "links":[
+
+                                ],
+                                "coord":{
+                                    "lat":"43.30273",
+                                    "lon":"5.380659"
+                                },
+                                "label":"gare de Marseille-St-Charles",
+                                "timezone":"Europe/Paris",
+                                "id":"stop_area:OCE:SA:87751008"
+                            },
+                            "name":"gare de Marseille-St-Charles",
+                            "id":"stop_area:OCE:SA:87751008"
+                        },
+                        "codes":[
+                            {
+                                "type":"external_code",
+                                "value":"OCETGV-87686006-87751008-2"
+                            }
+                        ],
+                        "name":"Paris-Gare-de-Lyon vers Marseille-St-Charles",
+                        "links":[
+
+                        ],
+                        "is_frequence":"False",
+                        "geojson":{
+                            "type":"MultiLineString",
+                            "coordinates":[
+
+                            ]
+                        },
+                        "id":"route:OCE:TGV-87686006-87751008-2"
                     },
-                    "id": "admin:61449extern",
-                    "insee": "67462",
-                    "label": "Sélestat (67600)",
-                    "level": 8,
-                    "name": "Sélestat",
-                    "zip_code": "67600"
-                }
-            ],
-            "coord": {
-                "lat": "48.259942",
-                "lon": "7.443167"
+                    "name":"gare de Marseille-St-Charles",
+                    "id":"journey_pattern:OCE:TGV-87751008-87686006-4066"
+                },
+                "calendars":[
+                    {
+                        "active_periods":[
+                            {
+                                "begin":"20150916",
+                                "end":"20151017"
+                            }
+                        ],
+                        "week_pattern":{
+                            "monday":true,
+                            "tuesday":true,
+                            "friday":true,
+                            "wednesday":true,
+                            "thursday":true,
+                            "sunday":true,
+                            "saturday":true
+                        }
+                    }
+                ],
+                "stop_times":[
+                    {
+                        "arrival_time":"123700",
+                        "journey_pattern_point":{
+                            "id":"OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
+                        },
+                        "headsign":"6113",
+                        "departure_time":"123700",
+                        "stop_point":{
+                            "codes":[
+                                {
+                                    "type":"external_code",
+                                    "value":"OCETGV-87686006"
+                                }
+                            ],
+                            "name":"gare de Paris-Gare-de-Lyon",
+                            "links":[
+
+                            ],
+                            "coord":{
+                                "lat":"48.844924",
+                                "lon":"2.373481"
+                            },
+                            "label":"gare de Paris-Gare-de-Lyon",
+                            "equipments":[
+
+                            ],
+                            "id":"stop_point:OCE:SP:TGV-87686006",
+                            "stop_area":{
+                                "codes":[
+                                    {
+                                        "type":"external_code",
+                                        "value":"OCE87686006"
+                                    }
+                                ],
+                                "name":"gare de Paris-Gare-de-Lyon",
+                                "links":[
+
+                                ],
+                                "coord":{
+                                    "lat":"48.844924",
+                                    "lon":"2.373481"
+                                },
+                                "label":"gare de Paris-Gare-de-Lyon",
+                                "timezone":"Europe/Paris",
+                                "id":"stop_area:OCE:SA:87686006"
+                            }
+                        }
+                    },
+                    {
+                        "arrival_time":"152100",
+                        "journey_pattern_point":{
+                            "id":"OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87318964:1"
+                        },
+                        "headsign":"6113",
+                        "departure_time":"152400",
+                        "stop_point":{
+                            "codes":[
+                                {
+                                    "type":"external_code",
+                                    "value":"OCETGV-87318964"
+                                }
+                            ],
+                            "name":"gare de Avignon-TGV",
+                            "links":[
+
+                            ],
+                            "coord":{
+                                "lat":"43.921963",
+                                "lon":"4.78616"
+                            },
+                            "label":"gare de Avignon-TGV",
+                            "equipments":[
+
+                            ],
+                            "id":"stop_point:OCE:SP:TGV-87318964",
+                            "stop_area":{
+                                "codes":[
+                                    {
+                                        "type":"external_code",
+                                        "value":"OCE87318964"
+                                    }
+                                ],
+                                "name":"gare de Avignon-TGV",
+                                "links":[
+
+                                ],
+                                "coord":{
+                                    "lat":"43.921963",
+                                    "lon":"4.78616"
+                                },
+                                "label":"gare de Avignon-TGV",
+                                "timezone":"Europe/Paris",
+                                "id":"stop_area:OCE:SA:87318964"
+                            }
+                        }
+                    },
+                    {
+                        "arrival_time":"154300",
+                        "journey_pattern_point":{
+                            "id":"OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87319012:2"
+                        },
+                        "headsign":"6113",
+                        "departure_time":"154600",
+                        "stop_point":{
+                            "codes":[
+                                {
+                                    "type":"external_code",
+                                    "value":"OCETGV-87319012"
+                                }
+                            ],
+                            "name":"gare de Aix-en-Provence-TGV",
+                            "links":[
+
+                            ],
+                            "coord":{
+                                "lat":"43.455151",
+                                "lon":"5.317273"
+                            },
+                            "label":"gare de Aix-en-Provence-TGV",
+                            "equipments":[
+
+                            ],
+                            "id":"stop_point:OCE:SP:TGV-87319012",
+                            "stop_area":{
+                                "codes":[
+                                    {
+                                        "type":"external_code",
+                                        "value":"OCE87319012"
+                                    }
+                                ],
+                                "name":"gare de Aix-en-Provence-TGV",
+                                "links":[
+
+                                ],
+                                "coord":{
+                                    "lat":"43.455151",
+                                    "lon":"5.317273"
+                                },
+                                "label":"gare de Aix-en-Provence-TGV",
+                                "timezone":"Europe/Paris",
+                                "id":"stop_area:OCE:SA:87319012"
+                            }
+                        }
+                    },
+                    {
+                        "arrival_time":"160300",
+                        "journey_pattern_point":{
+                            "id":"OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
+                        },
+                        "headsign":"6113",
+                        "departure_time":"160300",
+                        "stop_point":{
+                            "codes":[
+                                {
+                                    "type":"external_code",
+                                    "value":"OCETGV-87751008"
+                                }
+                            ],
+                            "name":"gare de Marseille-St-Charles",
+                            "links":[
+
+                            ],
+                            "coord":{
+                                "lat":"43.30273",
+                                "lon":"5.380659"
+                            },
+                            "label":"gare de Marseille-St-Charles",
+                            "equipments":[
+
+                            ],
+                            "id":"stop_point:OCE:SP:TGV-87751008",
+                            "stop_area":{
+                                "codes":[
+                                    {
+                                        "type":"external_code",
+                                        "value":"OCE87751008"
+                                    }
+                                ],
+                                "name":"gare de Marseille-St-Charles",
+                                "links":[
+
+                                ],
+                                "coord":{
+                                    "lat":"43.30273",
+                                    "lon":"5.380659"
+                                },
+                                "label":"gare de Marseille-St-Charles",
+                                "timezone":"Europe/Paris",
+                                "id":"stop_area:OCE:SA:87751008"
+                            }
+                        }
+                    }
+                ],
+                "validity_pattern":{
+                    "beginning_date":"20150915",
+                    "days":"000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111111111110"
+                },
+                "id":"vehicle_journey:OCETGV-87686006-87751008-2:25768"
+            }
+        ],
+        "disruptions":[
+
+        ],
+        "pagination":{
+            "start_page":0,
+            "items_on_page":1,
+            "items_per_page":25,
+            "total_result":1
+        },
+        "links":[
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/stop_points/{stop_point.id}",
+                "type":"stop_point",
+                "rel":"stop_points",
+                "templated":true
             },
-            "id": "stop_area:OCE:SA:87214056",
-            "label": "gare de Sélestat (Sélestat)",
-            "links": [],
-            "name": "gare de Sélestat",
-            "timezone": "Europe/Paris"
-        }
-    ]}""", 200),
-    'stop_areas/?filter=stop_area.has_code(CRCICH, 0087-182014-BV)':
-        ("""
-        {"stop_areas": [
             {
-                "administrative_regions": [
-                    {
-                        "coord": {
-                            "lat": "48.077751",
-                            "lon": "7.357964"
-                        },
-                        "id": "admin:61423extern",
-                        "insee": "68066",
-                        "label": "Colmar (68000)",
-                        "level": 8,
-                        "name": "Colmar",
-                        "zip_code": "68000"
-                    }
-                ],
-                "coord": {
-                    "lat": "48.072345",
-                    "lon": "7.34703"
-                },
-                "id": "stop_area:OCE:SA:87182014",
-                "label": "gare de Colmar (Colmar)",
-                "links": [],
-                "name": "gare de Colmar",
-                "timezone": "Europe/Paris"
+                "href":"http://localhost:5000/v1/coverage/navitia/stop_areas/{stop_area.id}",
+                "type":"stop_area",
+                "rel":"stop_areas",
+                "templated":true
+            },
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/journey_patterns/{journey_pattern.id}",
+                "type":"journey_pattern",
+                "rel":"journey_patterns",
+                "templated":true
+            },
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/routes/{route.id}",
+                "type":"route",
+                "rel":"routes",
+                "templated":true
+            },
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/journey_pattern_points/{journey_pattern_point.id}",
+                "type":"journey_pattern_point",
+                "rel":"journey_pattern_points",
+                "templated":true
+            },
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/vehicle_journeys/{vehicle_journeys.id}",
+                "type":"vehicle_journeys",
+                "rel":"vehicle_journeys",
+                "templated":true
+            },
+            {
+                "href":"http://localhost:5000/v1/coverage/navitia/vehicle_journeys",
+                "type":"first",
+                "templated":false
             }
-        ]}""", 200),
-    'stop_areas/?filter=stop_area.has_code(CRCICH, 0087-182063-BV)':
-        ("""
-        {"stop_areas": [
+        ],
+        "feed_publishers":[
             {
-                "administrative_regions": [
-                    {
-                        "coord": {
-                            "lat": "47.749416",
-                            "lon": "7.339935"
-                        },
-                        "id": "admin:38246extern",
-                        "insee": "68224",
-                        "label": "Mulhouse (68100-68200)",
-                        "level": 8,
-                        "name": "Mulhouse",
-                        "zip_code": "68100;68200"
-                    }
-                ],
-                "coord": {
-                    "lat": "47.742295",
-                    "lon": "7.342306"
-                },
-                "id": "stop_area:OCE:SA:87182063",
-                "label": "gare de Mulhouse (Mulhouse)",
-                "links": [],
-                "name": "gare de Mulhouse",
-                "timezone": "Europe/Paris"
-            }
-        ]}
-        """, 200),
-    'stop_areas/?filter=stop_area.has_code(CRCICH, 0087-182139-BV)':
-        ("""
-        {"stop_areas": [
-            {
-                "administrative_regions": [
-                    {
-                        "coord": {
-                            "lat": "47.586044",
-                            "lon": "7.561576"
-                        },
-                        "id": "admin:85276extern",
-                        "insee": "68297",
-                        "label": "Saint-Louis (68300)",
-                        "level": 8,
-                        "name": "Saint-Louis",
-                        "zip_code": "68300"
-                    }
-                ],
-                "coord": {
-                    "lat": "47.590479",
-                    "lon": "7.556179"
-                },
-                "id": "stop_area:OCE:SA:87182139",
-                "label": "gare de St-Louis (Haut-Rhin) (Saint-Louis)",
-                "links": [],
-                "name": "gare de St-Louis (Haut-Rhin)",
-                "timezone": "Europe/Paris"
-            }
-        ]}
-        """, 200),
-    'stop_areas/?filter=stop_area.has_code(CRCICH, 0087-187914-WS)':
-        ("""
-        {"stop_areas": [
-            {
-                "administrative_regions": [
-                    {
-                        "coord": {
-                            "lat": "47.557751",
-                            "lon": "7.593596"
-                        },
-                        "id": "admin:1683619extern",
-                        "insee": "",
-                        "label": "Basel",
-                        "level": 8,
-                        "name": "Basel",
-                        "zip_code": ""
-                    }
-                ],
-                "coord": {
-                    "lat": "47.547029",
-                    "lon": "7.589551"
-                },
-                "id": "stop_area:OCE:SA:85000109",
-                "label": "gare de Basel-SBB (Basel)",
-                "links": [],
-                "name": "gare de Basel-SBB",
-                "timezone": "Europe/Paris"
+                "url":"",
+                "id":"navitia",
+                "license":"",
+                "name":""
             }
         ]}
         """, 200),
