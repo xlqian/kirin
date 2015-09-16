@@ -65,6 +65,8 @@ class VehicleJourney(db.Model):
     navitia_id = db.Column(db.Text, nullable=False)
     circulation_date = db.Column(db.Date, nullable=False)
 
+    __table_args__ = (db.UniqueConstraint('navitia_id', 'circulation_date', name='vehicle_journey_navitia_id_circulation_date_idx'),)
+
     def __init__(self, navitia_vj, circulation_date):
         self.id = gen_uuid()
         self.navitia_id = navitia_vj['id']
@@ -94,6 +96,16 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.departure = departure
         self.arrival = arrival
 
+    def merge(self, other):
+        if not other:
+            return
+        #TODO diff can be at departure or arrival
+        assert self.stop_id == other.stop_id
+        self.departure = other.departure
+        self.departure_status = other.departure_status
+        self.arrival = other.arrival
+        self.arrival_status = other.arrival_status
+
 
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
@@ -111,12 +123,33 @@ class TripUpdate(db.Model, TimestampMixin):
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
-    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update')
+    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined')
 
     def __init__(self, vj=None):
         self.id = gen_uuid()
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
+
+
+    @classmethod
+    def find_by_dated_vj(cls, vj_navitia_id, vj_circulation_date):
+        return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_id == vj_navitia_id,
+                                              VehicleJourney.circulation_date == vj_circulation_date).first()
+
+    def find_stop(self, stop_id):
+        #TODO: we will need to handle vj who deserve the same stop multiple times
+        for st in self.stop_time_updates:
+            if st.stop_id == stop_id:
+                return st
+        return None
+
+    def merge(self, other):
+        if not other:
+            return
+        for stop in other.stop_time_updates:
+            current_stop = self.find_stop(stop.stop_id)
+            current_stop.merge(stop)
+
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
@@ -137,7 +170,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
 
-    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate)
+    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, backref='real_time_updates')
 
     def __init__(self, raw_data, connector,
                  contributor=None, status=None, error=None, received_at=datetime.datetime.now()):

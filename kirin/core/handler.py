@@ -29,6 +29,8 @@
 import kirin
 from kirin import gtfs_realtime_pb2
 
+from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
+import datetime
 
 def handle(real_time_update):
     """
@@ -39,18 +41,49 @@ def handle(real_time_update):
         raise TypeError()
 
     for trip_update in real_time_update.trip_updates:
-        pass
         #find if there already a row in db
-
+        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
-
-        #produce a gtfs from that and send it
+        merge(trip_update, old)
 
     feed = convert_to_gtfsrt(real_time_update)
 
     publish(feed, real_time_update)
 
     return real_time_update
+
+
+
+def merge(trip_update, old_trip_update):
+    if old_trip_update:
+        old_trip_update.merge(trip_update)
+        current = trip_update
+        #we have to link the old vj_update with the new real_time_update
+        rtu = trip_update.real_time_updates.pop()
+        old_trip_update.real_time_updates.append(rtu)
+    else:
+        current = trip_update
+        merge_realtime_theoric(current, trip_update.vj.navitia_vj)
+    return current
+
+def merge_realtime_theoric(trip_update, navitia_vj):
+    for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
+        stop_id = navitia_stop.get('stop_point', {}).get('id')
+        stop = trip_update.find_stop(stop_id)
+        #TODO: order is important...
+        if not stop:
+            departure_time = navitia_stop.get('departure_time')
+            arrival_time = navitia_stop.get('arrival_time')
+            departure = arrival = None
+            #TODO handle past midnigth
+            if departure_time:
+                departure = datetime.datetime.combine(trip_update.vj.circulation_date, departure_time)
+            if arrival_time:
+                arrival = datetime.datetime.combine(trip_update.vj.circulation_date, arrival_time)
+
+            st = StopTimeUpdate(navitia_stop['stop_point'], departure, arrival)
+            #we want to keep the order
+            trip_update.stop_time_updates.insert(idx, st)
 
 
 def convert_to_gtfsrt(real_time_update):
