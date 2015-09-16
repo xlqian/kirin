@@ -1,4 +1,4 @@
-"""add of trip_status to trip_update
+"""add of status to trip_update
 
 Revision ID: 5a198406227a
 Revises: bb47e3fc587
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('trip_update', sa.Column('trip_status', sa.Enum('add', 'delete', 'update', 'none', name='modification_type'), nullable=False))
+    op.add_column('trip_update', sa.Column('status', sa.Enum('add', 'delete', 'update', 'none', name='modification_type'), nullable=False))
 
 
 def downgrade():
-    op.drop_column('trip_update', 'trip_status')
+    op.drop_column('trip_update', 'status')

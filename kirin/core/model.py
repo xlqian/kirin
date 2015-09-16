@@ -122,7 +122,7 @@ class TripUpdate(db.Model, TimestampMixin):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
-    trip_status = db.Column(ModificationType, nullable=False, default='none')
+    status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined')
 

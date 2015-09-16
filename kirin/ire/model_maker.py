@@ -156,7 +156,7 @@ class KirinModelBuilder(object):
 
         delay = xml_modification.find('HoraireProjete')
         if delay:
-            trip_update.trip_status = 'update'
+            trip_update.status = 'update'
             for downstream_point in delay.iter('PointAval'):
                 # we need only to consider the station
                 if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
@@ -176,9 +176,9 @@ class KirinModelBuilder(object):
         removal = xml_modification.find('Suppression')
         if removal:
             if get_value(removal, 'TypeSuppression') == 'T':
-                trip_update.trip_status = 'delete'
+                trip_update.status = 'delete'
             elif get_value(removal, 'TypeSuppression') == 'P':
-                trip_update.trip_status = 'update'
+                trip_update.status = 'update'
 
         return trip_update
 
