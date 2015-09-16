@@ -58,5 +58,5 @@ def test_train_delayed(mock_navitia_fixture):
         assert trip_up.vj_id == trip_up.vj.id
 
         # 5 stop times must have been created
-        #assert len(trip_up.stop_time_updates) == 5
+        assert len(trip_up.stop_time_updates) == 5
 

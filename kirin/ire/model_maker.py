@@ -165,7 +165,7 @@ class KirinModelBuilder(object):
                 if nav_st is None:
                     continue
 
-                nav_stop = nav_st.get('journey_pattern_point', {}).get('stop_point', {})
+                nav_stop = nav_st.get('stop_point', {})
 
                 departure = None
                 arrival = None
@@ -188,11 +188,12 @@ class KirinModelBuilder(object):
 
         nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
 
-        nav_stop_times = [s for s in nav_vj.get('stop_times', [])
-                          if s.get('journey_pattern_point', {})
-                              .get('stop_point', {})
-                              .get('codes', {})
-                              .get('CRCICH') == nav_external_code]
+        nav_stop_times = []
+        for s in nav_vj.get('stop_times', []):
+            for c in s.get('stop_point', {}).get('stop_area', {}).get('codes', []):
+                if c['value'] == nav_external_code and c['type'] == 'CR-CI-CH':
+                    nav_stop_times.append(s)
+                    break
 
         if not nav_stop_times:
             logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
