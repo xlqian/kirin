@@ -209,7 +209,8 @@ class KirinModelBuilder(object):
             return None
 
         if len(nav_stop_times) > 1:
-            logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, we take the first one'
-                                             .format(nav_external_code))
+            logging.getLogger(__name__).warning('too many stops found for code "{}" in the vj, '
+                                                'we take the first one'
+                                                .format(nav_external_code))
 
         return nav_stop_times[0]
