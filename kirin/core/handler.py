@@ -31,6 +31,8 @@ from kirin import gtfs_realtime_pb2
 
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 import datetime
+from kirin.core.populate_pb import convert_to_gtfsrt
+
 
 def handle(real_time_update):
     """
@@ -51,7 +53,6 @@ def handle(real_time_update):
     publish(feed, real_time_update)
 
     return real_time_update
-
 
 
 def merge(trip_update, old_trip_update):
@@ -84,15 +85,6 @@ def merge_realtime_theoric(trip_update, navitia_vj):
             st = StopTimeUpdate(navitia_stop['stop_point'], departure, arrival)
             #we want to keep the order
             trip_update.stop_time_updates.insert(idx, st)
-
-
-def convert_to_gtfsrt(real_time_update):
-    feed = gtfs_realtime_pb2.FeedMessage()
-
-    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-    feed.header.gtfs_realtime_version = '42'  # TODO
-
-    return feed
 
 
 def publish(feed, rt_update):
