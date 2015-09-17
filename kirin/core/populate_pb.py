@@ -30,6 +30,7 @@
 from kirin import gtfs_realtime_pb2
 import datetime
 
+
 def date_to_str(date):
     if date:
         return date.strftime("%Y%m%d")
@@ -53,6 +54,7 @@ def convert_to_gtfsrt(real_time_update):
         fill_entity(feed.entity.add(), trip_update)
 
     return feed
+
 
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id

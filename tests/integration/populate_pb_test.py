@@ -36,8 +36,6 @@ from kirin import app
 from kirin import gtfs_realtime_pb2
 
 
-
-
 def test_handle_new_vj():
     """
     an easy one: we have one vj with only one stop time updated
