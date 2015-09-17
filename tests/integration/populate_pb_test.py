@@ -59,7 +59,7 @@ def test_populate_pb_with_one_stop_time():
         feed_entity = convert_to_gtfsrt(real_time_update)
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-        assert feed_entity.header.gtfs_realtime_version == '42'
+        assert feed_entity.header.gtfs_realtime_version == '1'
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
@@ -97,7 +97,7 @@ def test_populate_pb_with_two_stop_time():
         feed_entity = convert_to_gtfsrt(real_time_update)
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-        assert feed_entity.header.gtfs_realtime_version, '42'
+        assert feed_entity.header.gtfs_realtime_version, '1'
         assert len(feed_entity.entity) == 1
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
