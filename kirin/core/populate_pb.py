@@ -47,7 +47,7 @@ def convert_to_gtfsrt(real_time_update):
     feed = gtfs_realtime_pb2.FeedMessage()
 
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-    feed.header.gtfs_realtime_version = '42'
+    feed.header.gtfs_realtime_version = '1'
     feed.header.timestamp = get_pos_time(datetime.datetime.utcnow())
 
     for trip_update in real_time_update.trip_updates:
