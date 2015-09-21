@@ -37,7 +37,7 @@ def date_to_str(date):
     return None
 
 
-def get_pos_time(date_time):
+def to_posix_time(date_time):
     if date_time:
         return int((date_time - datetime.datetime(1970, 1, 1)).total_seconds())
     return 0
@@ -48,7 +48,7 @@ def convert_to_gtfsrt(real_time_update):
 
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
     feed.header.gtfs_realtime_version = '1'
-    feed.header.timestamp = get_pos_time(datetime.datetime.utcnow())
+    feed.header.timestamp = to_posix_time(datetime.datetime.utcnow())
 
     for trip_update in real_time_update.trip_updates:
         fill_entity(feed.entity.add(), trip_update)
@@ -58,8 +58,8 @@ def convert_to_gtfsrt(real_time_update):
 
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
-    pb_stop_time.arrival.time = get_pos_time(stop_time.arrival)
-    pb_stop_time.departure.time = get_pos_time(stop_time.departure)
+    pb_stop_time.arrival.time = to_posix_time(stop_time.arrival)
+    pb_stop_time.departure.time = to_posix_time(stop_time.departure)
 
 
 def fill_trip_update(pb_trip_update, trip_update):
