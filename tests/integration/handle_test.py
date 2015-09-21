@@ -167,7 +167,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         trip_update.vj = vj
         st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 9, 20), arrival=datetime.datetime(2015, 9, 8, 9, 15))
         st.arrival_status = st.departure_status = 'update'
-        real_time_update = RealTimeUpdate(raw_data=None, connector='test')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
         real_time_update.trip_updates.append(trip_update)
         trip_update.stop_time_updates.append(st)
