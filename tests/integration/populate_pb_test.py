@@ -40,10 +40,10 @@ from kirin import gtfs_realtime_pb2
 def _dt(dt_to_parse, year=2015, month=9, day=8):
     """
     small helper to ease the reading of the tests
-    >>>> _dt("8:15")
-        datetime.datetime(2015, 9, 8, 8, 15)
-    >>>> _dt("9:15", day=2)
-        datetime.datetime(2015, 9, 2, 9, 15)
+    >>> _dt("8:15")
+    datetime.datetime(2015, 9, 8, 8, 15)
+    >>> _dt("9:15", day=2)
+    datetime.datetime(2015, 9, 2, 9, 15)
     """
     d = parse(dt_to_parse)
     return d.replace(year=year, month=month, day=day)
