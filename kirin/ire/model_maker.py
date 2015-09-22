@@ -28,7 +28,6 @@
 # www.navitia.io
 import logging
 from datetime import timedelta
-from flask.globals import current_app
 from dateutil import parser
 from kirin.core import model
 

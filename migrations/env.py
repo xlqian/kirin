@@ -13,6 +13,8 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
+from kirin.core import model
+target_metadata = model.meta
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from flask import current_app

@@ -29,10 +29,18 @@
 import kirin
 from kirin import gtfs_realtime_pb2
 
+from kirin.core import model
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 import datetime
 from kirin.core.populate_pb import convert_to_gtfsrt
 
+
+def persist(real_time_update):
+    """
+    receive a RealTimeUpdate and persist it in the database
+    """
+    model.db.session.add(real_time_update)
+    model.db.session.commit()
 
 def handle(real_time_update):
     """
@@ -47,6 +55,8 @@ def handle(real_time_update):
         old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
         merge(trip_update, old)
+
+    persist(real_time_update)
 
     feed = convert_to_gtfsrt(real_time_update)
 
