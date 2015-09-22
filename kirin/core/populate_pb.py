@@ -75,5 +75,5 @@ def fill_trip_update(pb_trip_update, trip_update):
 
 
 def fill_entity(pb_entity, trip_update):
-    pb_entity.id = trip_update.id
+    pb_entity.id = trip_update.vj_id
     fill_trip_update(pb_entity.trip_update, trip_update)
