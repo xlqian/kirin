@@ -28,20 +28,29 @@
 # www.navitia.io
 
 import pytest
+from dateutil.parser import parse
 from kirin.core.handler import handle
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
-from kirin.core.populate_pb import convert_to_gtfsrt
+from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
 import datetime
 from kirin import app
 from kirin import gtfs_realtime_pb2
 
 
-def test_populate_pb_with_one_stop_time():
+def _dt(dt_to_parse, year=2015, month=9, day=8):
     """
-    an easy one: we have one vj with only one stop time updated
-    fill protobuf from trip_update
-    Verify protobuf
+    small helper to ease the reading of the tests
+    >>> _dt("8:15")
+    datetime.datetime(2015, 9, 8, 8, 15)
+    >>> _dt("9:15", day=2)
+    datetime.datetime(2015, 9, 2, 9, 15)
     """
+    d = parse(dt_to_parse)
+    return d.replace(year=year, month=month, day=day)
+
+
+@pytest.fixture()
+def complete_trip_update_on_sa1():
     navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
@@ -51,66 +60,65 @@ def test_populate_pb_with_one_stop_time():
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
-        st = StopTimeUpdate({'id': 'sa:1'}, departure=datetime.datetime(2015, 9, 8, 8, 15), arrival=None)
+        st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), arrival=None)
         real_time_update = RealTimeUpdate(raw_data=None, connector='test')
         real_time_update.trip_updates.append(trip_update)
         trip_update.stop_time_updates.append(st)
 
-        feed_entity = convert_to_gtfsrt(real_time_update)
-
-        assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-        assert feed_entity.header.gtfs_realtime_version == '1'
-        pb_trip_update = feed_entity.entity[0].trip_update
-        assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
-        assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
-
-        pb_stop_time = feed_entity.entity[0].trip_update.stop_time_update[0]
-        assert pb_stop_time.arrival.time == 0
-        assert pb_stop_time.departure.time == 1441700100
-        assert pb_stop_time.stop_id == 'sa:1'
+    return real_time_update
 
 
-def test_populate_pb_with_two_stop_time():
+def test_populate_pb_with_one_stop_time(complete_trip_update_on_sa1):
     """
     an easy one: we have one vj with only one stop time updated
     fill protobuf from trip_update
     Verify protobuf
     """
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
-        ]}
+    feed_entity = convert_to_gtfsrt(complete_trip_update_on_sa1)
 
-    with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.vj = vj
-        st = StopTimeUpdate({'id': 'sa:1'}, departure=datetime.datetime(2015, 9, 8, 8, 15), arrival=None)
-        real_time_update = RealTimeUpdate(raw_data=None, connector='test')
-        real_time_update.trip_updates.append(trip_update)
-        trip_update.stop_time_updates.append(st)
-        st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 8, 21),
-                            arrival=datetime.datetime(2015, 9, 8, 8, 20))
-        trip_update.stop_time_updates.append(st)
+    assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+    assert feed_entity.header.gtfs_realtime_version == '1'
+    pb_trip_update = feed_entity.entity[0].trip_update
+    assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
+    assert pb_trip_update.trip.start_date == '20150908'
+    assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
-        feed_entity = convert_to_gtfsrt(real_time_update)
+    pb_stop_time = feed_entity.entity[0].trip_update.stop_time_update[0]
+    assert pb_stop_time.arrival.time == 0
+    assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+    assert pb_stop_time.stop_id == 'sa:1'
 
-        assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
-        assert feed_entity.header.gtfs_realtime_version, '1'
-        assert len(feed_entity.entity) == 1
-        pb_trip_update = feed_entity.entity[0].trip_update
-        assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
-        assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
-        assert len(pb_trip_update.stop_time_update) == 2
-        pb_stop_time = pb_trip_update.stop_time_update[0]
-        assert pb_stop_time.arrival.time == 0
-        assert pb_stop_time.departure.time == 1441700100
-        assert pb_stop_time.stop_id == 'sa:1'
+def test_populate_pb_with_two_stop_time(complete_trip_update_on_sa1):
+    """
+    an easy one: we have one vj with only one stop time updated
+    fill protobuf from trip_update
+    Verify protobuf
+    """
 
-        pb_stop_time = pb_trip_update.stop_time_update[1]
-        assert pb_stop_time.arrival.time == 1441700400
-        assert pb_stop_time.departure.time == 1441700460
-        assert pb_stop_time.stop_id == 'sa:2'
+    #we add another impacted stop time to the Model
+    st = StopTimeUpdate({'id': 'sa:2'},
+                        departure=_dt("8:21"),
+                        arrival=_dt("8:20"))
+    complete_trip_update_on_sa1.trip_updates[0].stop_time_updates.append(st)
+
+    feed_entity = convert_to_gtfsrt(complete_trip_update_on_sa1)
+
+    assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+    assert feed_entity.header.gtfs_realtime_version, '1'
+    assert len(feed_entity.entity) == 1
+    pb_trip_update = feed_entity.entity[0].trip_update
+    assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
+    assert pb_trip_update.trip.start_date == '20150908'
+    assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
+
+    assert len(pb_trip_update.stop_time_update) == 2
+    pb_stop_time = pb_trip_update.stop_time_update[0]
+    assert pb_stop_time.arrival.time == 0
+    assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+    assert pb_stop_time.stop_id == 'sa:1'
+
+    pb_stop_time = pb_trip_update.stop_time_update[1]
+    assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
+    assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
+    assert pb_stop_time.stop_id == 'sa:2'
