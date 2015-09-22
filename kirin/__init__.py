@@ -55,7 +55,7 @@ app.config.from_object('kirin.default_settings')
 if 'KIRIN_CONFIG_FILE' in os.environ:
     app.config.from_envvar('KIRIN_CONFIG_FILE')
 
-from core import model
+from kirin.core import model
 db = model.db
 db.init_app(app)
 
