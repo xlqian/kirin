@@ -33,6 +33,7 @@ import datetime
 import sqlalchemy
 db = SQLAlchemy()
 
+# default name convention for db constraints (when not specified), for future alembic updates
 meta = sqlalchemy.schema.MetaData(naming_convention={
         "ix": 'ix_%(column_0_label)s',
         "uq": "uq_%(table_name)s_%(column_0_name)s",

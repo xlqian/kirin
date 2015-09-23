@@ -130,17 +130,20 @@ def test_handle_new_vj():
 
 
         # testing that RealTimeUpdate is persisted in db
-        assert len(real_time_update.query.from_self(TripUpdate).all()) == 1
-        assert real_time_update.query.from_self(TripUpdate).all()[0].status == 'update'
-        st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
-        assert len(st_updates) == 2
-        assert st_updates[0].stop_id == 'sa:1'
-        assert st_updates[0].departure == datetime.datetime(2015, 9, 8, 8, 15)
-        assert st_updates[0].arrival == None
+        db_trip_updates = real_time_update.query.from_self(TripUpdate).all()
+        assert len(db_trip_updates) == 1
+        assert db_trip_updates[0].status == 'update'
+        db_st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
+        assert len(db_st_updates) == 2
+        assert db_st_updates[0].stop_id == 'sa:1'
+        assert db_st_updates[0].departure == datetime.datetime(2015, 9, 8, 8, 15)
+        assert db_st_updates[0].arrival == None
+        assert db_st_updates[0].trip_update_id == db_trip_updates[0].vj_id
 
-        assert st_updates[1].stop_id == 'sa:2'
-        assert st_updates[1].departure == None
-        assert st_updates[1].arrival == datetime.datetime(2015, 9, 8, 9, 10)
+        assert db_st_updates[1].stop_id == 'sa:2'
+        assert db_st_updates[1].departure == None
+        assert db_st_updates[1].arrival == datetime.datetime(2015, 9, 8, 9, 10)
+        assert db_st_updates[1].trip_update_id == db_trip_updates[0].vj_id
 
 
 def test_handle_new_trip_out_of_order(navitia_vj):
@@ -152,7 +155,8 @@ def test_handle_new_trip_out_of_order(navitia_vj):
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
-        st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 9, 50), arrival=datetime.datetime(2015, 9, 8, 9, 49))
+        st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 9, 50),
+                            arrival=datetime.datetime(2015, 9, 8, 9, 49))
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.trip_updates.append(trip_update)
         trip_update.stop_time_updates.append(st)
@@ -183,7 +187,8 @@ def test_handle_update_vj(setup_database, navitia_vj):
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.status = 'update'
         trip_update.vj = vj
-        st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 9, 20), arrival=datetime.datetime(2015, 9, 8, 9, 15))
+        st = StopTimeUpdate({'id': 'sa:2'}, departure=datetime.datetime(2015, 9, 8, 9, 20),
+                            arrival=datetime.datetime(2015, 9, 8, 9, 15))
         st.arrival_status = st.departure_status = 'update'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
@@ -197,62 +202,56 @@ def test_handle_update_vj(setup_database, navitia_vj):
         assert len(trip_update.real_time_updates) == 2
         assert len(trip_update.stop_time_updates) == 3
 
-        tmp_map = {}
-        for stu in trip_update.stop_time_updates:
-            tmp_map[stu.stop_id] = stu
+        stu_map = {stu.stop_id: stu for stu in trip_update.stop_time_updates}
 
-        assert 'sa:1' in tmp_map
-        assert tmp_map['sa:1'].arrival == None
-        assert tmp_map['sa:1'].departure == datetime.datetime(2015, 9, 8, 8, 15)
+        assert 'sa:1' in stu_map
+        assert stu_map['sa:1'].arrival == None
+        assert stu_map['sa:1'].departure == datetime.datetime(2015, 9, 8, 8, 15)
 
-        assert 'sa:2' in tmp_map
-        assert tmp_map['sa:2'].arrival == datetime.datetime(2015, 9, 8, 9, 15)
-        assert tmp_map['sa:2'].departure == datetime.datetime(2015, 9, 8, 9, 20)
+        assert 'sa:2' in stu_map
+        assert stu_map['sa:2'].arrival == datetime.datetime(2015, 9, 8, 9, 15)
+        assert stu_map['sa:2'].departure == datetime.datetime(2015, 9, 8, 9, 20)
 
-        assert 'sa:3' in tmp_map
-        assert tmp_map['sa:3'].arrival == datetime.datetime(2015, 9, 8, 10, 5)
-        assert tmp_map['sa:3'].departure ==  None
+        assert 'sa:3' in stu_map
+        assert stu_map['sa:3'].arrival == datetime.datetime(2015, 9, 8, 10, 5)
+        assert stu_map['sa:3'].departure ==  None
 
 
         # testing that RealTimeUpdate is persisted in db
-        trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
-        assert len(trip_updates) == 2
+        db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
+        assert len(db_trip_updates) == 2
         assert real_time_update.query.from_self(TripUpdate).all()[0].status == 'none'
         st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
         assert len(st_updates) == 6
 
         # testing that trip update on 2015/09/07 is remaining correctly stored in db
-        assert len(trip_updates[0].stop_time_updates) == 3
-        tmp_map = {}
-        for stu in trip_updates[0].stop_time_updates:
-            tmp_map[stu.stop_id] = stu
+        assert len(db_trip_updates[0].stop_time_updates) == 3
+        db_stu_map = {stu.stop_id: stu for stu in db_trip_updates[0].stop_time_updates}
 
-        assert 'sa:1' in tmp_map
-        assert tmp_map['sa:1'].arrival == None
-        assert tmp_map['sa:1'].departure == datetime.datetime(2015, 9, 7, 8, 35)
+        assert 'sa:1' in db_stu_map
+        assert db_stu_map['sa:1'].arrival == None
+        assert db_stu_map['sa:1'].departure == datetime.datetime(2015, 9, 7, 8, 35)
 
-        assert 'sa:2' in tmp_map
-        assert tmp_map['sa:2'].arrival == datetime.datetime(2015, 9, 7, 9, 35)
-        assert tmp_map['sa:2'].departure == datetime.datetime(2015, 9, 7, 9, 40)
+        assert 'sa:2' in db_stu_map
+        assert db_stu_map['sa:2'].arrival == datetime.datetime(2015, 9, 7, 9, 35)
+        assert db_stu_map['sa:2'].departure == datetime.datetime(2015, 9, 7, 9, 40)
 
-        assert 'sa:3' in tmp_map
-        assert tmp_map['sa:3'].arrival == datetime.datetime(2015, 9, 7, 10, 35)
-        assert tmp_map['sa:3'].departure ==  None
+        assert 'sa:3' in db_stu_map
+        assert db_stu_map['sa:3'].arrival == datetime.datetime(2015, 9, 7, 10, 35)
+        assert db_stu_map['sa:3'].departure ==  None
 
         # testing that trip update on 2015/09/08 is correctly merged and stored in db
-        assert len(trip_updates[1].stop_time_updates) == 3
-        tmp_map = {}
-        for stu in trip_updates[1].stop_time_updates:
-            tmp_map[stu.stop_id] = stu
+        assert len(db_trip_updates[1].stop_time_updates) == 3
+        db_stu_map = {stu.stop_id: stu for stu in db_trip_updates[1].stop_time_updates}
 
-        assert 'sa:1' in tmp_map
-        assert tmp_map['sa:1'].arrival == None
-        assert tmp_map['sa:1'].departure == datetime.datetime(2015, 9, 8, 8, 15)
+        assert 'sa:1' in db_stu_map
+        assert db_stu_map['sa:1'].arrival == None
+        assert db_stu_map['sa:1'].departure == datetime.datetime(2015, 9, 8, 8, 15)
 
-        assert 'sa:2' in tmp_map
-        assert tmp_map['sa:2'].arrival == datetime.datetime(2015, 9, 8, 9, 15)
-        assert tmp_map['sa:2'].departure == datetime.datetime(2015, 9, 8, 9, 20)
+        assert 'sa:2' in db_stu_map
+        assert db_stu_map['sa:2'].arrival == datetime.datetime(2015, 9, 8, 9, 15)
+        assert db_stu_map['sa:2'].departure == datetime.datetime(2015, 9, 8, 9, 20)
 
-        assert 'sa:3' in tmp_map
-        assert tmp_map['sa:3'].arrival == datetime.datetime(2015, 9, 8, 10, 5)
-        assert tmp_map['sa:3'].departure ==  None
+        assert 'sa:3' in db_stu_map
+        assert db_stu_map['sa:3'].arrival == datetime.datetime(2015, 9, 8, 10, 5)
+        assert db_stu_map['sa:3'].departure ==  None
