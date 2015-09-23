@@ -29,9 +29,11 @@
 import pytest
 
 from tests.check_utils import api_post
+import datetime
 from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_ire_data
+from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -77,6 +79,28 @@ def test_ire_post(mock_rabbitmq):
     ire_6113 = get_ire_data('train_6113_trip_removal.xml')
     res = api_post('/ire', data=ire_6113)
     assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 5
+        db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
+
+        assert len(db_trip_updates) == 2
+        db_trip_delayed = db_trip_updates[0]
+        assert db_trip_delayed.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
+        assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
+        assert db_trip_delayed.vj.circulation_date == datetime.date(2015, 9, 21)
+        assert db_trip_delayed.status == 'update'
+        # 5 stop times must have been created
+        assert len(db_trip_delayed.stop_time_updates) == 5
+
+        db_trip_removal = db_trip_updates[1]
+        assert db_trip_removal.vj.navitia_id == 'vehicle_journey:OCETGV-87686006-87751008-2:25768'
+        assert db_trip_removal.vj.circulation_date == datetime.date(2015, 10, 6)
+        assert db_trip_removal.vj_id == db_trip_removal.vj.id
+        assert db_trip_removal.status == 'delete'
+        # full trip removal : no stop_time to precise
+        assert len(db_trip_removal.stop_time_updates) == 0
 
     # the rabbit mq has to have been called only once
     assert mock_rabbitmq.call_count == 2
