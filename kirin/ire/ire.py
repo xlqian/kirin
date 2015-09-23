@@ -74,6 +74,8 @@ class Ire(Resource):
 
         # create a raw ire obj, save the raw_xml into the db
         rt_update = _make_rt_update(raw_xml)
+        # assuming UTF-8 encoding for all ire input
+        rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
         # raw_xml is interpreted
         KirinModelBuilder(make_navitia_wrapper()).build(rt_update)

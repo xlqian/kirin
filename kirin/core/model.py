@@ -33,6 +33,14 @@ import datetime
 import sqlalchemy
 db = SQLAlchemy()
 
+# default name convention for db constraints (when not specified), for future alembic updates
+meta = sqlalchemy.schema.MetaData(naming_convention={
+        "ix": 'ix_%(column_0_label)s',
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+      })
 
 #force the server to use UTC time for each connection
 def set_utc_on_connect(dbapi_con, con_record):
@@ -79,7 +87,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     Stop time
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    trip_update_id = db.Column(postgresql.UUID, db.ForeignKey('trip_update.id'), nullable=False)
+    trip_update_id = db.Column(postgresql.UUID, db.ForeignKey('trip_update.vj_id'), nullable=False)
 
     stop_id = db.Column(db.Text, nullable=False)
 
@@ -111,7 +119,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
                                     db.Column('real_time_update_id', postgresql.UUID, db.ForeignKey('real_time_update.id')),
-                                    db.Column('trip_update_id', postgresql.UUID, db.ForeignKey('trip_update.id')),
+                                    db.Column('trip_update_id', postgresql.UUID, db.ForeignKey('trip_update.vj_id')),
                                     db.PrimaryKeyConstraint('real_time_update_id', 'trip_update_id', name='associate_realtimeupdate_tripupdate_pkey')
 )
 
@@ -120,14 +128,12 @@ class TripUpdate(db.Model, TimestampMixin):
     """
     Update information for Vehicule Journey
     """
-    id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False)
+    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined')
 
     def __init__(self, vj=None):
-        self.id = gen_uuid()
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
 
