@@ -72,11 +72,14 @@ def test_ire_post(mock_rabbitmq):
     """
     ire_96231 = get_ire_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231)
+    assert res == 'OK'
 
+    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    res = api_post('/ire', data=ire_6113)
     assert res == 'OK'
 
     # the rabbit mq has to have been called only once
-    assert mock_rabbitmq.call_count == 1
+    assert mock_rabbitmq.call_count == 2
 
 
 def test_ire_post_no_data():
