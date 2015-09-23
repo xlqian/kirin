@@ -29,6 +29,7 @@ import os
 
 from kirin import app
 import json
+from dateutil.parser import parse
 
 
 def api_get(url, display=False, *args, **kwargs):
@@ -71,3 +72,15 @@ def get_ire_data(name):
     file = os.path.join(os.path.dirname(__file__), 'fixtures', name)
     with open(file, "r") as ire:
         return ire.read()
+
+
+def _dt(dt_to_parse, year=2015, month=9, day=8):
+    """
+    small helper to ease the reading of the tests
+    >>> _dt("8:15")
+    datetime.datetime(2015, 9, 8, 8, 15)
+    >>> _dt("9:15", day=2)
+    datetime.datetime(2015, 9, 2, 9, 15)
+    """
+    d = parse(dt_to_parse)
+    return d.replace(year=year, month=month, day=day)

@@ -27,26 +27,12 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import pytest
-from dateutil.parser import parse
-from kirin.core.handler import handle
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
 import datetime
 from kirin import app, db
 from kirin import gtfs_realtime_pb2
-
-
-def _dt(dt_to_parse, year=2015, month=9, day=8):
-    """
-    small helper to ease the reading of the tests
-    >>> _dt("8:15")
-    datetime.datetime(2015, 9, 8, 8, 15)
-    >>> _dt("9:15", day=2)
-    datetime.datetime(2015, 9, 2, 9, 15)
-    """
-    d = parse(dt_to_parse)
-    return d.replace(year=year, month=month, day=day)
+from tests.check_utils import _dt
 
 
 def test_populate_pb_with_one_stop_time():
