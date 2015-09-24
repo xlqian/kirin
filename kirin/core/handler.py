@@ -42,19 +42,24 @@ def persist(real_time_update):
     model.db.session.add(real_time_update)
     model.db.session.commit()
 
-def handle(real_time_update):
+
+def handle(real_time_update, trip_updates):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
     """
-    if not real_time_update or not hasattr(real_time_update, 'trip_updates'):
+    if not real_time_update:
         raise TypeError()
 
-    for trip_update in real_time_update.trip_updates:
+    for trip_update in trip_updates:
         #find if there already a row in db
         old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
-        merge(trip_update, old)
+        current_trip_update = merge(trip_update, old)
+
+        # we have to link the current_vj_update with the new real_time_update
+        # this link is done quite late for sqlalchemy not to persist the trip_update too soon
+        current_trip_update.real_time_updates.append(real_time_update)
 
     persist(real_time_update)
 
@@ -68,10 +73,7 @@ def handle(real_time_update):
 def merge(trip_update, old_trip_update):
     if old_trip_update:
         old_trip_update.merge(trip_update)
-        current = trip_update
-        #we have to link the old vj_update with the new real_time_update
-        rtu = trip_update.real_time_updates.pop()
-        old_trip_update.real_time_updates.append(rtu)
+        current = old_trip_update
     else:
         current = trip_update
         merge_realtime_theoric(current, trip_update.vj.navitia_vj)

@@ -78,8 +78,8 @@ class Ire(Resource):
         rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
         # raw_xml is interpreted
-        KirinModelBuilder(make_navitia_wrapper()).build(rt_update)
+        trip_updates = KirinModelBuilder(make_navitia_wrapper()).build(rt_update)
 
-        core.handle(rt_update)
+        core.handle(rt_update, trip_updates)
 
         return 'OK', 200
