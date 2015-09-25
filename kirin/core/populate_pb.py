@@ -68,6 +68,7 @@ def fill_trip_update(pb_trip_update, trip_update):
     if vj:
         pb_trip.trip_id = vj.navitia_id
         pb_trip.start_date = date_to_str(vj.circulation_date)
+        # TODO fill the right schedule_relationship
         pb_trip.schedule_relationship = gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         for stop_time_update in trip_update.stop_time_updates:

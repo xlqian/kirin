@@ -48,12 +48,15 @@ def test_train_delayed(mock_navitia_fixture):
 
     with app.app_context():
         rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
-        KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+        trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+
+        # we associate the trip_update manually for sqlalchemy to make the links
+        rt_update.trip_updates = trip_updates
         db.session.add(rt_update)
         db.session.commit()
 
-        assert len(rt_update.trip_updates) == 1
-        trip_up = rt_update.trip_updates[0]
+        assert len(trip_updates) == 1
+        trip_up = trip_updates[0]
         assert trip_up.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
         assert trip_up.vj_id == trip_up.vj.id
         assert trip_up.status == 'update'
@@ -71,12 +74,13 @@ def test_train_trip_removal(mock_navitia_fixture):
 
     with app.app_context():
         rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='ire')
-        KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+        trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
+        rt_update.trip_updates = trip_updates
         db.session.add(rt_update)
         db.session.commit()
 
-        assert len(rt_update.trip_updates) == 1
-        trip_up = rt_update.trip_updates[0]
+        assert len(trip_updates) == 1
+        trip_up = trip_updates[0]
         assert trip_up.vj.navitia_id == 'vehicle_journey:OCETGV-87686006-87751008-2:25768'
         assert trip_up.vj_id == trip_up.vj.id
         assert trip_up.status == 'delete'

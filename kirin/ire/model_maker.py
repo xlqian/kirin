@@ -96,7 +96,10 @@ class KirinModelBuilder(object):
 
     def build(self, rt_update):
         """
-        parse raw xml and change the rt_update object with all the IRE data
+        parse raw xml in the rt_update object
+        and return a list of trip updates
+
+        The TripUpdates are not yet associated with the RealTimeUpdate
         """
         try:
             root = ElementTree.fromstring(rt_update.raw_data)
@@ -108,10 +111,10 @@ class KirinModelBuilder(object):
 
         vjs = self.get_vjs(get_node(root, 'Train'))
 
-        for vj in vjs:
-            # TODO handle also root[DernierPointDeParcoursObserve] in the modification
-            trip_update = self.make_trip_update(vj, get_node(root, 'TypeModification'))
-            rt_update.trip_updates.append(trip_update)
+        # TODO handle also root[DernierPointDeParcoursObserve] in the modification
+        trip_updates = [self.make_trip_update(vj, get_node(root, 'TypeModification')) for vj in vjs]
+
+        return trip_updates
 
     def get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
