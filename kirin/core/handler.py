@@ -98,6 +98,10 @@ def merge_realtime_theoric(trip_update, navitia_vj):
             #we want to keep the order
             trip_update.stop_time_updates.insert(idx, st)
 
+        stop = trip_update.find_stop(stop_id)
+        if stop and trip_update.status == 'delete':
+            trip_update.stop_time_updates.remove(stop)
+
 
 def publish(feed, rt_update):
     """

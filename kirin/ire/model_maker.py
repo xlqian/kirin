@@ -179,6 +179,7 @@ class KirinModelBuilder(object):
         if removal:
             if get_value(removal, 'TypeSuppression') == 'T':
                 trip_update.status = 'delete'
+                trip_update.stop_time_updates = []
             elif get_value(removal, 'TypeSuppression') == 'P':
                 trip_update.status = 'update'
 

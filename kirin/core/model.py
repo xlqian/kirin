@@ -103,6 +103,8 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.stop_id = navitia_stop['id']
         self.departure = departure
         self.arrival = arrival
+        self.departure_status = 'none'
+        self.arrival_status = 'none'
 
     def merge(self, other):
         if not other:
@@ -131,12 +133,11 @@ class TripUpdate(db.Model, TimestampMixin):
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
-    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined')
+    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined', cascade='all, delete-orphan')
 
     def __init__(self, vj=None):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
-
 
     @classmethod
     def find_by_dated_vj(cls, vj_navitia_id, vj_circulation_date):
@@ -156,6 +157,9 @@ class TripUpdate(db.Model, TimestampMixin):
         for stop in other.stop_time_updates:
             current_stop = self.find_stop(stop.stop_id)
             current_stop.merge(stop)
+        self.status = other.status
+        if other.status == 'delete':
+            self.stop_time_updates = []
 
 
 
