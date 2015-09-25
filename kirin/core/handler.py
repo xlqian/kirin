@@ -58,7 +58,7 @@ def handle(real_time_update, trip_updates):
         current_trip_update = merge(trip_update, old)
 
         # we have to link the current_vj_update with the new real_time_update
-        # this link is done quite late for sqlalchemy not to persist the trip_update too soon
+        # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
         current_trip_update.real_time_updates.append(real_time_update)
 
     persist(real_time_update)

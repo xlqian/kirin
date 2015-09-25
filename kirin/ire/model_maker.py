@@ -99,7 +99,7 @@ class KirinModelBuilder(object):
         parse raw xml in the rt_update object
         and return a list of trip updates
 
-        The RealTimeUpdates are not yet associated with the RealTimeUpdate
+        The TripUpdates are not yet associated with the RealTimeUpdate
         """
         try:
             root = ElementTree.fromstring(rt_update.raw_data)
