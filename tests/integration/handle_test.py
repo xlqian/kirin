@@ -193,7 +193,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
-        assert trip_update.status == 'none'
+        assert trip_update.status == 'update'
         assert len(trip_update.real_time_updates) == 2
         assert len(trip_update.stop_time_updates) == 3
 
@@ -215,7 +215,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         # testing that RealTimeUpdate is persisted in db
         db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
         assert len(db_trip_updates) == 2
-        assert real_time_update.query.from_self(TripUpdate).all()[0].status == 'none'
+        assert real_time_update.query.from_self(TripUpdate).all()[0].status == 'update'
         st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
         assert len(st_updates) == 6
 
