@@ -133,6 +133,35 @@ def check_db_ire_6113_trip_removal():
         assert len(db_trip_removal.stop_time_updates) == 0
 
 
+def check_db_ire_JOHN_trip_removal():
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) >= 2
+        assert len(StopTimeUpdate.query.all()) >= 0
+        db_trip1_removal = TripUpdate.find_by_dated_vj('vehicle_journey:OCETGV-87686006-87751008-2:25768',
+                                                      datetime.date(2015, 9, 21))
+        assert db_trip1_removal
+
+        assert db_trip1_removal.vj.navitia_id == 'vehicle_journey:OCETGV-87686006-87751008-2:25768'
+        assert db_trip1_removal.vj.circulation_date == datetime.date(2015, 9, 21)
+        assert db_trip1_removal.vj_id == db_trip1_removal.vj.id
+        assert db_trip1_removal.status == 'delete'
+        # full trip removal : no stop_time to precise
+        assert len(db_trip1_removal.stop_time_updates) == 0
+
+
+        db_trip2_removal = TripUpdate.find_by_dated_vj('vehicle_journey:OCETrainTER-87212027-85000109-3:11859',
+                                                      datetime.date(2015, 9, 21))
+        assert db_trip2_removal
+
+        assert db_trip2_removal.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
+        assert db_trip2_removal.vj.circulation_date == datetime.date(2015, 9, 21)
+        assert db_trip2_removal.vj_id == db_trip2_removal.vj.id
+        assert db_trip2_removal.status == 'delete'
+        # full trip removal : no stop_time to precise
+        assert len(db_trip2_removal.stop_time_updates) == 0
+
+
 def test_ire_delayed_simple_post(mock_rabbitmq):
     """
     simple delayed stops post
@@ -241,5 +270,41 @@ def test_ire_trip_delayed_then_removal(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
     check_db_ire_96231_trip_removal()
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_ire_two_trip_removal_one_post(mock_rabbitmq):
+    """
+    post one ire trip removal on two trips
+    """
+    ire_JOHN_trip_removal = get_ire_data('train_JOHN_trip_removal.xml')
+    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_ire_JOHN_trip_removal()
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_ire_two_trip_removal_post_twice(mock_rabbitmq):
+    """
+    post twice ire trip removal on two trips
+    """
+    ire_JOHN_trip_removal = get_ire_data('train_JOHN_trip_removal.xml')
+    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    assert res == 'OK'
+    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_ire_JOHN_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
