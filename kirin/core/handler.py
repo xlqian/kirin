@@ -77,6 +77,8 @@ def merge(trip_update, old_trip_update):
     else:
         current = trip_update
         merge_realtime_theoric(current, trip_update.vj.navitia_vj)
+    if current.status == 'delete':
+        current.stop_time_updates = []
     return current
 
 def merge_realtime_theoric(trip_update, navitia_vj):
