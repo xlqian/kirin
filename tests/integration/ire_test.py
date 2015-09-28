@@ -277,6 +277,7 @@ def test_ire_trip_delayed_then_removal(mock_rabbitmq):
 def test_ire_two_trip_removal_one_post(mock_rabbitmq):
     """
     post one ire trip removal on two trips
+    (navitia mock returns 2 vj for 'JOHN' headsign)
     """
     ire_JOHN_trip_removal = get_ire_data('train_JOHN_trip_removal.xml')
     res = api_post('/ire', data=ire_JOHN_trip_removal)

@@ -158,8 +158,6 @@ class TripUpdate(db.Model, TimestampMixin):
             current_stop = self.find_stop(stop.stop_id)
             current_stop.merge(stop)
         self.status = other.status
-        if other.status == 'delete':
-            self.stop_time_updates = []
 
 
 

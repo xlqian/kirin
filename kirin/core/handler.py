@@ -77,6 +77,8 @@ def merge(trip_update, old_trip_update):
     else:
         current = trip_update
         merge_realtime_theoric(current, trip_update.vj.navitia_vj)
+    if current.status == 'delete':
+        current.stop_time_updates = []
     return current
 
 def merge_realtime_theoric(trip_update, navitia_vj):
@@ -97,10 +99,6 @@ def merge_realtime_theoric(trip_update, navitia_vj):
             st = StopTimeUpdate(navitia_stop['stop_point'], departure, arrival)
             #we want to keep the order
             trip_update.stop_time_updates.insert(idx, st)
-
-        stop = trip_update.find_stop(stop_id)
-        if stop and trip_update.status == 'delete':
-            trip_update.stop_time_updates.remove(stop)
 
 
 def publish(feed, rt_update):
