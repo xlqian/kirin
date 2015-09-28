@@ -81,6 +81,7 @@ def merge(trip_update, old_trip_update):
         current.stop_time_updates = []
     return current
 
+
 def merge_realtime_theoric(trip_update, navitia_vj):
     for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
         stop_id = navitia_stop.get('stop_point', {}).get('id')

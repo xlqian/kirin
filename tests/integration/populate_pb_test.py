@@ -123,3 +123,32 @@ def test_populate_pb_with_two_stop_time():
         assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
         assert pb_stop_time.stop_id == 'sa:2'
+
+
+def test_populate_pb_with_cancelation():
+    """
+    VJ cancelation
+    """
+    navitia_vj = {'id': 'vehicle_journey:1'}
+
+    with app.app_context():
+        trip_update = TripUpdate()
+        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        trip_update.vj = vj
+        trip_update.status = 'delete'
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update.trip_updates.append(trip_update)
+
+        db.session.add(real_time_update)
+        db.session.commit()
+
+        feed_entity = convert_to_gtfsrt(real_time_update)
+
+        assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+        assert feed_entity.header.gtfs_realtime_version == '1'
+        pb_trip_update = feed_entity.entity[0].trip_update
+        assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
+        assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
+
+        assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
