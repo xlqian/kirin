@@ -133,7 +133,8 @@ class TripUpdate(db.Model, TimestampMixin):
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
-    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined', cascade='all, delete-orphan')
+    stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
+                                        cascade='all, delete-orphan')
 
     def __init__(self, vj=None):
         self.created_at = datetime.datetime.utcnow()
