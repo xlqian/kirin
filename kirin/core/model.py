@@ -139,6 +139,7 @@ class TripUpdate(db.Model, TimestampMixin):
     def __init__(self, vj=None):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
+        self.status = 'none'
 
     @classmethod
     def find_by_dated_vj(cls, vj_navitia_id, vj_circulation_date):
