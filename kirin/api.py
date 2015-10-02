@@ -26,9 +26,11 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
+import logging
+from flask.signals import got_request_exception
 import flask_restful
-
+from flask import request
+from werkzeug.exceptions import HTTPException
 from kirin import resources
 from kirin.ire import ire
 from kirin import app
@@ -51,9 +53,26 @@ api.add_resource(ire.Ire,
                  '/ire',
                  endpoint='ire')
 
-@app.errorhandler(Exception)
-def error_handler(exception):
+
+def log_exception(sender, exception):
     """
     log all exceptions not catch before
     """
-    app.logger.exception('')
+    logger = logging.getLogger(__name__)
+    message = ""
+    if hasattr(exception, "data"):
+        message = exception.data
+    error = "{ex} {data} {url}".format(ex=exception.__class__.__name__, data=message, url=request.url)
+
+    if isinstance(exception, HTTPException):
+        logger.debug(error)
+    else:
+        logger.exception(error)
+
+got_request_exception.connect(log_exception, app)
+
+@app.after_request
+def access_log(response, *args, **kwargs):
+    logger = logging.getLogger('kirin.access')
+    logger.info('"%s %s" %s', request.method, request.full_path, response.status_code)
+    return response
