@@ -97,6 +97,7 @@ def check_db_ire_96231_delayed():
         assert db_trip_delayed.status == 'update'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
+        assert db_trip_delayed.real_time_updates[0].contributor == 'realtime.ire'
 
 
 def check_db_ire_96231_trip_removal():
