@@ -7,6 +7,11 @@ NAVITIA_URL = 'https://api.navitia.io/'
 
 NAVITIA_INSTANCE = 'sncf'
 
+NAVITIA_TOKEN = None
+
+CONTRIBUTOR = 'realtime.ire'
+
+
 DEBUG = True
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
