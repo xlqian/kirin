@@ -7,6 +7,11 @@ NAVITIA_URL = 'https://api.navitia.io/'
 
 NAVITIA_INSTANCE = 'sncf'
 
+NAVITIA_TOKEN = None
+
+CONTRIBUTOR = 'realtime.ire'
+
+
 DEBUG = True
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
@@ -27,7 +32,7 @@ ENABLE_RABBITMQ = True
 LOGGER = {
     'version': 1,
     'disable_existing_loggers': True,
-    'formatters':{
+    'formatters': {
         'default': {
             'format': '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s',
         },
@@ -43,8 +48,9 @@ LOGGER = {
         '': {
             'handlers': ['default'],
             'level': 'DEBUG',
+            'propagate': False
         },
-        'amqp':{
+        'amqp': {
             'level': 'DEBUG',
         },
         'sqlalchemy.engine': {
@@ -58,6 +64,11 @@ LOGGER = {
             'propagate': False
         },
         'sqlalchemy.dialects.postgresql': {
+            'handlers': ['default'],
+            'level': 'WARN',
+            'propagate': False
+        },
+        'werkzeug': {
             'handlers': ['default'],
             'level': 'WARN',
             'propagate': False

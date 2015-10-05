@@ -42,6 +42,7 @@ def _make_rt_update(data):
     Create an RealTimeUpdate object for the query and persist it
     """
     rt_update = model.RealTimeUpdate(data, connector='ire')
+    rt_update.contributor = current_app.config['CONTRIBUTOR']
 
     model.db.session.add(rt_update)
     model.db.session.commit()
