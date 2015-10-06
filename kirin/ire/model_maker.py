@@ -36,6 +36,7 @@ from kirin.core import model
 import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments, ObjectNotFound
 import navitia_wrapper
+import re
 
 
 def get_node(elt, xpath):
@@ -146,6 +147,9 @@ class KirinModelBuilder(object):
         vjs = []
         for nav_vj in navitia_vjs:
             vj = model.VehicleJourney(nav_vj, vj_start.date())
+            #ugly hack: we convert a vehicle_journey id in a meta-vj id
+            vj.navitia_id = re.sub('^vehicle_journey:', '', vj.navitia_id)
+            vj.navitia_id = re.sub('_dst_\d$', '', vj.navitia_id)
             vjs.append(vj)
 
         return vjs
