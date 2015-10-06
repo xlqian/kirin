@@ -108,7 +108,7 @@ def test_find_activate():
         request date            20150906    |                               |                       |
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 6))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 6))
         assert len(rtu) == 3
         assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d3'
         assert rtu[1].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
@@ -121,7 +121,7 @@ def test_find_activate():
                                             |                               |                       |
         request date                    20150908                            |                       |
         """
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 8))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 8))
         assert len(rtu) == 3
 
         """
@@ -131,7 +131,7 @@ def test_find_activate():
                                             |                               |                       |
         request date                        |   20150909                    |                       |
         """
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 9))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 9))
         assert len(rtu) == 2
         assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
         assert rtu[1].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d5'
@@ -144,7 +144,7 @@ def test_find_activate():
         request date                        |                            20150910                   |
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 10))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 10))
         assert len(rtu) == 2
 
         """
@@ -155,7 +155,7 @@ def test_find_activate():
         request date                        |                               |   20150911            |
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 11))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 11))
         assert len(rtu) == 1
         assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d5'
 
@@ -167,7 +167,7 @@ def test_find_activate():
         request date                        |                               |                    20150912
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 12))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 12))
         assert len(rtu) == 1
 
         """
@@ -178,7 +178,7 @@ def test_find_activate():
         request date                        |                               |                       |   20150913
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 13))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 13))
         assert len(rtu) == 0
 
         """
@@ -190,7 +190,7 @@ def test_find_activate():
                             20150905   20150906
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 06))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 06))
         assert len(rtu) == 0
 
         """
@@ -202,7 +202,7 @@ def test_find_activate():
                             20150905            20150908
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 8))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 8))
         assert len(rtu) == 1
 
         """
@@ -214,7 +214,7 @@ def test_find_activate():
                             20150905                    20150909
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 9))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 9))
         assert len(rtu) == 1
 
         """
@@ -226,7 +226,7 @@ def test_find_activate():
                             20150905                                             20150910
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 10))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 10))
         assert len(rtu) == 2
 
         """
@@ -238,7 +238,7 @@ def test_find_activate():
                             20150905                                                          20150911
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 11))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 11))
         assert len(rtu) == 2
 
         """
@@ -250,7 +250,7 @@ def test_find_activate():
                             20150905                                                                     20150912
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 12))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 12))
         assert len(rtu) == 3
 
         """
@@ -262,7 +262,7 @@ def test_find_activate():
                             20150905                                                                                20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 05), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 14))
         assert len(rtu) == 3
 
         """
@@ -274,7 +274,7 @@ def test_find_activate():
                                                     20150908                                                        20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 8), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 8), datetime.date(2015, 9, 14))
         assert len(rtu) == 3
 
         """
@@ -286,7 +286,7 @@ def test_find_activate():
                                                       20150909                                                      20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 9), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 9), datetime.date(2015, 9, 14))
         assert len(rtu) == 2
 
         """
@@ -298,7 +298,7 @@ def test_find_activate():
                                                                                     20150910                        20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 10), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 10), datetime.date(2015, 9, 14))
         assert len(rtu) == 2
 
         """
@@ -310,7 +310,7 @@ def test_find_activate():
                                                                                        20150911                     20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 11), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 11), datetime.date(2015, 9, 14))
         assert len(rtu) == 1
 
         """
@@ -322,7 +322,7 @@ def test_find_activate():
                                                                                                          20150912   20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 12), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 12), datetime.date(2015, 9, 14))
         assert len(rtu) == 1
 
 
@@ -335,11 +335,15 @@ def test_find_activate():
                                                                                                            20150913 20150914
         """
 
-        rtu = RealTimeUpdate.all('C1', datetime.date(2015, 9, 13), datetime.date(2015, 9, 14))
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 13), datetime.date(2015, 9, 14))
         assert len(rtu) == 0
 
-        rtu = RealTimeUpdate.all('C2', datetime.date(2015, 9, 6))
+        rtu = RealTimeUpdate.all(['C2'], datetime.date(2015, 9, 6))
         assert len(rtu) == 1
 
-        rtu = RealTimeUpdate.all('C2', datetime.date(2015, 9, 12))
+        rtu = RealTimeUpdate.all(['C2'], datetime.date(2015, 9, 12))
         assert len(rtu) == 1
+
+
+        rtu = RealTimeUpdate.all(['C1', 'C2'], datetime.date(2015, 9, 12))
+        assert len(rtu) == 2

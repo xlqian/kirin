@@ -195,11 +195,12 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         return '<RealTimeUpdate %r>' % self.id
 
     @classmethod
-    def all(cls, contributor, start_date=datetime.datetime.now().date(), end_date=None):
-        query = cls.query.filter_by(contributor=contributor)
+    def all(cls, contributors, start_date, end_date=None):
+        query = cls.query.filter(cls.contributor.in_(contributors))
         query = query.join(cls.trip_updates)
         query = query.join(VehicleJourney)
         query = query.filter(VehicleJourney.circulation_date >= start_date)
         if end_date:
             query = query.filter(VehicleJourney.circulation_date <= end_date)
         return query.all()
+
