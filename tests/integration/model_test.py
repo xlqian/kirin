@@ -347,3 +347,4 @@ def test_find_activate():
 
         rtu = RealTimeUpdate.all(['C1', 'C2'], datetime.date(2015, 9, 12))
         assert len(rtu) == 2
+

@@ -179,7 +179,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
 
-    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, backref='real_time_updates')
+    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
+                                   backref='real_time_updates', lazy='joined')
 
     def __init__(self, raw_data, connector,
                  contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
