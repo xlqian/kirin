@@ -117,7 +117,6 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.arrival_status = other.arrival_status
 
 
-
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
                                     db.Column('real_time_update_id', postgresql.UUID, db.ForeignKey('real_time_update.id')),
@@ -162,7 +161,6 @@ class TripUpdate(db.Model, TimestampMixin):
         self.status = other.status
 
 
-
 class RealTimeUpdate(db.Model, TimestampMixin):
     """
     Real Time Update received from POST request
@@ -181,7 +179,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
 
-    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, backref='real_time_updates')
+    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
+                                   backref='real_time_updates', lazy='joined')
 
     def __init__(self, raw_data, connector,
                  contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
@@ -192,3 +191,17 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.status = status
         self.error = error
         self.received_at = received_at
+
+    def __repr__(self):
+        return '<RealTimeUpdate %r>' % self.id
+
+    @classmethod
+    def all(cls, contributors, start_date, end_date=None):
+        query = cls.query.filter(cls.contributor.in_(contributors))
+        query = query.join(cls.trip_updates)
+        query = query.join(VehicleJourney)
+        query = query.filter(VehicleJourney.circulation_date >= start_date)
+        if end_date:
+            query = query.filter(VehicleJourney.circulation_date <= end_date)
+        return query.all()
+

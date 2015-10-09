@@ -27,20 +27,29 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin.core.model import VehicleJourney, TripUpdate, StopTimeUpdate
+from kirin.core.model import VehicleJourney, TripUpdate, StopTimeUpdate, RealTimeUpdate
 from kirin import db, app
 import datetime
 import pytest
 
+
 def create_trip_update(vj_id, trip_id, circulation_date):
     trip_update = TripUpdate()
-    vj = VehicleJourney({'id':trip_id}, circulation_date)
+    vj = VehicleJourney({'id': trip_id}, circulation_date)
     vj.id = vj_id
     trip_update.vj = vj
 
     db.session.add(vj)
     db.session.add(trip_update)
     return trip_update
+
+
+def create_real_time_update(id, contributor, connector, vj_id, trip_id, circulation_date):
+    rtu = RealTimeUpdate('', connector, contributor)
+    rtu.id = id
+    trip_update = create_trip_update(vj_id, trip_id, circulation_date)
+    rtu.trip_updates.append(trip_update)
+
 
 @pytest.fixture()
 def setup_database():
@@ -63,7 +72,6 @@ def test_find_by_vj(setup_database):
         assert row.vj_id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
 
 
-
 def test_find_stop():
     with app.app_context():
         vj = create_trip_update('70866ce8-0638-4fa1-8556-1ddfa22d09d3', 'vj1', datetime.date(2015, 9, 8))
@@ -77,3 +85,266 @@ def test_find_stop():
         assert vj.find_stop('sa:1') == st1
         assert vj.find_stop('sa:3') == st3
         assert vj.find_stop('sa:4') is None
+
+
+def test_find_activate():
+    with app.app_context():
+        create_real_time_update('70866ce8-0638-4fa1-8556-1ddfa22d09d3', 'C1', 'ire',
+                                '70866ce8-0638-4fa1-8556-1ddfa22d09d3', 'vj1', datetime.date(2015, 9, 8))
+        create_real_time_update('70866ce8-0638-4fa1-8556-1ddfa22d09d4', 'C1', 'ire',
+                                '70866ce8-0638-4fa1-8556-1ddfa22d09d4', 'vj2', datetime.date(2015, 9, 10))
+        create_real_time_update('70866ce8-0638-4fa1-8556-1ddfa22d09d5', 'C1', 'ire',
+                                '70866ce8-0638-4fa1-8556-1ddfa22d09d5', 'vj3', datetime.date(2015, 9, 12))
+
+        create_real_time_update('70866ce8-0638-4fa1-8556-1ddfa22d09d6', 'C2', 'ire',
+                                '70866ce8-0638-4fa1-8556-1ddfa22d09d6', 'vj4', datetime.date(2015, 9, 12))
+        db.session.commit()
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date            20150906    |                               |                       |
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 6))
+        assert len(rtu) == 3
+        assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d3'
+        assert rtu[1].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
+        assert rtu[2].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d5'
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                    20150908                            |                       |
+        """
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 8))
+        assert len(rtu) == 3
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                        |   20150909                    |                       |
+        """
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 9))
+        assert len(rtu) == 2
+        assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
+        assert rtu[1].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d5'
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                        |                            20150910                   |
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 10))
+        assert len(rtu) == 2
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                        |                               |   20150911            |
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 11))
+        assert len(rtu) == 1
+        assert rtu[0].id == '70866ce8-0638-4fa1-8556-1ddfa22d09d5'
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                        |                               |                    20150912
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 12))
+        assert len(rtu) == 1
+
+        """
+        contributor                     C1
+        VehicleJourney                  vj1
+        Circulation date                20150908                         20150910                20150912
+                                            |                               |                       |
+        request date                        |                               |                       |   20150913
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 13))
+        assert len(rtu) == 0
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |---------|          |                               |                       |
+                            20150905   20150906
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 06))
+        assert len(rtu) == 0
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |--------------------|                               |                       |
+                            20150905            20150908
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 8))
+        assert len(rtu) == 1
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |-------------------------|                          |                       |
+                            20150905                    20150909
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 9))
+        assert len(rtu) == 1
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |----------------------------------------------------|                       |
+                            20150905                                             20150910
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 10))
+        assert len(rtu) == 2
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |----------------------------------------------------------------|           |
+                            20150905                                                          20150911
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 11))
+        assert len(rtu) == 2
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |----------------------------------------------------------------------------|
+                            20150905                                                                     20150912
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 12))
+        assert len(rtu) == 3
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date  |--------------------------------------------------------------------------------------|
+                            20150905                                                                                20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 05), datetime.date(2015, 9, 14))
+        assert len(rtu) == 3
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                       |------------------------------------------------------------------|
+                                                    20150908                                                        20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 8), datetime.date(2015, 9, 14))
+        assert len(rtu) == 3
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                         |----------------------------------------------------------------|
+                                                      20150909                                                      20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 9), datetime.date(2015, 9, 14))
+        assert len(rtu) == 2
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                                                       |-----------------------------------|
+                                                                                    20150910                        20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 10), datetime.date(2015, 9, 14))
+        assert len(rtu) == 2
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                                                          |--------------------------------|
+                                                                                       20150911                     20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 11), datetime.date(2015, 9, 14))
+        assert len(rtu) == 1
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                                                                               |-----------|
+                                                                                                         20150912   20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 12), datetime.date(2015, 9, 14))
+        assert len(rtu) == 1
+
+
+        """
+        contributor                            C1
+        VehicleJourney                          vj1
+        Circulation date                        20150908                         20150910                20150912
+                                                    |                               |                       |
+        request interval date                                                                                 |---------|
+                                                                                                           20150913 20150914
+        """
+
+        rtu = RealTimeUpdate.all(['C1'], datetime.date(2015, 9, 13), datetime.date(2015, 9, 14))
+        assert len(rtu) == 0
+
+        rtu = RealTimeUpdate.all(['C2'], datetime.date(2015, 9, 6))
+        assert len(rtu) == 1
+
+        rtu = RealTimeUpdate.all(['C2'], datetime.date(2015, 9, 12))
+        assert len(rtu) == 1
+
+
+        rtu = RealTimeUpdate.all(['C1', 'C2'], datetime.date(2015, 9, 12))
+        assert len(rtu) == 2
+
