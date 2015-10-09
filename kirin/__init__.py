@@ -49,11 +49,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging.config
 import sys
+from flask_script import Manager
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
 if 'KIRIN_CONFIG_FILE' in os.environ:
     app.config.from_envvar('KIRIN_CONFIG_FILE')
+
+manager = Manager(app)
+
+# activate a command
+import kirin.command.load_realtime
 
 from kirin.core import model
 db = model.db

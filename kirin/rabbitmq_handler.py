@@ -26,11 +26,16 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from kombu import BrokerConnection, Exchange
+from kombu import BrokerConnection, Exchange, Queue, Consumer
 from kombu.pools import producers, connections
 import logging
 from amqp.exceptions import ConnectionForced
 import gevent
+from kirin import task_pb2
+from google.protobuf.message import DecodeError
+import socket
+from kirin.core.model import RealTimeUpdate
+from kirin.core.populate_pb import convert_to_gtfsrt
 
 
 class RabbitMQHandler(object):
@@ -58,6 +63,46 @@ class RabbitMQHandler(object):
             if 'password' in res:
                 del res['password']
             return res
+
+    def listen_load_realtime(self):
+        log = logging.getLogger(__name__)
+
+        def callback(body, message):
+            task = task_pb2.Task()
+            try:
+                # `body` is of unicode type, but we need str type for
+                # `ParseFromString()` to work.  It seems to work.
+                # Maybe kombu estimate that, without any information,
+                # the body should be something as json, and thus a
+                # unicode string.  On the c++ side, I didn't manage to
+                # find a way to give a content-type or something like
+                # that.
+                body = str(body)
+                task.ParseFromString(body)
+            except DecodeError as e:
+                log.warn('invalid protobuf: {}'.format(str(e)))
+                return
+
+            log.info('getting a request: {}'.format(task))
+            if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
+                return
+
+            feed = convert_to_gtfsrt(RealTimeUpdate.all(task.load_realtime.contributors))
+
+            with self._get_producer() as producer:
+                producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
+
+        route = 'task.load_realtime.INSTANCE'
+        log.info('listening route {} on exchange {}...'.format(route, self._exchange))
+        rt_queue = Queue('', routing_key=route, exchange=self._exchange, durable=False, auto_delete=True)
+        with connections[self._connection].acquire(block=True) as conn:
+            self._connections.add(conn)
+            with Consumer(conn, queues=[rt_queue], callbacks=[callback]):
+                while True:
+                    try:
+                        conn.drain_events(timeout=1)
+                    except socket.timeout:
+                        pass
 
 
 def monitor_heartbeats(connections, rate=2):
