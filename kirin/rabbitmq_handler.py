@@ -92,7 +92,7 @@ class RabbitMQHandler(object):
             with self._get_producer() as producer:
                 producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
 
-        route = 'task.load_realtime.INSTANCE'
+        route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
         rt_queue = Queue('', routing_key=route, exchange=self._exchange, durable=False, auto_delete=True)
         with connections[self._connection].acquire(block=True) as conn:
