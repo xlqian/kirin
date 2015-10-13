@@ -27,7 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
 import datetime
 
 
@@ -63,8 +63,23 @@ def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
 
 
+def fill_channel(pb_cahnnel):
+    pb_cahnnel.id = 'fe647dbe-610e-11e5-b0e1-00249b0dc60b'
+    pb_cahnnel.types.append(chaos_pb2.Channel.unkown_type)
+
+
+def fill_message(pb_trip_update, message):
+    pb_message = pb_trip_update.Extensions[kirin_pb2.message]
+    pb_message.text = message
+    fill_channel(pb_message.channel)
+
+
 def fill_trip_update(pb_trip_update, trip_update):
     pb_trip = pb_trip_update.trip
+
+    if trip_update.message:
+        fill_message(pb_trip_update, trip_update.message)
+
     vj = trip_update.vj
     if vj:
         pb_trip.trip_id = vj.navitia_trip_id
