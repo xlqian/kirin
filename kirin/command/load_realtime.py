@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#  Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -28,14 +27,12 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import app, db
-import sys
-from flask_script import Manager
-from flask_migrate import Migrate, MigrateCommand
 from kirin import manager
+import kirin
 
-migrate = Migrate(app, db)
-manager.add_command('db', MigrateCommand)
-
-if __name__ == '__main__':
-    manager.run()
+@manager.command
+def load_realtime():
+    """
+    Launch the server that serve realtime updates to starting kraken
+    """
+    kirin.rabbitmq_handler.listen_load_realtime()

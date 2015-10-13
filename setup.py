@@ -18,6 +18,7 @@ class BuildPbfCommand(Command):
 
     def run(self):
         os.system('{protoc} -Ichaos-proto --python_out=kirin chaos-proto/*.proto'.format(protoc=protoc))
+        os.system('{protoc} -Inavitia-proto --python_out=kirin navitia-proto/*.proto'.format(protoc=protoc))
 
 
 setup(
