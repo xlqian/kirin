@@ -31,7 +31,7 @@ from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTim
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
 import datetime
 from kirin import app, db
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2
 from tests.check_utils import _dt
 
 
@@ -111,6 +111,7 @@ def test_populate_pb_with_two_stop_time():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 2
@@ -137,6 +138,7 @@ def test_populate_pb_with_cancelation():
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
         trip_update.status = 'delete'
+        trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.trip_updates.append(trip_update)
 
@@ -150,6 +152,7 @@ def test_populate_pb_with_cancelation():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
