@@ -160,6 +160,7 @@ class TripUpdate(db.Model, TimestampMixin):
             current_stop = self.find_stop(stop.stop_id)
             current_stop.merge(stop)
         self.status = other.status
+        self.message = other.message
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
