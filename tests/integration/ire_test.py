@@ -1,3 +1,5 @@
+# coding: utf8
+
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -130,6 +132,8 @@ def check_db_ire_6113_trip_removal():
         assert db_trip_removal.vj.circulation_date == datetime.date(2015, 10, 6)
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
+        print db_trip_removal.message
+        assert db_trip_removal.message == u'Accident à un Passage à Niveau'
         # full trip removal : no stop_time to precise
         assert len(db_trip_removal.stop_time_updates) == 0
 
