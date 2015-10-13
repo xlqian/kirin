@@ -181,6 +181,9 @@ class KirinModelBuilder(object):
                 trip_update.stop_time_updates = []
             elif get_value(removal, 'TypeSuppression') == 'P':
                 trip_update.status = 'update'
+            xml_prdebut = removal.find('PRDebut')
+            if xml_prdebut:
+                trip_update.message = get_value(xml_prdebut, 'MotifExterne')
 
         return trip_update
 
