@@ -52,7 +52,10 @@ def convert_to_gtfsrt(real_time_updates):
 
     for real_time_update in real_time_updates:
         for trip_update in real_time_update.trip_updates:
-            fill_entity(feed.entity.add(), trip_update)
+            contributor = None
+            if real_time_update.contributor:
+                contributor = real_time_update.contributor
+            fill_entity(feed.entity.add(), trip_update, contributor)
 
     return feed
 
@@ -74,9 +77,10 @@ def fill_message(pb_trip_update, message):
     fill_channel(pb_message.channel)
 
 
-def fill_trip_update(pb_trip_update, trip_update):
+def fill_trip_update(pb_trip_update, trip_update, contributor=None):
     pb_trip = pb_trip_update.trip
-
+    if contributor:
+        pb_trip.Extensions[kirin_pb2.contributor] = contributor
     if trip_update.message:
         fill_message(pb_trip_update, trip_update.message)
 
@@ -94,6 +98,6 @@ def fill_trip_update(pb_trip_update, trip_update):
             fill_stop_times(pb_trip_update.stop_time_update.add(), stop_time_update)
 
 
-def fill_entity(pb_entity, trip_update):
+def fill_entity(pb_entity, trip_update, contributor=None):
     pb_entity.id = trip_update.vj_id
-    fill_trip_update(pb_entity.trip_update, trip_update)
+    fill_trip_update(pb_entity.trip_update, trip_update, contributor)
