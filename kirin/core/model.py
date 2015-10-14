@@ -70,14 +70,14 @@ class VehicleJourney(db.Model):
     Vehicle Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    navitia_id = db.Column(db.Text, nullable=False)
+    navitia_trip_id = db.Column(db.Text, nullable=False)
     circulation_date = db.Column(db.Date, nullable=False)
 
-    __table_args__ = (db.UniqueConstraint('navitia_id', 'circulation_date', name='vehicle_journey_navitia_id_circulation_date_idx'),)
+    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'circulation_date', name='vehicle_journey_navitia_trip_id_circulation_date_idx'),)
 
     def __init__(self, navitia_vj, circulation_date):
         self.id = gen_uuid()
-        self.navitia_id = navitia_vj['id']
+        self.navitia_trip_id = navitia_vj['trip']['id']
         self.circulation_date = circulation_date
         self.navitia_vj = navitia_vj  # Not persisted
 
@@ -141,8 +141,8 @@ class TripUpdate(db.Model, TimestampMixin):
         self.status = 'none'
 
     @classmethod
-    def find_by_dated_vj(cls, vj_navitia_id, vj_circulation_date):
-        return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_id == vj_navitia_id,
+    def find_by_dated_vj(cls, navitia_trip_id, vj_circulation_date):
+        return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_trip_id == navitia_trip_id,
                                               VehicleJourney.circulation_date == vj_circulation_date).first()
 
     def find_stop(self, stop_id):

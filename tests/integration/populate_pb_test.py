@@ -41,7 +41,7 @@ def test_populate_pb_with_one_stop_time():
     fill protobuf from trip_update
     Verify protobuf
     """
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}
@@ -81,7 +81,7 @@ def test_populate_pb_with_two_stop_time():
     """
 
     #we add another impacted stop time to the Model
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}
@@ -130,7 +130,7 @@ def test_populate_pb_with_cancelation():
     """
     VJ cancelation
     """
-    navitia_vj = {'id': 'vehicle_journey:1'}
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}}
 
     with app.app_context():
         trip_update = TripUpdate()

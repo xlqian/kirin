@@ -35,7 +35,7 @@ import pytest
 
 def create_trip_update(vj_id, trip_id, circulation_date):
     trip_update = TripUpdate()
-    vj = VehicleJourney({'id': trip_id}, circulation_date)
+    vj = VehicleJourney({'trip': {'id': trip_id}}, circulation_date)
     vj.id = vj_id
     trip_update.vj = vj
 
