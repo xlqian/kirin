@@ -156,8 +156,11 @@ def test_populate_pb_with_cancelation():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == True
         assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
+        
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
         assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
