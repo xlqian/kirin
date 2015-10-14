@@ -38,7 +38,7 @@ from tests.check_utils import _dt
 def create_trip_update(id, trip_id, circulation_date, stops):
     trip_update = TripUpdate()
     trip_update.id = id
-    vj = VehicleJourney({'id': trip_id}, circulation_date)
+    vj = VehicleJourney({'trip': {'id': trip_id}}, circulation_date)
     trip_update.vj = vj
     for stop in stops:
         st = StopTimeUpdate({'id': stop['id']}, stop['departure'], stop['arrival'])
@@ -81,7 +81,7 @@ def setup_database():
 
 @pytest.fixture()
 def navitia_vj():
-    return {'id': 'vehicle_journey:1', 'stop_times': [
+    return {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 5), 'departure_time': datetime.time(9, 10), 'stop_point': {'id': 'sa:2'}},
         {'arrival_time': datetime.time(10, 5), 'departure_time': None, 'stop_point': {'id': 'sa:3'}}
@@ -101,7 +101,7 @@ def test_handle_basic():
 
 def test_handle_new_vj():
     """an easy one: we have one vj with only one stop time updated"""
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}

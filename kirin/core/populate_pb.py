@@ -67,7 +67,7 @@ def fill_trip_update(pb_trip_update, trip_update):
     pb_trip = pb_trip_update.trip
     vj = trip_update.vj
     if vj:
-        pb_trip.trip_id = vj.navitia_id
+        pb_trip.trip_id = vj.navitia_trip_id
         pb_trip.start_date = date_to_str(vj.circulation_date)
         # TODO fill the right schedule_relationship
         if trip_update.status == 'delete':
