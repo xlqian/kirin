@@ -66,11 +66,13 @@ def test_populate_pb_with_one_stop_time():
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
-
         pb_stop_time = feed_entity.entity[0].trip_update.stop_time_update[0]
         assert pb_stop_time.arrival.time == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
         assert pb_stop_time.stop_id == 'sa:1'
+
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
 
 
 def test_populate_pb_with_two_stop_time():
@@ -112,6 +114,7 @@ def test_populate_pb_with_two_stop_time():
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 2
@@ -140,6 +143,7 @@ def test_populate_pb_with_cancelation():
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update.contributor = 'kisio-digital'
         real_time_update.trip_updates.append(trip_update)
 
         db.session.add(real_time_update)
@@ -154,5 +158,6 @@ def test_populate_pb_with_cancelation():
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
+        assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
