@@ -68,7 +68,8 @@ def fill_stop_times(pb_stop_time, stop_time):
 
 def fill_channel(pb_channel):
     pb_channel.id = '1'
-    pb_channel.types.append(chaos_pb2.Channel.unkown_type)
+    for type in chaos_pb2._CHANNEL_TYPE.values:
+        pb_channel.types.append(type.number)
 
 
 def fill_message(pb_trip_update, message):

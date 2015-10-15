@@ -31,7 +31,7 @@ from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTim
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
 import datetime
 from kirin import app, db
-from kirin import gtfs_realtime_pb2, kirin_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
 from tests.check_utils import _dt
 
 
@@ -158,8 +158,12 @@ def test_populate_pb_with_cancelation():
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.message) == True
         assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
+        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        for type in chaos_pb2._CHANNEL_TYPE.values:
+            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
-        
+
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
         assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
 
