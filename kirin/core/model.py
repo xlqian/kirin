@@ -31,7 +31,6 @@ from sqlalchemy.dialects import postgresql
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
-import re
 db = SQLAlchemy()
 
 # default name convention for db constraints (when not specified), for future alembic updates
@@ -80,9 +79,6 @@ class VehicleJourney(db.Model):
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
-        if not self.navitia_trip_id and 'id' in navitia_vj: #retro-comp, TODO: remove
-            self.navitia_trip_id = re.sub('^vehicle_journey:', '', navitia_vj['id'])
-            self.navitia_trip_id = re.sub('_dst_\d$', '', self.navitia_trip_id)
         self.circulation_date = circulation_date
         self.navitia_vj = navitia_vj  # Not persisted
 
