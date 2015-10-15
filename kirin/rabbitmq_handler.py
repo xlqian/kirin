@@ -90,7 +90,9 @@ class RabbitMQHandler(object):
             feed = convert_to_gtfsrt(RealTimeUpdate.all(task.load_realtime.contributors))
 
             with self._get_producer() as producer:
+                log.info('Publishing full feed...')
                 producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
+                log.info('Full feed published.')
 
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
