@@ -1,3 +1,6 @@
 [submodule "chaos-proto"]
 	path = chaos-proto
 	url = https://github.com/CanalTP/chaos-proto/
+[submodule "navitia-proto"]
+	path = navitia-proto
+	url = https://github.com/CanalTP/navitia-proto.git

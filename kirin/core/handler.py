@@ -53,7 +53,7 @@ def handle(real_time_update, trip_updates):
 
     for trip_update in trip_updates:
         #find if there already a row in db
-        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_id, trip_update.vj.circulation_date)
+        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
         current_trip_update = merge(trip_update, old)
 
@@ -63,7 +63,7 @@ def handle(real_time_update, trip_updates):
 
     persist(real_time_update)
 
-    feed = convert_to_gtfsrt(real_time_update)
+    feed = convert_to_gtfsrt([real_time_update])
 
     publish(feed, real_time_update)
 

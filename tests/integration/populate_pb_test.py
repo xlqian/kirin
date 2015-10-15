@@ -31,7 +31,7 @@ from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTim
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
 import datetime
 from kirin import app, db
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
 from tests.check_utils import _dt
 
 
@@ -41,7 +41,7 @@ def test_populate_pb_with_one_stop_time():
     fill protobuf from trip_update
     Verify protobuf
     """
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}
@@ -58,7 +58,7 @@ def test_populate_pb_with_one_stop_time():
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt(real_time_update)
+        feed_entity = convert_to_gtfsrt([real_time_update])
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version == '1'
@@ -66,11 +66,13 @@ def test_populate_pb_with_one_stop_time():
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
-
         pb_stop_time = feed_entity.entity[0].trip_update.stop_time_update[0]
         assert pb_stop_time.arrival.time == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
         assert pb_stop_time.stop_id == 'sa:1'
+
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
 
 
 def test_populate_pb_with_two_stop_time():
@@ -81,7 +83,7 @@ def test_populate_pb_with_two_stop_time():
     """
 
     #we add another impacted stop time to the Model
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}
@@ -103,7 +105,7 @@ def test_populate_pb_with_two_stop_time():
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt(real_time_update)
+        feed_entity = convert_to_gtfsrt([real_time_update])
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version, '1'
@@ -111,44 +113,58 @@ def test_populate_pb_with_two_stop_time():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 2
-        pb_stop_time = pb_trip_update.stop_time_update[0]
-        assert pb_stop_time.arrival.time == 0
-        assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
-        assert pb_stop_time.stop_id == 'sa:1'
 
-        pb_stop_time = pb_trip_update.stop_time_update[1]
+        pb_stop_time = pb_trip_update.stop_time_update[0]
         assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
         assert pb_stop_time.stop_id == 'sa:2'
+
+        pb_stop_time = pb_trip_update.stop_time_update[1]
+        assert pb_stop_time.arrival.time == 0
+        assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+        assert pb_stop_time.stop_id == 'sa:1'
 
 
 def test_populate_pb_with_cancelation():
     """
     VJ cancelation
     """
-    navitia_vj = {'id': 'vehicle_journey:1'}
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}}
 
     with app.app_context():
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
         trip_update.status = 'delete'
+        trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update.contributor = 'kisio-digital'
         real_time_update.trip_updates.append(trip_update)
 
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt(real_time_update)
+        feed_entity = convert_to_gtfsrt([real_time_update])
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version == '1'
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == True
+        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
+        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        for type in chaos_pb2._CHANNEL_TYPE.values:
+            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
+
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
+        assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0

@@ -27,7 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
 import datetime
 
 
@@ -43,15 +43,19 @@ def to_posix_time(date_time):
     return 0
 
 
-def convert_to_gtfsrt(real_time_update):
+def convert_to_gtfsrt(real_time_updates):
     feed = gtfs_realtime_pb2.FeedMessage()
 
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
     feed.header.gtfs_realtime_version = '1'
     feed.header.timestamp = to_posix_time(datetime.datetime.utcnow())
 
-    for trip_update in real_time_update.trip_updates:
-        fill_entity(feed.entity.add(), trip_update)
+    for real_time_update in real_time_updates:
+        for trip_update in real_time_update.trip_updates:
+            contributor = None
+            if real_time_update.contributor:
+                contributor = real_time_update.contributor
+            fill_entity(feed.entity.add(), trip_update, contributor)
 
     return feed
 
@@ -62,11 +66,29 @@ def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
 
 
-def fill_trip_update(pb_trip_update, trip_update):
+def fill_channel(pb_channel):
+    pb_channel.id = '1'
+    # We do not have a particular channel, We broadcast on all channel types
+    for type in chaos_pb2._CHANNEL_TYPE.values:
+        pb_channel.types.append(type.number)
+
+
+def fill_message(pb_trip_update, message):
+    pb_message = pb_trip_update.Extensions[kirin_pb2.message]
+    pb_message.text = message
+    fill_channel(pb_message.channel)
+
+
+def fill_trip_update(pb_trip_update, trip_update, contributor=None):
     pb_trip = pb_trip_update.trip
+    if contributor:
+        pb_trip.Extensions[kirin_pb2.contributor] = contributor
+    if trip_update.message:
+        fill_message(pb_trip_update, trip_update.message)
+
     vj = trip_update.vj
     if vj:
-        pb_trip.trip_id = vj.navitia_id
+        pb_trip.trip_id = vj.navitia_trip_id
         pb_trip.start_date = date_to_str(vj.circulation_date)
         # TODO fill the right schedule_relationship
         if trip_update.status == 'delete':
@@ -78,6 +100,6 @@ def fill_trip_update(pb_trip_update, trip_update):
             fill_stop_times(pb_trip_update.stop_time_update.add(), stop_time_update)
 
 
-def fill_entity(pb_entity, trip_update):
+def fill_entity(pb_entity, trip_update, contributor=None):
     pb_entity.id = trip_update.vj_id
-    fill_trip_update(pb_entity.trip_update, trip_update)
+    fill_trip_update(pb_entity.trip_update, trip_update, contributor)

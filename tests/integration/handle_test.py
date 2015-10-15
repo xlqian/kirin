@@ -38,7 +38,7 @@ from tests.check_utils import _dt
 def create_trip_update(id, trip_id, circulation_date, stops):
     trip_update = TripUpdate()
     trip_update.id = id
-    vj = VehicleJourney({'id': trip_id}, circulation_date)
+    vj = VehicleJourney({'trip': {'id': trip_id}}, circulation_date)
     trip_update.vj = vj
     for stop in stops:
         st = StopTimeUpdate({'id': stop['id']}, stop['departure'], stop['arrival'])
@@ -81,7 +81,7 @@ def setup_database():
 
 @pytest.fixture()
 def navitia_vj():
-    return {'id': 'vehicle_journey:1', 'stop_times': [
+    return {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 5), 'departure_time': datetime.time(9, 10), 'stop_point': {'id': 'sa:2'}},
         {'arrival_time': datetime.time(10, 5), 'departure_time': None, 'stop_point': {'id': 'sa:3'}}
@@ -101,7 +101,7 @@ def test_handle_basic():
 
 def test_handle_new_vj():
     """an easy one: we have one vj with only one stop time updated"""
-    navitia_vj = {'id': 'vehicle_journey:1', 'stop_times': [
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
         {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
         ]}
@@ -119,19 +119,21 @@ def test_handle_new_vj():
         trip_update = res.trip_updates[0]
         assert trip_update.status == 'update'
         assert len(trip_update.stop_time_updates) == 2
-        assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
-        assert trip_update.stop_time_updates[0].departure == _dt("8:15")
-        assert trip_update.stop_time_updates[0].arrival == None
 
-        assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
-        assert trip_update.stop_time_updates[1].departure == None
-        assert trip_update.stop_time_updates[1].arrival == _dt("9:10")
+        assert trip_update.stop_time_updates[0].stop_id == 'sa:2'
+        assert trip_update.stop_time_updates[0].departure == None
+        assert trip_update.stop_time_updates[0].arrival == _dt("9:10")
+
+        assert trip_update.stop_time_updates[1].stop_id == 'sa:1'
+        assert trip_update.stop_time_updates[1].departure == _dt("8:15")
+        assert trip_update.stop_time_updates[1].arrival == None
 
 
         # testing that RealTimeUpdate is persisted in db
         db_trip_updates = real_time_update.query.from_self(TripUpdate).all()
         assert len(db_trip_updates) == 1
         assert db_trip_updates[0].status == 'update'
+
         db_st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
         assert len(db_st_updates) == 2
         assert db_st_updates[0].stop_id == 'sa:1'
@@ -162,17 +164,17 @@ def test_handle_new_trip_out_of_order(navitia_vj):
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
         assert len(trip_update.stop_time_updates) == 3
-        assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
-        assert trip_update.stop_time_updates[0].departure == _dt("8:10")
-        assert trip_update.stop_time_updates[0].arrival == None
+        assert trip_update.stop_time_updates[0].stop_id == 'sa:3'
+        assert trip_update.stop_time_updates[0].departure == None
+        assert trip_update.stop_time_updates[0].arrival == _dt("10:05")
 
         assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
         assert trip_update.stop_time_updates[1].departure == _dt("9:50")
         assert trip_update.stop_time_updates[1].arrival == _dt("9:49")
 
-        assert trip_update.stop_time_updates[2].stop_id == 'sa:3'
-        assert trip_update.stop_time_updates[2].departure == None
-        assert trip_update.stop_time_updates[2].arrival == _dt("10:05")
+        assert trip_update.stop_time_updates[2].stop_id == 'sa:1'
+        assert trip_update.stop_time_updates[2].departure == _dt("8:10")
+        assert trip_update.stop_time_updates[2].arrival == None
 
 
 def test_handle_update_vj(setup_database, navitia_vj):

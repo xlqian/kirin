@@ -57,7 +57,7 @@ def test_train_delayed(mock_navitia_fixture):
 
         assert len(trip_updates) == 1
         trip_up = trip_updates[0]
-        assert trip_up.vj.navitia_id == 'vehicle_journey:OCETrainTER-87212027-85000109-3:11859'
+        assert trip_up.vj.navitia_trip_id == 'trip:OCETrainTER-87212027-85000109-3:11859'
         assert trip_up.vj_id == trip_up.vj.id
         assert trip_up.status == 'update'
 
@@ -81,7 +81,7 @@ def test_train_trip_removal(mock_navitia_fixture):
 
         assert len(trip_updates) == 1
         trip_up = trip_updates[0]
-        assert trip_up.vj.navitia_id == 'vehicle_journey:OCETGV-87686006-87751008-2:25768'
+        assert trip_up.vj.navitia_trip_id == 'trip:OCETGV-87686006-87751008-2:25768'
         assert trip_up.vj_id == trip_up.vj.id
         assert trip_up.status == 'delete'
         # full trip removal : no stop_time to precise
