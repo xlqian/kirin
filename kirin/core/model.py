@@ -132,6 +132,7 @@ class TripUpdate(db.Model, TimestampMixin):
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
+    message = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
                                         cascade='all, delete-orphan')
 
@@ -159,6 +160,7 @@ class TripUpdate(db.Model, TimestampMixin):
             current_stop = self.find_stop(stop.stop_id)
             current_stop.merge(stop)
         self.status = other.status
+        self.message = other.message
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
