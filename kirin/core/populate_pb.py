@@ -68,6 +68,7 @@ def fill_stop_times(pb_stop_time, stop_time):
 
 def fill_channel(pb_channel):
     pb_channel.id = '1'
+    # We do not have a particular channel, We broadcast on all channel types
     for type in chaos_pb2._CHANNEL_TYPE.values:
         pb_channel.types.append(type.number)
 
