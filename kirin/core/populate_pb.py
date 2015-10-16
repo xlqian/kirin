@@ -43,16 +43,15 @@ def to_posix_time(date_time):
     return 0
 
 
-def convert_to_gtfsrt(real_time_updates, incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL):
+def convert_to_gtfsrt(trip_updates, incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL):
     feed = gtfs_realtime_pb2.FeedMessage()
 
     feed.header.incrementality = incrementality
     feed.header.gtfs_realtime_version = '1'
     feed.header.timestamp = to_posix_time(datetime.datetime.utcnow())
 
-    for real_time_update in real_time_updates:
-        for trip_update in real_time_update.trip_updates:
-            fill_entity(feed.entity.add(), trip_update)
+    for trip_update in trip_updates:
+        fill_entity(feed.entity.add(), trip_update)
 
     return feed
 

@@ -63,7 +63,7 @@ def handle(real_time_update, trip_updates, contributor):
 
     persist(real_time_update)
 
-    feed = convert_to_gtfsrt([real_time_update])
+    feed = convert_to_gtfsrt(real_time_update.trip_updates)
 
     publish(feed, contributor)
 

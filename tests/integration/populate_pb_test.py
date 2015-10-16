@@ -58,7 +58,7 @@ def test_populate_pb_with_one_stop_time():
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt([real_time_update])
+        feed_entity = convert_to_gtfsrt(real_time_update.trip_updates)
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version == '1'
@@ -105,7 +105,7 @@ def test_populate_pb_with_two_stop_time():
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt([real_time_update])
+        feed_entity = convert_to_gtfsrt(real_time_update.trip_updates)
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version, '1'
@@ -149,7 +149,7 @@ def test_populate_pb_with_cancelation():
         db.session.add(real_time_update)
         db.session.commit()
 
-        feed_entity = convert_to_gtfsrt([real_time_update])
+        feed_entity = convert_to_gtfsrt(real_time_update.trip_updates)
 
         assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
         assert feed_entity.header.gtfs_realtime_version == '1'
