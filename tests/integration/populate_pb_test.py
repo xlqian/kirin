@@ -143,7 +143,7 @@ def test_populate_pb_with_cancelation():
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
-        real_time_update.contributor = 'kisio-digital'
+        trip_update.contributor = 'kisio-digital'
         real_time_update.trip_updates.append(trip_update)
 
         db.session.add(real_time_update)

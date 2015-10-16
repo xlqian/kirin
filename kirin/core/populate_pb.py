@@ -43,19 +43,16 @@ def to_posix_time(date_time):
     return 0
 
 
-def convert_to_gtfsrt(real_time_updates):
+def convert_to_gtfsrt(real_time_updates, incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL):
     feed = gtfs_realtime_pb2.FeedMessage()
 
-    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+    feed.header.incrementality = incrementality
     feed.header.gtfs_realtime_version = '1'
     feed.header.timestamp = to_posix_time(datetime.datetime.utcnow())
 
     for real_time_update in real_time_updates:
         for trip_update in real_time_update.trip_updates:
-            contributor = None
-            if real_time_update.contributor:
-                contributor = real_time_update.contributor
-            fill_entity(feed.entity.add(), trip_update, contributor)
+            fill_entity(feed.entity.add(), trip_update)
 
     return feed
 
@@ -79,10 +76,10 @@ def fill_message(pb_trip_update, message):
     fill_channel(pb_message.channel)
 
 
-def fill_trip_update(pb_trip_update, trip_update, contributor=None):
+def fill_trip_update(pb_trip_update, trip_update):
     pb_trip = pb_trip_update.trip
-    if contributor:
-        pb_trip.Extensions[kirin_pb2.contributor] = contributor
+    if trip_update.contributor:
+        pb_trip.Extensions[kirin_pb2.contributor] = trip_update.contributor
     if trip_update.message:
         fill_message(pb_trip_update, trip_update.message)
 
@@ -100,6 +97,6 @@ def fill_trip_update(pb_trip_update, trip_update, contributor=None):
             fill_stop_times(pb_trip_update.stop_time_update.add(), stop_time_update)
 
 
-def fill_entity(pb_entity, trip_update, contributor=None):
+def fill_entity(pb_entity, trip_update):
     pb_entity.id = trip_update.vj_id
-    fill_trip_update(pb_entity.trip_update, trip_update, contributor)
+    fill_trip_update(pb_entity.trip_update, trip_update)

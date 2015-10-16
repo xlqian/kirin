@@ -36,6 +36,7 @@ from google.protobuf.message import DecodeError
 import socket
 from kirin.core.model import RealTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
+import gtfs_realtime_pb2
 
 
 class RabbitMQHandler(object):
@@ -87,7 +88,8 @@ class RabbitMQHandler(object):
             if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
                 return
 
-            feed = convert_to_gtfsrt(RealTimeUpdate.all(task.load_realtime.contributors))
+            feed = convert_to_gtfsrt(RealTimeUpdate.all(task.load_realtime.contributors),
+                                     gtfs_realtime_pb2.FULL_DATASET)
 
             with self._get_producer() as producer:
                 log.info('Publishing full feed...')
