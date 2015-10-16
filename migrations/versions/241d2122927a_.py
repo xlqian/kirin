@@ -30,6 +30,7 @@ def upgrade():
     op.drop_index('contributor_idx', table_name='real_time_update')
     op.drop_column('real_time_update', 'contributor')
     op.create_index('contributor_idx', 'trip_update', ['contributor'], unique=False)
+    op.create_index('circulation_date_idx', 'vehicle_journey', ['circulation_date'], unique=False)
 
 
 def downgrade():
@@ -46,4 +47,5 @@ def downgrade():
 
     op.drop_index('contributor_idx', table_name='trip_update')
     op.drop_column('trip_update', 'contributor')
+    op.drop_index('circulation_date_idx', table_name='vehicle_journey')
     op.create_index('contributor_idx', 'real_time_update', ['contributor'], unique=False)
