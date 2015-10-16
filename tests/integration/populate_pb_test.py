@@ -168,3 +168,43 @@ def test_populate_pb_with_cancelation():
         assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
+
+
+def test_populate_pb_with_full_dataset():
+    """
+    VJ cancelation
+    """
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}}
+
+    with app.app_context():
+        trip_update = TripUpdate()
+        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        trip_update.vj = vj
+        trip_update.status = 'delete'
+        trip_update.message = 'Message Test'
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.contributor = 'kisio-digital'
+        real_time_update.trip_updates.append(trip_update)
+
+        db.session.add(real_time_update)
+        db.session.commit()
+
+        feed_entity = convert_to_gtfsrt(real_time_update.trip_updates, gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
+
+        assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+        assert feed_entity.header.gtfs_realtime_version == '1'
+        pb_trip_update = feed_entity.entity[0].trip_update
+        assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
+        assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.message) == True
+        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
+        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        for type in chaos_pb2._CHANNEL_TYPE.values:
+            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
+
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
+        assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
+
+        assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
