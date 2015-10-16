@@ -138,6 +138,7 @@ class TripUpdate(db.Model, TimestampMixin):
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
     message = db.Column(db.Text, nullable=True)
+    contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
                                         cascade='all, delete-orphan')
 
@@ -180,7 +181,6 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
-    contributor = db.Column(db.Text, nullable=True)
     connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
@@ -189,11 +189,9 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
                                    backref='real_time_updates', lazy='joined')
 
-    def __init__(self, raw_data, connector,
-                 contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
+    def __init__(self, raw_data, connector, status=None, error=None, received_at=datetime.datetime.now()):
         self.id = gen_uuid()
         self.raw_data = raw_data
-        self.contributor = contributor
         self.connector = connector
         self.status = status
         self.error = error
