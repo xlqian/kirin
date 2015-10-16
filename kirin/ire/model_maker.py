@@ -66,9 +66,9 @@ def to_str(date):
 
 def headsign(str):
     """
-    we remove leading 0 for the headsigns
+    we remove leading 0 for the headsigns and everything after a '/'
     """
-    return str.lstrip('0')
+    return str.lstrip('0').split('/', 1)[0]
 
 
 def as_bool(s):
@@ -117,7 +117,7 @@ class KirinModelBuilder(object):
 
     def get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
-        train_number = headsign(get_value(xml_train, 'NumeroTrain'))  # TODO handle parity in train number
+        train_number = headsign(get_value(xml_train, 'NumeroTrain'))
 
         # to get the date of the vj we use the start/end of the vj + some tolerance
         # since the ire data and navitia data might not be synchronized
