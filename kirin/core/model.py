@@ -160,9 +160,11 @@ class TripUpdate(db.Model, TimestampMixin):
     def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
         query = cls.query.filter(cls.contributor.in_(contributors))
         if start_date:
-            query = query.filter("vehicle_journey_1.circulation_date >= '{start_date}'".format(start_date=start_date))
+            query = query.filter("vehicle_journey_1.circulation_date >= '{start_date}'".
+                                 format(start_date=start_date))
         if end_date:
-            query = query.filter("vehicle_journey_1.circulation_date <= '{end_date}'".format(end_date=end_date))
+            query = query.filter("vehicle_journey_1.circulation_date <= '{end_date}'".
+                                 format(end_date=end_date))
         return query.all()
 
     def find_stop(self, stop_id):

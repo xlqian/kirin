@@ -90,10 +90,13 @@ class RabbitMQHandler(object):
                 return
             begin_date = None
             end_date = None
-            if task.load_realtime.begin_date:
-                begin_date = str_to_date(task.load_realtime.begin_date)
-            if task.load_realtime.begin_date:
-                end_date = str_to_date(task.load_realtime.end_date)
+            if hasattr(task.load_realtime, "begin_date"):
+                if task.load_realtime.begin_date:
+                    begin_date = str_to_date(task.load_realtime.begin_date)
+
+            if hasattr(task.load_realtime, "end_date"):
+                if task.load_realtime.end_date:
+                    end_date = str_to_date(task.load_realtime.end_date)
             feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
                                                                            begin_date,
                                                                            end_date),
