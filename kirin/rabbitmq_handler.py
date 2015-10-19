@@ -34,8 +34,10 @@ import gevent
 from kirin import task_pb2
 from google.protobuf.message import DecodeError
 import socket
-from kirin.core.model import RealTimeUpdate
+from kirin.core.model import TripUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
+import gtfs_realtime_pb2
+from kirin.utils import str_to_date
 
 
 class RabbitMQHandler(object):
@@ -86,8 +88,19 @@ class RabbitMQHandler(object):
             log.info('getting a request: {}'.format(task))
             if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
                 return
+            begin_date = None
+            end_date = None
+            if hasattr(task.load_realtime, "begin_date"):
+                if task.load_realtime.begin_date:
+                    begin_date = str_to_date(task.load_realtime.begin_date)
 
-            feed = convert_to_gtfsrt(RealTimeUpdate.all(task.load_realtime.contributors))
+            if hasattr(task.load_realtime, "end_date"):
+                if task.load_realtime.end_date:
+                    end_date = str_to_date(task.load_realtime.end_date)
+            feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
+                                                                           begin_date,
+                                                                           end_date),
+                                     gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
 
             with self._get_producer() as producer:
                 log.info('Publishing full feed...')

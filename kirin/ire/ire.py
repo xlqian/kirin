@@ -32,7 +32,6 @@ from flask_restful import Resource
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import InvalidArguments
-import kirin
 from model_maker import KirinModelBuilder
 import navitia_wrapper
 
@@ -42,7 +41,6 @@ def _make_rt_update(data):
     Create an RealTimeUpdate object for the query and persist it
     """
     rt_update = model.RealTimeUpdate(data, connector='ire')
-    rt_update.contributor = current_app.config['CONTRIBUTOR']
 
     model.db.session.add(rt_update)
     model.db.session.commit()
@@ -79,8 +77,8 @@ class Ire(Resource):
         rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
         # raw_xml is interpreted
-        trip_updates = KirinModelBuilder(make_navitia_wrapper()).build(rt_update)
+        trip_updates = KirinModelBuilder(make_navitia_wrapper(), current_app.config['CONTRIBUTOR']).build(rt_update)
 
-        core.handle(rt_update, trip_updates)
+        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
 
         return 'OK', 200
