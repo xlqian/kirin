@@ -95,7 +95,7 @@ def test_handle_basic():
     #a RealTimeUpdate without any TripUpdate doesn't do anything
     with app.app_context():
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
-        res = handle(real_time_update, [])
+        res = handle(real_time_update, [], 'kisio-digital')
         assert res == real_time_update
 
 
@@ -113,7 +113,7 @@ def test_handle_new_vj():
         st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), arrival=None)
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update])
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -159,7 +159,7 @@ def test_handle_new_trip_out_of_order(navitia_vj):
         st = StopTimeUpdate({'id': 'sa:2'}, departure=_dt("9:50"), arrival=_dt("9:49"))
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update])
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -191,7 +191,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update])
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]

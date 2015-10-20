@@ -29,6 +29,7 @@
 import logging
 from datetime import timedelta
 from dateutil import parser
+from flask.globals import current_app
 from kirin.core import model
 
 # For perf benches:
@@ -66,9 +67,9 @@ def to_str(date):
 
 def headsign(str):
     """
-    we remove leading 0 for the headsigns
+    we remove leading 0 for the headsigns and everything after a '/'
     """
-    return str.lstrip('0')
+    return str.lstrip('0').split('/', 1)[0]
 
 
 def as_bool(s):
@@ -90,8 +91,9 @@ def get_navitia_stop_time(navitia_vj, stop_id):
 
 class KirinModelBuilder(object):
 
-    def __init__(self, nav):
+    def __init__(self, nav, contributor=None):
         self.navitia = nav
+        self.contributor = contributor
 
     def build(self, rt_update):
         """
@@ -117,7 +119,7 @@ class KirinModelBuilder(object):
 
     def get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
-        train_number = headsign(get_value(xml_train, 'NumeroTrain'))  # TODO handle parity in train number
+        train_number = headsign(get_value(xml_train, 'NumeroTrain'))
 
         # to get the date of the vj we use the start/end of the vj + some tolerance
         # since the ire data and navitia data might not be synchronized
@@ -154,6 +156,7 @@ class KirinModelBuilder(object):
         create the TripUpdate object
         """
         trip_update = model.TripUpdate(vj=vj)
+        trip_update.contributor = self.contributor
 
         delay = xml_modification.find('HoraireProjete')
         if delay:

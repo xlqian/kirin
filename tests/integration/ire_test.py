@@ -99,7 +99,7 @@ def check_db_ire_96231_delayed():
         assert db_trip_delayed.status == 'update'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
-        assert db_trip_delayed.real_time_updates[0].contributor == 'realtime.ire'
+        assert db_trip_delayed.contributor == 'realtime.ire'
 
 
 def check_db_ire_96231_trip_removal():
@@ -314,3 +314,21 @@ def test_ire_two_trip_removal_post_twice(mock_rabbitmq):
     check_db_ire_JOHN_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
+
+
+def test_ire_trip_removal_parity(mock_rabbitmq):
+    """
+    simple parity trip removal post
+    """
+    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113_14 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
+                                   '<NumeroTrain>006113/14</NumeroTrain>')
+    res = api_post('/ire', data=ire_6113_14)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_ire_6113_trip_removal()
+    assert mock_rabbitmq.call_count == 1

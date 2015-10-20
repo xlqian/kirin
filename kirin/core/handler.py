@@ -43,7 +43,7 @@ def persist(real_time_update):
     model.db.session.commit()
 
 
-def handle(real_time_update, trip_updates):
+def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
@@ -63,9 +63,9 @@ def handle(real_time_update, trip_updates):
 
     persist(real_time_update)
 
-    feed = convert_to_gtfsrt([real_time_update])
+    feed = convert_to_gtfsrt(real_time_update.trip_updates)
 
-    publish(feed, real_time_update)
+    publish(feed, contributor)
 
     return real_time_update
 
@@ -102,8 +102,8 @@ def merge_realtime_theoric(trip_update, navitia_vj):
             trip_update.stop_time_updates.insert(idx, st)
 
 
-def publish(feed, rt_update):
+def publish(feed, contributor):
     """
     send RT feed to navitia
     """
-    kirin.rabbitmq_handler.publish(feed.SerializeToString(), rt_update.contributor)
+    kirin.rabbitmq_handler.publish(feed.SerializeToString(), contributor)

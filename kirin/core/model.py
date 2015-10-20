@@ -136,8 +136,9 @@ class TripUpdate(db.Model, TimestampMixin):
     """
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
-    vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False)
+    vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False, lazy='joined')
     message = db.Column(db.Text, nullable=True)
+    contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
                                         cascade='all, delete-orphan')
 
@@ -145,11 +146,26 @@ class TripUpdate(db.Model, TimestampMixin):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
         self.status = 'none'
+        self.contributor=None
+
+    def __repr__(self):
+        return '<TripUpdate %r>' % self.vj_id
 
     @classmethod
     def find_by_dated_vj(cls, navitia_trip_id, vj_circulation_date):
         return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_trip_id == navitia_trip_id,
                                               VehicleJourney.circulation_date == vj_circulation_date).first()
+
+    @classmethod
+    def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
+        query = cls.query.filter(cls.contributor.in_(contributors))
+        if start_date:
+            query = query.filter("vehicle_journey_1.circulation_date >= '{start_date}'".
+                                 format(start_date=start_date))
+        if end_date:
+            query = query.filter("vehicle_journey_1.circulation_date <= '{end_date}'".
+                                 format(end_date=end_date))
+        return query.all()
 
     def find_stop(self, stop_id):
         #TODO: we will need to handle vj who deserve the same stop multiple times
@@ -166,6 +182,7 @@ class TripUpdate(db.Model, TimestampMixin):
             current_stop.merge(stop)
         self.status = other.status
         self.message = other.message
+        self.contributor = other.contributor
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
@@ -180,7 +197,6 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     received_at = db.Column(db.DateTime, nullable=False)
-    contributor = db.Column(db.Text, nullable=True)
     connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
@@ -189,27 +205,10 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
                                    backref='real_time_updates', lazy='joined')
 
-    def __init__(self, raw_data, connector,
-                 contributor=None, status=None, error=None, received_at=datetime.datetime.now()):
+    def __init__(self, raw_data, connector, status=None, error=None, received_at=datetime.datetime.now()):
         self.id = gen_uuid()
         self.raw_data = raw_data
-        self.contributor = contributor
         self.connector = connector
         self.status = status
         self.error = error
         self.received_at = received_at
-
-    def __repr__(self):
-        return '<RealTimeUpdate %r>' % self.id
-
-    @classmethod
-    def all(cls, contributors, start_date=None, end_date=None):
-        query = cls.query.filter(cls.contributor.in_(contributors))
-        query = query.join(cls.trip_updates)
-        query = query.join(VehicleJourney)
-        if start_date:
-            query = query.filter(VehicleJourney.circulation_date >= start_date)
-        if end_date:
-            query = query.filter(VehicleJourney.circulation_date <= end_date)
-        return query.all()
-
