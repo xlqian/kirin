@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -27,11 +28,10 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dateutil import parser
 from flask.globals import current_app
 from kirin.core import model
-
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
@@ -59,6 +59,23 @@ def as_date(s):
     if s is None:
         return None
     return parser.parse(s, dayfirst=True, yearfirst=False)
+
+
+def as_duration(s):
+    """
+    return a string formated like 'HH:MM' to a timedelta
+    >>> as_duration(None)
+
+    >>> as_duration("12:45")
+    datetime.timedelta(0, 45900)
+    >>> as_duration("bob")
+    Traceback (most recent call last):
+    ValueError: time data 'bob' does not match format '%H:%M'
+    """
+    if s is None:
+        return None
+    d = datetime.strptime(s, '%H:%M')
+    return d - datetime.strptime('00:00', '%H:%M')
 
 
 def to_str(date):
@@ -110,14 +127,14 @@ class KirinModelBuilder(object):
         if root.tag != 'InfoRetard':
             raise InvalidArguments('{} is not a valid xml root, it must be "InfoRetard"'.format(root.tag))
 
-        vjs = self.get_vjs(get_node(root, 'Train'))
+        vjs = self._get_vjs(get_node(root, 'Train'))
 
         # TODO handle also root[DernierPointDeParcoursObserve] in the modification
-        trip_updates = [self.make_trip_update(vj, get_node(root, 'TypeModification')) for vj in vjs]
+        trip_updates = [self._make_trip_update(vj, get_node(root, 'TypeModification')) for vj in vjs]
 
         return trip_updates
 
-    def get_vjs(self, xml_train):
+    def _get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
         train_number = headsign(get_value(xml_train, 'NumeroTrain'))
 
@@ -151,7 +168,7 @@ class KirinModelBuilder(object):
 
         return vjs
 
-    def make_trip_update(self, vj, xml_modification):
+    def _make_trip_update(self, vj, xml_modification):
         """
         create the TripUpdate object
         """
@@ -165,16 +182,20 @@ class KirinModelBuilder(object):
                 # we need only to consider the station
                 if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
                     continue
-                nav_st = self.get_navitia_stop_time(downstream_point, vj.navitia_vj)
+                nav_st = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
 
                 if nav_st is None:
                     continue
 
                 nav_stop = nav_st.get('stop_point', {})
 
-                departure = None
-                arrival = None
-                st_update = model.StopTimeUpdate(nav_stop, departure, arrival)
+                departure, dep_status = self._compute_new_dt(downstream_point.find('TypeHoraire/Depart'),
+                                                             nav_st['departure_time'],
+                                                             vj.circulation_date)
+                arrival, arr_status = self._compute_new_dt(downstream_point.find('TypeHoraire/Arrivee'),
+                                                           nav_st['arrival_time'],
+                                                           vj.circulation_date)
+                st_update = model.StopTimeUpdate(nav_stop, departure, arrival, dep_status, arr_status)
                 trip_update.stop_time_updates.append(st_update)
 
         removal = xml_modification.find('Suppression')
@@ -190,7 +211,8 @@ class KirinModelBuilder(object):
 
         return trip_update
 
-    def get_navitia_stop_time(self, downstream_point, nav_vj):
+    @staticmethod
+    def _get_navitia_stop_time(downstream_point, nav_vj):
         """
         get a navitia stop from an xml node
         the xml node MUST contains a CR, CI, CH tags
@@ -222,3 +244,40 @@ class KirinModelBuilder(object):
                                                 .format(nav_external_code))
 
         return nav_stop_times[0]
+
+    @staticmethod
+    def _compute_new_dt(xml, navitia_time, date):
+        """
+        Compute the new datetime from the IRE delay and the navitia scheduled time
+
+        the xml is like:
+        <Depart or Arrivee>
+            <Etat>Retard</Etat>
+            <DateHeureTheorique>21/09/2015 17:40:30</DateHeureTheorique>
+            <DateHeureProjete>21/09/2015 17:55:30</DateHeureProjete>
+            <EcartInterne>00:15</EcartInterne>
+            <EcartExterne>00:15</EcartExterne>
+        </Depart or Arrivee>
+
+        For coherence purpose, we don't want to take the projected datetime ('DateHeureProjete'),
+        since navitia may have a different schedule than IRE
+
+        We compute the new datetime from the base navitia schedule, the public delay ('EcartExterne')
+        and the ire date
+
+        Note: we don't use the date of DateHeureProjete to be sure to handle the overmidnight
+        cases since the navitia's time will be overmidnight (like 24:45)
+
+        Note: if the status ('Etat') is 'supprimé' the delay is 0
+
+        return a pair with the new datetime and it's status
+        """
+        if xml is None:
+            return datetime.combine(date, navitia_time), 'none'
+
+        if get_value(xml, 'Etat') == 'supprimé':
+            delay = 0
+        else:
+            delay = as_duration(get_value(xml, 'EcartExterne'))
+
+        return datetime.combine(date, navitia_time) + delay, 'update'

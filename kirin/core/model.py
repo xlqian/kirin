@@ -102,14 +102,14 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     arrival = db.Column(db.DateTime, nullable=True)
     arrival_status = db.Column(ModificationType, nullable=False, default='none')
 
-    def __init__(self, navitia_stop, departure, arrival):
+    def __init__(self, navitia_stop, departure, arrival, dep_status='none', arr_status='none'):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
         self.stop_id = navitia_stop['id']
         self.departure = departure
         self.arrival = arrival
-        self.departure_status = 'none'
-        self.arrival_status = 'none'
+        self.departure_status = dep_status
+        self.arrival_status = arr_status
 
     def merge(self, other):
         if not other:
@@ -146,7 +146,7 @@ class TripUpdate(db.Model, TimestampMixin):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
         self.status = 'none'
-        self.contributor=None
+        self.contributor = None
 
     def __repr__(self):
         return '<TripUpdate %r>' % self.vj_id

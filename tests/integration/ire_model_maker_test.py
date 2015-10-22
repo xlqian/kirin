@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -31,7 +32,7 @@ from kirin import db, app
 from kirin.core import model
 from kirin.ire.model_maker import KirinModelBuilder
 import navitia_wrapper
-from tests.check_utils import get_ire_data
+from tests.check_utils import get_ire_data, _dt
 
 
 def dumb_nav_wrapper():
@@ -63,6 +64,38 @@ def test_train_delayed(mock_navitia_fixture):
 
         # 5 stop times must have been created
         assert len(trip_up.stop_time_updates) == 5
+
+        # first stop time should be 'gare de Sélestat'
+        st = trip_up.stop_time_updates[0]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
+        # the arrival is not in the IRE data, so the dt is navitia's arrival and the status is 'none'
+        assert st.arrival == _dt('17:38', day=21, month=9)
+        assert st.arrival_status == 'none'
+        # the departure is delayed by 15mn, and ire says the base schedule is 17:55:30
+        # but navitia says it's at 17:55:00, so since it's navitia who's right,
+        # the new departure is 17:55:00
+        assert st.departure == _dt('17:55', day=21, month=9)
+        assert st.departure_status == 'update'
+
+        # second should be 'gare de Colmar'
+        st = trip_up.stop_time_updates[1]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
+        assert st.arrival == _dt('18:06', day=21, month=9)
+        assert st.arrival_status == 'update'
+        assert st.departure == _dt('18:08', day=21, month=9)
+        assert st.departure_status == 'update'
+
+        # last should be 'gare de Basel-SBB'
+        st = trip_up.stop_time_updates[-1]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert st.arrival == _dt('18:54', day=21, month=9)
+        assert st.arrival_status == 'update'
+        # no departure in ire since it's the last (thus the departure is before the arrival)
+        assert st.departure == _dt('18:39', day=21, month=9)
+        assert st.departure_status == 'none'
 
 
 def test_train_trip_removal(mock_navitia_fixture):
