@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -25,13 +26,14 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import timedelta
 import pytest
 
 from kirin import db, app
 from kirin.core import model
 from kirin.ire.model_maker import KirinModelBuilder
 import navitia_wrapper
-from tests.check_utils import get_ire_data
+from tests.check_utils import get_ire_data, _dt
 
 
 def dumb_nav_wrapper():
@@ -63,6 +65,41 @@ def test_train_delayed(mock_navitia_fixture):
 
         # 5 stop times must have been created
         assert len(trip_up.stop_time_updates) == 5
+
+        # first stop time should be 'gare de Sélestat'
+        st = trip_up.stop_time_updates[0]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
+        # the arrival is not in the IRE data, so the status is 'none'
+        assert st.arrival is None  # not computed yet
+        assert st.arrival_delay == timedelta(0)
+        assert st.arrival_status == 'none'
+        assert st.departure is None
+        assert st.departure_delay == timedelta(minutes=15)
+        assert st.departure_status == 'update'
+
+        # second should be 'gare de Colmar'
+        st = trip_up.stop_time_updates[1]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
+        assert st.arrival is None
+        assert st.arrival_delay == timedelta(minutes=15)
+        assert st.arrival_status == 'update'
+        assert st.departure is None
+        assert st.departure_delay == timedelta(minutes=15)
+        assert st.departure_status == 'update'
+
+        # last should be 'gare de Basel-SBB'
+        st = trip_up.stop_time_updates[-1]
+        assert st.id
+        assert st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert st.arrival is None
+        assert st.arrival_delay == timedelta(minutes=15)
+        assert st.arrival_status == 'update'
+        # no departure in ire since it's the last (thus the departure will be before the arrival)
+        assert st.departure is None
+        assert st.departure_delay == timedelta(0)
+        assert st.departure_status == 'none'
 
 
 def test_train_trip_removal(mock_navitia_fixture):
