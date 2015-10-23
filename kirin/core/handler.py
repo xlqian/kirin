@@ -71,6 +71,10 @@ def handle(real_time_update, trip_updates, contributor):
 
 
 def merge(trip_update, old_trip_update):
+    """
+    TODO: this will not work when navitia base schedule change
+    it will need to be handled, but it will be done after
+    """
     if old_trip_update:
         old_trip_update.merge(trip_update)
         current = old_trip_update
@@ -85,21 +89,26 @@ def merge(trip_update, old_trip_update):
 def merge_realtime_theoric(trip_update, navitia_vj):
     for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
-        stop = trip_update.find_stop(stop_id)
+        st = trip_update.find_stop(stop_id)
         #TODO: order is important...
-        if not stop:
-            departure_time = navitia_stop.get('departure_time')
-            arrival_time = navitia_stop.get('arrival_time')
-            departure = arrival = None
-            #TODO handle past midnigth
-            if departure_time:
-                departure = datetime.datetime.combine(trip_update.vj.circulation_date, departure_time)
-            if arrival_time:
-                arrival = datetime.datetime.combine(trip_update.vj.circulation_date, arrival_time)
+        departure_time = navitia_stop.get('departure_time')
+        arrival_time = navitia_stop.get('arrival_time')
+        departure = arrival = None
+        #TODO handle past midnight
+        if departure_time:
+            departure = datetime.datetime.combine(trip_update.vj.circulation_date, departure_time)
+        if arrival_time:
+            arrival = datetime.datetime.combine(trip_update.vj.circulation_date, arrival_time)
 
-            st = StopTimeUpdate(navitia_stop['stop_point'], departure, arrival)
+        if not st:
+            st = StopTimeUpdate(navitia_stop['stop_point'], departure=departure, arrival=arrival)
             #we want to keep the order
             trip_update.stop_time_updates.insert(idx, st)
+        else:
+            if st.departure_status == 'update' and departure:
+                st.departure = departure + st.departure_delay
+            if st.arrival_status == 'update' and arrival:
+                st.arrival = arrival + st.arrival_delay
 
 
 def publish(feed, contributor):
