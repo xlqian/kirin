@@ -189,13 +189,10 @@ class KirinModelBuilder(object):
 
                 nav_stop = nav_st.get('stop_point', {})
 
-                departure, dep_status = self._compute_new_dt(downstream_point.find('TypeHoraire/Depart'),
-                                                             nav_st['departure_time'],
-                                                             vj.circulation_date)
-                arrival, arr_status = self._compute_new_dt(downstream_point.find('TypeHoraire/Arrivee'),
-                                                           nav_st['arrival_time'],
-                                                           vj.circulation_date)
-                st_update = model.StopTimeUpdate(nav_stop, departure, arrival, dep_status, arr_status)
+                dep_delay, dep_status = self._get_delay(downstream_point.find('TypeHoraire/Depart'))
+                arr_delay, arr_status = self._get_delay(downstream_point.find('TypeHoraire/Arrivee'))
+                st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
+                                                 dep_status=dep_status, arr_status=arr_status)
                 trip_update.stop_time_updates.append(st_update)
 
         removal = xml_modification.find('Suppression')
@@ -246,9 +243,9 @@ class KirinModelBuilder(object):
         return nav_stop_times[0]
 
     @staticmethod
-    def _compute_new_dt(xml, navitia_time, date):
+    def _get_delay(xml):
         """
-        Compute the new datetime from the IRE delay and the navitia scheduled time
+        get the delay from IRE
 
         the xml is like:
         <Depart or Arrivee>
@@ -262,22 +259,13 @@ class KirinModelBuilder(object):
         For coherence purpose, we don't want to take the projected datetime ('DateHeureProjete'),
         since navitia may have a different schedule than IRE
 
-        We compute the new datetime from the base navitia schedule, the public delay ('EcartExterne')
-        and the ire date
+        We only read the public delay ('EcartExterne') and the new datetime will be computed during the
+        merge (in the handler) from the base navitia schedule and the ire date
 
-        Note: we don't use the date of DateHeureProjete to be sure to handle the overmidnight
-        cases since the navitia's time will be overmidnight (like 24:45)
-
-        Note: if the status ('Etat') is 'supprimé' the delay is 0
-
-        return a pair with the new datetime and it's status
+        Note: if the XML is not here, or if the state ('Etat') is deleted ('supprimé')
+        we consider that we do not have any information, thus the status is set to 'none'
         """
-        if xml is None:
-            return datetime.combine(date, navitia_time), 'none'
+        if xml is None or get_value(xml, 'Etat') == u'supprimé':
+            return timedelta(seconds=0), 'none'
 
-        if get_value(xml, 'Etat') == 'supprimé':
-            delay = 0
-        else:
-            delay = as_duration(get_value(xml, 'EcartExterne'))
-
-        return datetime.combine(date, navitia_time) + delay, 'update'
+        return as_duration(get_value(xml, 'EcartExterne')), 'update'

@@ -26,6 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import timedelta
 
 from sqlalchemy.dialects import postgresql
 from flask_sqlalchemy import SQLAlchemy
@@ -96,20 +97,29 @@ class StopTimeUpdate(db.Model, TimestampMixin):
 
     stop_id = db.Column(db.Text, nullable=False)
 
+    # Note: for departure (and arrival), we store its datetime ('departure' or 'arrival')
+    # and the delay to be able to handle the base navitia schedule changes
     departure = db.Column(db.DateTime, nullable=True)
+    departure_delay = db.Column(db.Interval, nullable=True)
     departure_status = db.Column(ModificationType, nullable=False, default='none')
 
     arrival = db.Column(db.DateTime, nullable=True)
+    arrival_delay = db.Column(db.Interval, nullable=True)
     arrival_status = db.Column(ModificationType, nullable=False, default='none')
 
-    def __init__(self, navitia_stop, departure, arrival, dep_status='none', arr_status='none'):
+    def __init__(self, navitia_stop,
+                 departure=None, arrival=None,
+                 departure_delay=timedelta(0), arrival_delay=timedelta(0),
+                 dep_status='none', arr_status='none'):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
         self.stop_id = navitia_stop['id']
-        self.departure = departure
-        self.arrival = arrival
         self.departure_status = dep_status
         self.arrival_status = arr_status
+        self.departure_delay = departure_delay
+        self.arrival_delay = arrival_delay
+        self.departure = departure
+        self.arrival = arrival
 
     def merge(self, other):
         if not other:

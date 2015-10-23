@@ -26,6 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import timedelta
 import pytest
 
 from kirin import db, app
@@ -69,32 +70,35 @@ def test_train_delayed(mock_navitia_fixture):
         st = trip_up.stop_time_updates[0]
         assert st.id
         assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
-        # the arrival is not in the IRE data, so the dt is navitia's arrival and the status is 'none'
-        assert st.arrival == _dt('17:38', day=21, month=9)
+        # the arrival is not in the IRE data, so the status is 'none'
+        assert st.arrival is None  # not computed yet
+        assert st.arrival_delay == timedelta(0)
         assert st.arrival_status == 'none'
-        # the departure is delayed by 15mn, and ire says the base schedule is 17:55:30
-        # but navitia says it's at 17:55:00, so since it's navitia who's right,
-        # the new departure is 17:55:00
-        assert st.departure == _dt('17:55', day=21, month=9)
+        assert st.departure is None
+        assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
 
         # second should be 'gare de Colmar'
         st = trip_up.stop_time_updates[1]
         assert st.id
         assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
-        assert st.arrival == _dt('18:06', day=21, month=9)
+        assert st.arrival is None
+        assert st.arrival_delay == timedelta(minutes=15)
         assert st.arrival_status == 'update'
-        assert st.departure == _dt('18:08', day=21, month=9)
+        assert st.departure is None
+        assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
 
         # last should be 'gare de Basel-SBB'
         st = trip_up.stop_time_updates[-1]
         assert st.id
         assert st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
-        assert st.arrival == _dt('18:54', day=21, month=9)
+        assert st.arrival is None
+        assert st.arrival_delay == timedelta(minutes=15)
         assert st.arrival_status == 'update'
-        # no departure in ire since it's the last (thus the departure is before the arrival)
-        assert st.departure == _dt('18:39', day=21, month=9)
+        # no departure in ire since it's the last (thus the departure will be before the arrival)
+        assert st.departure is None
+        assert st.departure_delay == timedelta(0)
         assert st.departure_status == 'none'
 
 
