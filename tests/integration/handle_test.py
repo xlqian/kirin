@@ -119,10 +119,7 @@ def test_handle_new_vj():
         {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
     ]}
     with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.vj = vj
-        trip_update.status = 'update'
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         st = StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
@@ -165,9 +162,7 @@ def test_handle_new_trip_out_of_order(navitia_vj):
     so we have to reorder the stop times in the resulting trip_update
     """
     with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.vj = vj
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         st = StopTimeUpdate({'id': 'sa:2'},
                             departure_delay=timedelta(minutes=40), dep_status='update',
                             arrival_delay=timedelta(minutes=44), arr_status='update')
@@ -202,10 +197,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
     update kirin       -       9:15-9:20       -
     """
     with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.status = 'update'
-        trip_update.vj = vj
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         st = StopTimeUpdate({'id': 'sa:2'},
                             arrival_delay=timedelta(minutes=10), dep_status='update',
                             departure_delay=timedelta(minutes=10), arr_status='update')
@@ -278,10 +270,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
 def test_simple_delay(navitia_vj):
     """Test on delay when there is nothing in the db"""
     with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.vj = vj
-        trip_update.status = 'update'
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         st = StopTimeUpdate({'id': 'sa:1'},
                             departure_delay=timedelta(minutes=10), dep_status='update',
                             arrival_delay=timedelta(minutes=5), arr_status='update')
@@ -332,6 +321,36 @@ def test_simple_delay(navitia_vj):
         assert db_st_updates[2].stop_id == 'sa:3'
 
 
+def _check_multiples_delay(res):
+    assert len(res.trip_updates) == 1
+    trip_update = res.trip_updates[0]
+    assert trip_update.status == 'update'
+    assert len(trip_update.stop_time_updates) == 3
+    assert len(trip_update.real_time_updates) == 2
+
+    stu = trip_update.stop_time_updates
+    # Note: order is important
+    assert stu[0].stop_id == 'sa:1'
+    assert stu[0].arrival is None
+    assert stu[0].arrival_status == 'none'
+    assert stu[0].departure == _dt("8:20")
+    assert stu[0].departure_status == 'update'
+
+    assert stu[1].stop_id == 'sa:2'
+    assert stu[1].arrival == _dt("9:07")
+    assert stu[1].arrival_status == 'update'
+    assert stu[1].arrival_delay == timedelta(minutes=2)
+    assert stu[1].departure == _dt("9:10")
+    assert stu[1].departure_status == 'none'
+    assert stu[1].departure_delay is None
+
+    assert stu[2].stop_id == 'sa:3'
+    assert stu[2].arrival == _dt("10:05")
+    assert stu[2].arrival_status == 'none'
+    assert stu[2].departure is None
+    assert stu[2].departure_status == 'none'
+
+
 def test_multiple_delays(setup_database, navitia_vj):
     """
     We receive a delay on the first and second stoptimes of a vj, and there was already some delay on the
@@ -343,10 +362,7 @@ def test_multiple_delays(setup_database, navitia_vj):
     update kirin      8:20     9:07-9:10     10:05
     """
     with app.app_context():
-        trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
-        trip_update.vj = vj
-        trip_update.status = 'update'
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates = [
             # Note: the delay is based of the navitia's vj
@@ -354,30 +370,28 @@ def test_multiple_delays(setup_database, navitia_vj):
             StopTimeUpdate({'id': 'sa:2'}, arrival_delay=timedelta(minutes=2), arr_status='update'),
         ]
         res = handle(real_time_update, [trip_update], 'kisio-digital')
-        assert len(res.trip_updates) == 1
-        trip_update = res.trip_updates[0]
-        assert trip_update.status == 'update'
-        assert len(trip_update.stop_time_updates) == 3
-        assert len(trip_update.real_time_updates) == 2
 
-        stu = trip_update.stop_time_updates
-        # Note: order is important
-        assert stu[0].stop_id == 'sa:1'
-        assert stu[0].arrival is None
-        assert stu[0].arrival_status == 'none'
-        assert stu[0].departure == _dt("8:20")
-        assert stu[0].departure_status == 'update'
+        _check_multiples_delay(res)
 
-        assert stu[1].stop_id == 'sa:2'
-        assert stu[1].arrival == _dt("9:07")
-        assert stu[1].arrival_status == 'update'
-        assert stu[1].arrival_delay == timedelta(minutes=2)
-        assert stu[1].departure == _dt("9:10")
-        assert stu[1].departure_status == 'none'
-        assert stu[1].departure_delay is None
 
-        assert stu[2].stop_id == 'sa:3'
-        assert stu[2].arrival == _dt("10:05")
-        assert stu[2].arrival_status == 'none'
-        assert stu[2].departure is None
-        assert stu[2].departure_status == 'none'
+def test_multiple_delays_in_2_updates(navitia_vj):
+    """
+    same test as test_multiple_delays, but with nothing in the db and with 2 trip updates
+    """
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates = [
+            StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
+        ]
+        handle(real_time_update, [trip_update], 'kisio-digital')
+
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates = [
+            StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=10), dep_status='update'),
+            StopTimeUpdate({'id': 'sa:2'}, arrival_delay=timedelta(minutes=2), arr_status='update'),
+        ]
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        _check_multiples_delay(res)

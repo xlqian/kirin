@@ -163,10 +163,10 @@ class TripUpdate(db.Model, TimestampMixin):
                                         collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
 
-    def __init__(self, vj=None):
+    def __init__(self, vj=None, status='none'):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
-        self.status = 'none'
+        self.status = status
         self.contributor = None
 
     def __repr__(self):
