@@ -55,7 +55,7 @@ def handle(real_time_update, trip_updates, contributor):
         #find if there already a row in db
         old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.circulation_date)
         #merge the theoric, the current realtime, and the new relatime
-        current_trip_update = merge(trip_update, old)
+        current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
 
         # we have to link the current_vj_update with the new real_time_update
         # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
@@ -70,45 +70,96 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update
 
 
-def merge(trip_update, old_trip_update):
+def merge(navitia_vj, db_trip_update, new_trip_update):
     """
-    TODO: this will not work when navitia base schedule change
+    We need to merge the info from 3 sources:
+        * the navitia base schedule
+        * the trip update already in the bd (potentially not existent)
+        * the incoming trip update
+
+    The result is either the db_trip_update if it exists, or the new_trip_update (it is updated as a side
+    effect)
+
+    The mechanism is quite simple:
+        * the result trip status is the new_trip_update's status
+            (ie in the db the trip was cancelled, and a new update is only an update, the trip update is
+            not cancelled anymore, only updated)
+
+        * for each navitia's stop_time and for departure|arrival:
+            - if there is an update on this stoptime (in new_trip_update):
+                we compute the new datetime based on the new information and the navitia's base schedule
+            - else if there if the stoptime in the db:
+                we keep this db stoptime
+            - else we keep the navitia's base schedule
+
+    ** Important Note **:
+    we DO NOT HANDLE changes in navitia's schedule for the moment
     it will need to be handled, but it will be done after
     """
-    if old_trip_update:
-        old_trip_update.merge(trip_update)
-        current = old_trip_update
-    else:
-        current = trip_update
-        merge_realtime_theoric(current, trip_update.vj.navitia_vj)
-    if current.status == 'delete':
-        current.stop_time_updates = []
-    return current
+    res = db_trip_update if db_trip_update else new_trip_update
+    res_stoptime_updates = []
 
+    res.status = new_trip_update.status
+    if new_trip_update.message:
+        res.message = new_trip_update.message
+    res.contributor = res.contributor
 
-def merge_realtime_theoric(trip_update, navitia_vj):
+    if res.status == 'delete':
+        # for trip cancellation, we delete all stoptimes update
+        res.stop_time_updates = []
+        return res
+
     for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
-        st = trip_update.find_stop(stop_id)
+        new_st = new_trip_update.find_stop(stop_id)
+        db_st = db_trip_update.find_stop(stop_id) if db_trip_update else None
         #TODO: order is important...
-        departure_time = navitia_stop.get('departure_time')
-        arrival_time = navitia_stop.get('arrival_time')
-        departure = arrival = None
-        #TODO handle past midnight
-        if departure_time:
-            departure = datetime.datetime.combine(trip_update.vj.circulation_date, departure_time)
-        if arrival_time:
-            arrival = datetime.datetime.combine(trip_update.vj.circulation_date, arrival_time)
+        nav_departure_time = navitia_stop.get('departure_time')
+        nav_arrival_time = navitia_stop.get('arrival_time')
 
-        if not st:
-            st = StopTimeUpdate(navitia_stop['stop_point'], departure=departure, arrival=arrival)
-            #we want to keep the order
-            trip_update.stop_time_updates.insert(idx, st)
+        departure = arrival = None
+        if nav_departure_time:
+            departure = datetime.datetime.combine(new_trip_update.vj.circulation_date, nav_departure_time)
+        if nav_arrival_time:
+            arrival = datetime.datetime.combine(new_trip_update.vj.circulation_date, nav_arrival_time)
+
+        #TODO handle past midnight
+
+        if new_st:
+            res_st = db_st or new_st
+            # we have an update on the stop time, we consider it
+            if new_st.departure_status == 'update':
+                dep = departure + new_st.departure_delay if departure else None
+                res_st.set_departure(dep, status='update', delay=new_st.departure_delay)
+            elif db_st:
+                # we have no update on the departure for this st, we take it from the db (if it exists)
+                res_st.set_departure(db_st.departure,
+                                     status=db_st.departure_status,
+                                     delay=db_st.departure_delay)
+
+            if new_st.arrival_status == 'update':
+                arr = arrival + new_st.arrival_delay if arrival else None
+                res_st.set_arrival(arr, status='update', delay=new_st.arrival_delay)
+            elif db_st:
+                res_st.set_arrival(db_st.arrival,
+                                   status=db_st.arrival_status,
+                                   delay=db_st.arrival_delay)
+
+            # we might need to update the st's order
+            res_st.order = len(res_stoptime_updates)
+            res_stoptime_updates.append(res_st)
+        elif db_st:
+            db_st.order = len(res_stoptime_updates)
+            res_stoptime_updates.append(db_st)
         else:
-            if st.departure_status == 'update' and departure:
-                st.departure = departure + st.departure_delay
-            if st.arrival_status == 'update' and arrival:
-                st.arrival = arrival + st.arrival_delay
+            # nothing in db and in new trip update, we take the base schedule
+            new_st = StopTimeUpdate(navitia_stop['stop_point'], departure=departure, arrival=arrival)
+            new_st.order = len(res_stoptime_updates)
+            res_stoptime_updates.append(new_st)
+
+    res.stop_time_updates = res_stoptime_updates
+
+    return res
 
 
 def publish(feed, contributor):

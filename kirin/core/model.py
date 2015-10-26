@@ -124,15 +124,21 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.departure = departure
         self.arrival = arrival
 
-    def merge(self, other):
-        if not other:
-            return
-        #TODO diff can be at departure or arrival
-        assert self.stop_id == other.stop_id
-        self.departure = other.departure
-        self.departure_status = other.departure_status
-        self.arrival = other.arrival
-        self.arrival_status = other.arrival_status
+    def set_departure(self, time=None, delay=None, status=None):
+        if time:
+            self.departure = time
+        if delay:
+            self.departure_delay = delay
+        if status:
+            self.departure_status = status
+
+    def set_arrival(self, time=None, delay=None, status=None):
+        if time:
+            self.arrival = time
+        if delay:
+            self.arrival_delay = delay
+        if status:
+            self.arrival_status = status
 
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
@@ -188,16 +194,6 @@ class TripUpdate(db.Model, TimestampMixin):
             if st.stop_id == stop_id:
                 return st
         return None
-
-    def merge(self, other):
-        if not other:
-            return
-        for stop in other.stop_time_updates:
-            current_stop = self.find_stop(stop.stop_id)
-            current_stop.merge(stop)
-        self.status = other.status
-        self.message = other.message
-        self.contributor = other.contributor
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
