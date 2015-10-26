@@ -109,7 +109,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         res.stop_time_updates = []
         return res
 
-    for idx, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
+    for navitia_stop in navitia_vj.get('stop_times', []):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id)
         db_st = db_trip_update.find_stop(stop_id) if db_trip_update else None
