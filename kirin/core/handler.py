@@ -126,7 +126,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         #TODO handle past midnight
 
         if new_st:
-            res_st = db_st or new_st
+            res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])
             # we have an update on the stop time, we consider it
             if new_st.departure_status == 'update':
                 dep = departure + new_st.departure_delay if departure else None

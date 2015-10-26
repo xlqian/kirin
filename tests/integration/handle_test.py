@@ -36,18 +36,15 @@ from kirin import app, db
 from tests.check_utils import _dt
 
 
-def create_trip_update(id, trip_id, circulation_date, stops):
-    trip_update = TripUpdate()
+def create_trip_update(id, trip_id, circulation_date, stops, status='update'):
+    trip_update = TripUpdate(VehicleJourney({'trip': {'id': trip_id}}, circulation_date), status)
     trip_update.id = id
-    vj = VehicleJourney({'trip': {'id': trip_id}}, circulation_date)
-    trip_update.vj = vj
     for stop in stops:
         st = StopTimeUpdate({'id': stop['id']}, stop['departure'], stop['arrival'])
         st.arrival_status = stop['arrival_status']
         st.departure_status = stop['departure_status']
         trip_update.stop_time_updates.append(st)
 
-    db.session.add(vj)
     db.session.add(trip_update)
     return trip_update
 
@@ -193,8 +190,8 @@ def test_handle_update_vj(setup_database, navitia_vj):
 
                       sa:1        sa:2       sa:3
     VJ navitia        8:10     9:05-9:10     10:05
-    VJ in db          8:15     9:05-9:10     10:05
-    update kirin       -       9:15-9:20       -
+    VJ in db          8:15*    9:05-9:10     10:05
+    update kirin       -      *9:15-9:20*      -
     """
     with app.app_context():
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
@@ -358,8 +355,8 @@ def test_multiple_delays(setup_database, navitia_vj):
 
                       sa:1        sa:2       sa:3
     VJ navitia        8:10     9:05-9:10     10:05
-    VJ in db          8:15     9:05-9:10     10:05
-    update kirin      8:20     9:07-9:10     10:05
+    VJ in db          8:15*    9:05-9:10     10:05
+    update kirin      8:20*   *9:07-9:10     10:05
     """
     with app.app_context():
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
@@ -372,6 +369,14 @@ def test_multiple_delays(setup_database, navitia_vj):
         res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_multiples_delay(res)
+
+        # we also check that there is what we want in the db
+        db_trip_updates = res.query.from_self(TripUpdate).all()
+        assert len(db_trip_updates) == 2
+        for tu in db_trip_updates:
+            assert tu.status == 'update'
+        assert len(RealTimeUpdate.query.all()) == 3  # 2 already in db, one new update
+        assert len(StopTimeUpdate.query.all()) == 6  # 3 st * 2 vj in the db
 
 
 def test_multiple_delays_in_2_updates(navitia_vj):
@@ -395,3 +400,140 @@ def test_multiple_delays_in_2_updates(navitia_vj):
         res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_multiples_delay(res)
+        # we also check that there is what we want in the db
+        db_trip_updates = res.query.from_self(TripUpdate).all()
+        assert len(db_trip_updates) == 1
+        assert db_trip_updates[0].status == 'update'
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 3
+
+
+def test_delays_then_cancellation(setup_database, navitia_vj):
+    """
+    We have a delay on the first st of a vj in the db and we receive a cancellation on this vj,
+    we should have a cancelled vj in the end
+
+                      sa:1        sa:2       sa:3
+    VJ navitia        8:10     9:05-9:10     10:05
+    VJ in db          8:15*    9:05-9:10     10:05
+    update kirin                   -
+    """
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        assert len(res.trip_updates) == 1
+        trip_update = res.trip_updates[0]
+        assert trip_update.status == 'delete'
+        assert len(trip_update.stop_time_updates) == 0
+        assert len(trip_update.real_time_updates) == 2
+
+
+def test_delays_then_cancellation_in_2_updates(navitia_vj):
+    """
+    Same test as above, but with nothing in the db, and with 2 updates
+    """
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates = [
+            StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
+        ]
+        handle(real_time_update, [trip_update], 'kisio-digital')
+
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        assert len(res.trip_updates) == 1
+        trip_update = res.trip_updates[0]
+        assert trip_update.status == 'delete'
+        assert len(trip_update.stop_time_updates) == 0
+        assert len(trip_update.real_time_updates) == 2
+
+
+def _check_cancellation_then_delay(res):
+    assert len(res.trip_updates) == 1
+    trip_update = res.trip_updates[0]
+    assert trip_update.status == 'update'
+    assert len(trip_update.stop_time_updates) == 3
+    assert len(trip_update.real_time_updates) == 2
+
+    stu = trip_update.stop_time_updates
+    # Note: order is important
+    assert stu[0].stop_id == 'sa:1'
+    assert stu[0].arrival is None
+    assert stu[0].arrival_status == 'none'
+    assert stu[0].departure == _dt("8:10")
+    assert stu[0].departure_status == 'none'
+
+    assert stu[1].stop_id == 'sa:2'
+    assert stu[1].arrival == _dt("9:05")
+    assert stu[1].arrival_status == 'none'
+    assert stu[1].arrival_delay is None
+    assert stu[1].departure == _dt("9:10")
+    assert stu[1].departure_status == 'none'
+    assert stu[1].departure_delay is None
+
+    assert stu[2].stop_id == 'sa:3'
+    assert stu[2].arrival == _dt("10:45")
+    assert stu[2].arrival_status == 'update'
+    assert stu[2].departure is None
+    assert stu[2].departure_status == 'none'
+
+    #db checks
+    db_trip_updates = TripUpdate.query.all()
+    assert len(TripUpdate.query.all()) == 1
+    assert db_trip_updates[0].status == 'update'
+    assert len(RealTimeUpdate.query.all()) == 2
+    assert len(StopTimeUpdate.query.all()) == 3
+
+
+def test_cancellation_then_delay(navitia_vj):
+    """
+    we have a cancelled vj in the db, and we receive an update on the 3rd stoptime,
+    at the end we have a delayed vj
+
+                      sa:1        sa:2       sa:3
+    VJ navitia        8:10     9:05-9:10     10:05
+    VJ in db                       -
+    update kirin      8:10     9:05-9:10     10:45*
+    """
+    with app.app_context():
+        vju = create_trip_update('70866ce8-0638-4fa1-8556-1ddfa22d09d3', 'vehicle_journey:1',
+                                 datetime.date(2015, 9, 8), [], status='delete')
+        rtu = RealTimeUpdate(None, 'ire')
+        rtu.id = '10866ce8-0638-4fa1-8556-1ddfa22d09d3'
+        rtu.trip_updates.append(vju)
+        db.session.add(rtu)
+        db.session.commit()
+
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates = [
+            StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update'),
+        ]
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        _check_cancellation_then_delay(res)
+
+def test_cancellation_then_delay_in_2_updates(navitia_vj):
+    """
+    same as test_cancellation_then_delay, but with a clear db and in 2 updates
+    """
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        trip_update.stop_time_updates = []
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        handle(real_time_update, [trip_update], 'kisio-digital')
+
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates = [
+            StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update'),
+        ]
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        _check_cancellation_then_delay(res)
