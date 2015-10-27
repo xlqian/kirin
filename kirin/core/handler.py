@@ -92,6 +92,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                 we keep this db stoptime
             - else we keep the navitia's base schedule
 
+    Note that the results is either 'db_trip_update' or 'new_trip_update'. Side effects on this object are
+    thus wanted because of database persistency (update or creation of new objects)
+
+
     ** Important Note **:
     we DO NOT HANDLE changes in navitia's schedule for the moment
     it will need to be handled, but it will be done after
