@@ -519,6 +519,7 @@ def test_cancellation_then_delay(navitia_vj):
 
         _check_cancellation_then_delay(res)
 
+
 def test_cancellation_then_delay_in_2_updates(navitia_vj):
     """
     same as test_cancellation_then_delay, but with a clear db and in 2 updates

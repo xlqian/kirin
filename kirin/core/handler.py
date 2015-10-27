@@ -113,7 +113,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id)
         db_st = db_trip_update.find_stop(stop_id) if db_trip_update else None
-        #TODO: order is important...
+
+        # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
 

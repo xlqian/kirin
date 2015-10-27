@@ -22,7 +22,7 @@ def upgrade():
     """
     op.execute("""TRUNCATE TABLE stop_time_update;""")
     op.execute("""DELETE from trip_update WHERE status != 'delete';""")
-    op.execute("""DELETE from vehicle_journey WHERE id not in (select vj_id from trip_udpate);""")
+    op.execute("""DELETE from vehicle_journey WHERE id not in (select vj_id from trip_update);""")
 
     op.add_column('stop_time_update', sa.Column('order', sa.Integer(), nullable=False))
 
