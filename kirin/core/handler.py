@@ -135,20 +135,20 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             # we have an update on the stop time, we consider it
             if new_st.departure_status == 'update':
                 dep = departure + new_st.departure_delay if departure else None
-                res_st.set_departure(dep, status='update', delay=new_st.departure_delay)
+                res_st.update_departure(time=dep, status='update', delay=new_st.departure_delay)
             elif db_st:
                 # we have no update on the departure for this st, we take it from the db (if it exists)
-                res_st.set_departure(db_st.departure,
-                                     status=db_st.departure_status,
-                                     delay=db_st.departure_delay)
+                res_st.update_departure(time=db_st.departure,
+                                        status=db_st.departure_status,
+                                        delay=db_st.departure_delay)
 
             if new_st.arrival_status == 'update':
                 arr = arrival + new_st.arrival_delay if arrival else None
-                res_st.set_arrival(arr, status='update', delay=new_st.arrival_delay)
+                res_st.update_arrival(time=arr, status='update', delay=new_st.arrival_delay)
             elif db_st:
-                res_st.set_arrival(db_st.arrival,
-                                   status=db_st.arrival_status,
-                                   delay=db_st.arrival_delay)
+                res_st.update_arrival(time=db_st.arrival,
+                                      status=db_st.arrival_status,
+                                      delay=db_st.arrival_delay)
 
             # we might need to update the st's order
             res_st.order = len(res_stoptime_updates)
