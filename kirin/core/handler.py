@@ -88,7 +88,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         * for each navitia's stop_time and for departure|arrival:
             - if there is an update on this stoptime (in new_trip_update):
                 we compute the new datetime based on the new information and the navitia's base schedule
-            - else if there if the stoptime in the db:
+            - else if there is the stoptime in the db:
                 we keep this db stoptime
             - else we keep the navitia's base schedule
 
@@ -102,7 +102,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     res.status = new_trip_update.status
     if new_trip_update.message:
         res.message = new_trip_update.message
-    res.contributor = res.contributor
+    res.contributor = new_trip_update.contributor
 
     if res.status == 'delete':
         # for trip cancellation, we delete all stoptimes update
