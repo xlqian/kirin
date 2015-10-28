@@ -66,7 +66,7 @@ class RabbitMQHandler(object):
                 del res['password']
             return res
 
-    def listen_load_realtime(self):
+    def listen_load_realtime(self, queue_name):
         log = logging.getLogger(__name__)
 
         def callback(body, message):
@@ -109,7 +109,7 @@ class RabbitMQHandler(object):
 
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
-        rt_queue = Queue('', routing_key=route, exchange=self._exchange, durable=False, auto_delete=True)
+        rt_queue = Queue(queue_name, routing_key=route, exchange=self._exchange, durable=False)
         with connections[self._connection].acquire(block=True) as conn:
             self._connections.add(conn)
             with Consumer(conn, queues=[rt_queue], callbacks=[callback]):

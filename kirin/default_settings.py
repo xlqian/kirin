@@ -17,6 +17,10 @@ DEBUG = True
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
 RABBITMQ_CONNECTION_STRING = 'pyamqp://guest:guest@localhost:5672//?heartbeat=60'
 
+#queue used for task of type load_realtime, all instances of kirin must use the same queue
+#to be able to load balance tasks between them
+LOAD_REALTIME_QUEUE = 'kirin_load_realtime'
+
 #amqp exhange used for sending disruptions
 EXCHANGE = 'navitia'
 
