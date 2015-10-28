@@ -266,6 +266,6 @@ class KirinModelBuilder(object):
         we consider that we do not have any information, thus the status is set to 'none'
         """
         if xml is None or get_value(xml, 'Etat') == u'supprimé':
-            return timedelta(seconds=0), 'none'
+            return None, 'none'
 
         return as_duration(get_value(xml, 'EcartExterne')), 'update'

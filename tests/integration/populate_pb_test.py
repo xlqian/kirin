@@ -120,14 +120,14 @@ def test_populate_pb_with_two_stop_time():
         assert len(pb_trip_update.stop_time_update) == 2
 
         pb_stop_time = pb_trip_update.stop_time_update[0]
-        assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
-        assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
-        assert pb_stop_time.stop_id == 'sa:2'
-
-        pb_stop_time = pb_trip_update.stop_time_update[1]
+        assert pb_stop_time.stop_id == 'sa:1'
         assert pb_stop_time.arrival.time == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
-        assert pb_stop_time.stop_id == 'sa:1'
+
+        pb_stop_time = pb_trip_update.stop_time_update[1]
+        assert pb_stop_time.stop_id == 'sa:2'
+        assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
+        assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
 
 
 def test_populate_pb_with_cancelation():

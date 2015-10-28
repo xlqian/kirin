@@ -27,8 +27,8 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 from datetime import timedelta
-
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
@@ -95,6 +95,9 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     trip_update_id = db.Column(postgresql.UUID, db.ForeignKey('trip_update.vj_id'), nullable=False)
 
+    # stop time's order in the vj
+    order = db.Column(db.Integer, nullable=False)
+
     stop_id = db.Column(db.Text, nullable=False)
 
     # Note: for departure (and arrival), we store its datetime ('departure' or 'arrival')
@@ -109,7 +112,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
 
     def __init__(self, navitia_stop,
                  departure=None, arrival=None,
-                 departure_delay=timedelta(0), arrival_delay=timedelta(0),
+                 departure_delay=None, arrival_delay=None,
                  dep_status='none', arr_status='none'):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
@@ -121,15 +124,21 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.departure = departure
         self.arrival = arrival
 
-    def merge(self, other):
-        if not other:
-            return
-        #TODO diff can be at departure or arrival
-        assert self.stop_id == other.stop_id
-        self.departure = other.departure
-        self.departure_status = other.departure_status
-        self.arrival = other.arrival
-        self.arrival_status = other.arrival_status
+    def update_departure(self, time, delay, status):
+        if time:
+            self.departure = time
+        if delay:
+            self.departure_delay = delay
+        if status:
+            self.departure_status = status
+
+    def update_arrival(self, time, delay, status):
+        if time:
+            self.arrival = time
+        if delay:
+            self.arrival_delay = delay
+        if status:
+            self.arrival_status = status
 
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
@@ -150,12 +159,14 @@ class TripUpdate(db.Model, TimestampMixin):
     message = db.Column(db.Text, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
+                                        order_by="StopTimeUpdate.order",
+                                        collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
 
-    def __init__(self, vj=None):
+    def __init__(self, vj=None, status='none'):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
-        self.status = 'none'
+        self.status = status
         self.contributor = None
 
     def __repr__(self):
@@ -183,16 +194,6 @@ class TripUpdate(db.Model, TimestampMixin):
             if st.stop_id == stop_id:
                 return st
         return None
-
-    def merge(self, other):
-        if not other:
-            return
-        for stop in other.stop_time_updates:
-            current_stop = self.find_stop(stop.stop_id)
-            current_stop.merge(stop)
-        self.status = other.status
-        self.message = other.message
-        self.contributor = other.contributor
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
