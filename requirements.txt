@@ -26,3 +26,4 @@ python-dateutil==2.4.2
 -e git+https://github.com//CanalTP/navitia_python_wrapper#egg=navitia_wrapper
 requests==2.4.3
 blinker==1.4
+sh==1.11
