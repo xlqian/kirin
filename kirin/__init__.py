@@ -30,8 +30,6 @@ import os
 from kirin import exceptions
 from kirin.rabbitmq_handler import RabbitMQHandler
 
-VERSION = '0.4.2'
-
 #remplace blocking method by a non blocking equivalent
 #this enable us to use gevent for launching background task
 #Note: there is a conflict between py.test and gevent
