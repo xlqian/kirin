@@ -159,11 +159,11 @@ class TripUpdate(db.Model, TimestampMixin):
                                         collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
 
-    def __init__(self, vj=None, status='none'):
+    def __init__(self, vj=None, status='none', contributor=None):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
         self.status = status
-        self.contributor = None
+        self.contributor = contributor
 
     def __repr__(self):
         return '<TripUpdate %r>' % self.vj_id
@@ -212,6 +212,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
                                    backref='real_time_updates', lazy='joined')
 
+    __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),)
+
     def __init__(self, raw_data, connector, status=None, error=None, received_at=None):
         self.id = gen_uuid()
         self.raw_data = raw_data
@@ -219,3 +221,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.status = status
         self.error = error
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
+
+    @classmethod
+    def get_last_update_by_contributor(cls):
+        query = db.session.query(TripUpdate.contributor, db.func.max(cls.created_at)).join(associate_realtimeupdate_tripupdate).join(cls).group_by(TripUpdate.contributor).all()
+        return {row[0]: row[1].strftime('%Y-%m-%dT%H:%M:%SZ') for row in query}

@@ -30,6 +30,7 @@ from flask_restful import Resource, url_for
 import kirin
 from kirin.version import version
 from flask import current_app
+from kirin.core import model
 
 class Index(Resource):
     def get(self):
@@ -46,5 +47,6 @@ class Status(Resource):
                    'db_pool_status': kirin.db.engine.pool.status(),
                    'db_version': kirin.db.engine.scalar('select version_num from alembic_version;'),
                    'navitia_url': current_app.config['NAVITIA_URL'],
-                   #'rabbitmq_info': publisher.info()
+                   'rabbitmq_info': kirin.rabbitmq_handler.info(),
+                   'last_update': model.RealTimeUpdate.get_last_update_by_contributor(),
                }, 200
