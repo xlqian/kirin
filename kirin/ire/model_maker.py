@@ -265,7 +265,7 @@ class KirinModelBuilder(object):
         Note: if the XML is not here, or if the state ('Etat') is deleted ('supprimé')
         we consider that we do not have any information, thus the status is set to 'none'
         """
-        if xml is None or get_value(xml, 'Etat') == u'supprimé':
+        if xml is None or get_value(xml, 'Etat') == u'supprimé' or xml.find('EcartExterne') is None:
             return None, 'none'
 
         return as_duration(get_value(xml, 'EcartExterne')), 'update'
