@@ -212,10 +212,10 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
                                    backref='real_time_updates', lazy='joined')
 
-    def __init__(self, raw_data, connector, status=None, error=None, received_at=datetime.datetime.now()):
+    def __init__(self, raw_data, connector, status=None, error=None, received_at=None):
         self.id = gen_uuid()
         self.raw_data = raw_data
         self.connector = connector
         self.status = status
         self.error = error
-        self.received_at = received_at
+        self.received_at = received_at if received_at else datetime.datetime.utcnow()
