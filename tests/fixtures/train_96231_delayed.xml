@@ -46,6 +46,11 @@
         <NumeroIncident>CROAL280720150041</NumeroIncident>
         <DateHeureDebutIncident>21/09/2015 17:51:00</DateHeureDebutIncident>
         <TypeHoraire>
+          <!-- adding Arrivee without EcartExterne should not raise exception -->
+          <Arrivee>
+            <Etat>normal</Etat>
+            <DateHeureTheorique>21/09/2015 17:39:00</DateHeureTheorique>
+          </Arrivee>
           <Depart>
             <Etat>retard&#xE9;</Etat>
             <DateHeureTheorique>21/09/2015 17:40:30</DateHeureTheorique>
