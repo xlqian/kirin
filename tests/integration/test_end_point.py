@@ -27,6 +27,10 @@
 # www.navitia.io
 
 from tests.check_utils import api_get
+from kirin.core import model
+from kirin import app
+from datetime import date, datetime
+import pytest
 
 
 def test_end_point():
@@ -35,12 +39,47 @@ def test_end_point():
     assert 'ire' in resp
 
 
-# Note: for the moment it's not possible to test the /status API because we need a bdd for that
-def test_status():
+def test_status(setup_database):
     resp = api_get('/status')
 
     assert 'version' in resp
     assert 'db_pool_status' in resp
     assert 'db_version' in resp
     assert 'navitia_url' in resp
+    assert 'last_update' in resp
+    assert 'realtime.ire' in resp['last_update']
+    assert 'realtime.timeo' in resp['last_update']
+
+    assert '2015-11-04T07:32:00Z' in resp['last_update']['realtime.ire']
+    assert '2015-11-04T07:42:00Z' in resp['last_update']['realtime.timeo']
+
+
+@pytest.fixture()
+def setup_database():
+    """
+    we create two realtime_updates with the same vj but for different date
+    and return a vj for navitia
+    """
+    with app.app_context():
+        vj1 = model.VehicleJourney({'trip': {'id': 'vj:1'}}, date(2015, 11, 4))
+        vj2 = model.VehicleJourney({'trip': {'id': 'vj:2'}}, date(2015, 11, 4))
+        vj3 = model.VehicleJourney({'trip': {'id': 'vj:3'}}, date(2015, 11, 4))
+        tu1 = model.TripUpdate(vj1, contributor='realtime.ire')
+        tu2 = model.TripUpdate(vj2, contributor='realtime.ire')
+        tu3 = model.TripUpdate(vj3, contributor='realtime.timeo')
+        rtu1 = model.RealTimeUpdate(None, 'ire')
+        rtu1.created_at = datetime(2015, 11, 4, 6, 32)
+        rtu1.trip_updates.append(tu1)
+        model.db.session.add(rtu1)
+        rtu2 = model.RealTimeUpdate(None, 'ire')
+        rtu2.created_at = datetime(2015, 11, 4, 7, 32)
+        rtu2.trip_updates.append(tu2)
+        model.db.session.add(rtu2)
+
+        rtu3 = model.RealTimeUpdate(None, 'ire')
+        rtu3.created_at = datetime(2015, 11, 4, 7, 42)
+        rtu3.trip_updates.append(tu3)
+        model.db.session.add(rtu3)
+
+        model.db.session.commit()
 

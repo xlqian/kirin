@@ -58,8 +58,6 @@ class RabbitMQHandler(object):
             producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
 
     def info(self):
-        if not self._is_active:
-            return {}
         with self._get_producer() as producer:
             res = producer.connection.info()
             if 'password' in res:
