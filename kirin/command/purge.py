@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#  Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -28,15 +27,20 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import app, db
-import sys
-from flask_script import Manager
-from flask_migrate import Migrate, MigrateCommand
-from kirin import manager
-from kirin.command import purge
+from kirin import manager, db
+from kirin.core.model import VehicleJourney
+import datetime
+import logging
 
-migrate = Migrate(app, db)
-manager.add_command('db', MigrateCommand)
+@manager.command
+def purge(nb_day_to_keep):
+    """
+    purge the database from old information
 
-if __name__ == '__main__':
-    manager.run()
+    """
+    logger = logging.getLogger(__name__)
+    until = datetime.date.today() - datetime.timedelta(days=int(nb_day_to_keep))
+    logger.info('purge until %s', until)
+    VehicleJourney.purge(until)
+    db.session.commit()
+

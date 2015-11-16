@@ -28,6 +28,7 @@
 # www.navitia.io
 from datetime import timedelta
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import backref
 from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
@@ -82,6 +83,13 @@ class VehicleJourney(db.Model):
             self.navitia_trip_id = navitia_vj['trip']['id']
         self.circulation_date = circulation_date
         self.navitia_vj = navitia_vj  # Not persisted
+
+    @classmethod
+    def purge(cls, until):
+        for vj in cls.query.filter(cls.circulation_date < until):
+            db.session.delete(vj)
+
+
 
 
 class StopTimeUpdate(db.Model, TimestampMixin):
@@ -151,7 +159,8 @@ class TripUpdate(db.Model, TimestampMixin):
     """
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
-    vj = db.relationship('VehicleJourney', backref='trip_update', uselist=False, lazy='joined')
+    vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
+                         backref=backref('trip_update', cascade='all, delete-orphan'))
     message = db.Column(db.Text, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
@@ -209,8 +218,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
 
-    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate,
-                                   backref='real_time_updates', lazy='joined')
+    trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, cascade='all',
+                                   lazy='joined', backref=backref('real_time_updates', cascade='all'))
 
     __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),)
 
