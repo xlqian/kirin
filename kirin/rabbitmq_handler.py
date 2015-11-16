@@ -110,7 +110,7 @@ class RabbitMQHandler(object):
         rt_queue = Queue(queue_name, routing_key=route, exchange=self._exchange, durable=False)
         with connections[self._connection].acquire(block=True) as conn:
             self._connections.add(conn)
-            with Consumer(conn, queues=[rt_queue], callbacks=[callback]):
+            with Consumer(conn, no_ack=True, queues=[rt_queue], callbacks=[callback]):
                 while True:
                     try:
                         conn.drain_events(timeout=1)
