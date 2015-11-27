@@ -91,10 +91,12 @@ def setup_database():
 @pytest.fixture()
 def navitia_vj():
     return {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1',
+         'stop_area': {'timezone': 'UTC'}}},
         {'arrival_time': datetime.time(9, 5), 'departure_time': datetime.time(9, 10),
-         'stop_point': {'id': 'sa:2'}},
-        {'arrival_time': datetime.time(10, 5), 'departure_time': None, 'stop_point': {'id': 'sa:3'}}
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'UTC'}}},
+        {'arrival_time': datetime.time(10, 5), 'departure_time': None, 'stop_point': {'id': 'sa:3',
+         'stop_area': {'timezone': 'UTC'}}}
     ]}
 
 
@@ -112,8 +114,10 @@ def test_handle_basic():
 def test_handle_new_vj():
     """an easy one: we have one vj with only one stop time updated"""
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1',
+         'stop_area': {'timezone': 'UTC'}}},
+        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2',
+         'stop_area': {'timezone': 'UTC'}}}
     ]}
     with app.app_context():
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')

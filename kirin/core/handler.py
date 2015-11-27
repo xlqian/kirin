@@ -26,6 +26,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import logging
+import pytz
 import kirin
 from kirin import gtfs_realtime_pb2
 
@@ -68,6 +70,26 @@ def handle(real_time_update, trip_updates, contributor):
     publish(feed, contributor)
 
     return real_time_update
+
+
+def _get_timezone(stop_time):
+    str_tz = stop_time.get('stop_point', {}).get('stop_area', {}).get('timezone')
+    if not str_tz:
+        raise Exception('impossible to convert local to utc without the timezone')
+
+    tz = pytz.timezone(str_tz)
+    if not tz:
+        raise Exception("impossible to find timezone: '{}'".format(str_tz))
+    return tz
+
+
+def _get_datetime(circulation_date, time, timezone):
+
+    dt = datetime.datetime.combine(circulation_date, time)
+    dt = timezone.localize(dt).astimezone(pytz.UTC)
+    # in the db dt with timezone cannot coexist with dt without tz
+    # since at the beginning there was dt without tz, we need to erase the tz info
+    return dt.replace(tzinfo=None)
 
 
 def merge(navitia_vj, db_trip_update, new_trip_update):
@@ -121,12 +143,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
+        timezone = _get_timezone(navitia_stop)
 
         departure = arrival = None
         if nav_departure_time:
-            departure = datetime.datetime.combine(new_trip_update.vj.circulation_date, nav_departure_time)
+            departure = _get_datetime(new_trip_update.vj.circulation_date, nav_departure_time, timezone)
         if nav_arrival_time:
-            arrival = datetime.datetime.combine(new_trip_update.vj.circulation_date, nav_arrival_time)
+            arrival = _get_datetime(new_trip_update.vj.circulation_date, nav_arrival_time, timezone)
 
         #TODO handle past midnight
 
