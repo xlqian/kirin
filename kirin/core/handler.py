@@ -84,7 +84,6 @@ def _get_timezone(stop_time):
 
 
 def _get_datetime(circulation_date, time, timezone):
-
     dt = datetime.datetime.combine(circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)
     # in the db dt with timezone cannot coexist with dt without tz
@@ -164,6 +163,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                 res_st.update_departure(time=db_st.departure,
                                         status=db_st.departure_status,
                                         delay=db_st.departure_delay)
+            else:
+                # we store the base's schedule
+                res_st.update_departure(time=departure, status='none', delay=None)
 
             if new_st.arrival_status == 'update':
                 arr = arrival + new_st.arrival_delay if arrival else None
@@ -172,6 +174,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                 res_st.update_arrival(time=db_st.arrival,
                                       status=db_st.arrival_status,
                                       delay=db_st.arrival_delay)
+            else:
+                # we store the base's schedule
+                res_st.update_arrival(time=arrival, status='none', delay=None)
 
             # we might need to update the st's order
             res_st.order = len(res_stoptime_updates)

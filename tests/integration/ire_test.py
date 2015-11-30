@@ -27,6 +27,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import timedelta
 
 import pytest
 
@@ -99,6 +100,39 @@ def check_db_ire_96231_delayed():
         assert db_trip_delayed.status == 'update'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
+
+        # the first stop (in Strasbourg) is not in the IRE, only on navitia's base schedule
+        # no delay then, only base schedule
+        # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
+        first_st = db_trip_delayed.stop_time_updates[0]
+        assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87212027'
+        assert first_st.arrival == datetime.datetime(2015, 9, 21, 15, 21)
+        assert first_st.arrival_status == 'none'
+        assert first_st.arrival_delay is None
+        assert first_st.departure == datetime.datetime(2015, 9, 21, 15, 21)
+        assert first_st.departure_delay is None
+        assert first_st.departure_status == 'none'
+
+        second_st = db_trip_delayed.stop_time_updates[1]
+        assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
+        assert second_st.arrival == datetime.datetime(2015, 9, 21, 15, 38)
+        assert second_st.arrival_status == 'none'
+        assert second_st.arrival_delay is None
+        assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
+        assert second_st.departure_delay == timedelta(minutes=15)
+        assert second_st.departure_status == 'update'
+
+        # last stop is gare de Basel-SBB, delay's only at the arrival
+        last_st = db_trip_delayed.stop_time_updates[-1]
+        assert last_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert last_st.arrival == datetime.datetime(2015, 9, 21, 16, 54)
+        assert last_st.arrival_status == 'update'
+        assert last_st.arrival_delay == timedelta(minutes=15)
+        #For the moment no check, the departure can be before the arrival
+        assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 39)
+        assert last_st.departure_delay is None
+        assert last_st.departure_status == 'none'
+
         assert db_trip_delayed.contributor == 'realtime.ire'
 
 
