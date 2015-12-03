@@ -104,6 +104,8 @@ class StopTimeUpdate(db.Model, TimestampMixin):
 
     stop_id = db.Column(db.Text, nullable=False)
 
+    cause = db.Column(db.Text, nullable=True)
+
     # Note: for departure (and arrival), we store its datetime ('departure' or 'arrival')
     # and the delay to be able to handle the base navitia schedule changes
     departure = db.Column(db.DateTime, nullable=True)
@@ -117,7 +119,8 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     def __init__(self, navitia_stop,
                  departure=None, arrival=None,
                  departure_delay=None, arrival_delay=None,
-                 dep_status='none', arr_status='none'):
+                 dep_status='none', arr_status='none',
+                 cause=None):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
         self.stop_id = navitia_stop['id']
@@ -127,6 +130,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.arrival_delay = arrival_delay
         self.departure = departure
         self.arrival = arrival
+        self.cause = cause
 
     def update_departure(self, time, delay, status):
         if time:

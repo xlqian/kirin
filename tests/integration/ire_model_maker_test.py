@@ -77,6 +77,7 @@ def test_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
+        assert st.cause == 'Affluence exceptionnelle de voyageurs'
 
         # second should be 'gare de Colmar'
         st = trip_up.stop_time_updates[1]
@@ -88,6 +89,7 @@ def test_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
+        assert st.cause == 'Affluence exceptionnelle de voyageurs'
 
         # last should be 'gare de Basel-SBB'
         st = trip_up.stop_time_updates[-1]
@@ -100,6 +102,7 @@ def test_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay is None
         assert st.departure_status == 'none'
+        assert st.cause == 'Affluence exceptionnelle de voyageurs'
 
 
 def test_train_trip_removal(mock_navitia_fixture):

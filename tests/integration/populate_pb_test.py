@@ -157,11 +157,7 @@ def test_populate_pb_with_cancelation():
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.message) == True
-        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
-        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        for type in chaos_pb2._CHANNEL_TYPE.values:
-            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert pb_trip_update.Extensions[kirin_pb2.message] == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
@@ -197,11 +193,7 @@ def test_populate_pb_with_full_dataset():
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.message) == True
-        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
-        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        for type in chaos_pb2._CHANNEL_TYPE.values:
-            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert pb_trip_update.Extensions[kirin_pb2.message] == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
