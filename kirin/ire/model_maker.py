@@ -192,9 +192,9 @@ class KirinModelBuilder(object):
                 dep_delay, dep_status = self._get_delay(downstream_point.find('TypeHoraire/Depart'))
                 arr_delay, arr_status = self._get_delay(downstream_point.find('TypeHoraire/Arrivee'))
 
-                cause = get_value(downstream_point, 'MotifExterne')
+                message = get_value(downstream_point, 'MotifExterne')
                 st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                                 dep_status=dep_status, arr_status=arr_status, cause=cause)
+                                                 dep_status=dep_status, arr_status=arr_status, message=message)
                 trip_update.stop_time_updates.append(st_update)
 
         removal = xml_modification.find('Suppression')

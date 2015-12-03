@@ -178,7 +178,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                 # we store the base's schedule
                 res_st.update_arrival(time=arrival, status='none', delay=None)
 
-            res_st.cause = new_st.cause
+            res_st.message = new_st.message
             # we might need to update the st's order
             res_st.order = len(res_stoptime_updates)
             res_stoptime_updates.append(res_st)

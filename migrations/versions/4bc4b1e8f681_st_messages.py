@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('stop_time_update', sa.Column('cause', sa.Text(), nullable=True))
+    op.add_column('stop_time_update', sa.Column('message', sa.Text(), nullable=True))
 
 
 def downgrade():
-    op.drop_column('stop_time_update', 'cause')
+    op.drop_column('stop_time_update', 'message')
