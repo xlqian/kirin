@@ -90,8 +90,6 @@ class VehicleJourney(db.Model):
             db.session.delete(vj)
 
 
-
-
 class StopTimeUpdate(db.Model, TimestampMixin):
     """
     Stop time

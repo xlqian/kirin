@@ -99,7 +99,8 @@ def test_populate_pb_with_two_stop_time():
 
         st = StopTimeUpdate({'id': 'sa:2'},
                             departure=_dt("8:21"),
-                            arrival=_dt("8:20"))
+                            arrival=_dt("8:20"),
+                            cause="bob's on the track")
         real_time_update.trip_updates[0].stop_time_updates.append(st)
 
         db.session.add(real_time_update)
@@ -123,11 +124,13 @@ def test_populate_pb_with_two_stop_time():
         assert pb_stop_time.stop_id == 'sa:1'
         assert pb_stop_time.arrival.time == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+        assert pb_stop_time.Extensions[kirin_pb2.cause] == ""
 
         pb_stop_time = pb_trip_update.stop_time_update[1]
         assert pb_stop_time.stop_id == 'sa:2'
         assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
+        assert pb_stop_time.Extensions[kirin_pb2.cause] == "bob's on the track"
 
 
 def test_populate_pb_with_cancelation():

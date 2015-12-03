@@ -60,6 +60,8 @@ def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
     pb_stop_time.arrival.time = to_posix_time(stop_time.arrival)
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
+    if stop_time.cause:
+        pb_stop_time.Extensions[kirin_pb2.cause] = stop_time.cause
 
 
 def fill_message(pb_trip_update, message):
