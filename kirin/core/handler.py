@@ -45,6 +45,54 @@ def persist(real_time_update):
     model.db.session.commit()
 
 
+def manage_consistency(trip_update):
+    """
+    receive a TripUpdate, then manage and adjust it's consistency
+    returns False if trip update cannot be managed
+    """
+    current_order = 0
+    previous_stu = None
+    for stu in trip_update.stop_time_updates:
+        # rejections
+        if stu.order != current_order:
+            return False
+
+        if not stu.arrival and not stu.departure:
+            return False
+
+        # modifications
+        if not stu.arrival:
+            stu.arrival = stu.departure
+            if not stu.arrival_delay:
+                stu.arrival_delay = stu.departure_delay
+
+        if not stu.departure:
+            stu.departure = stu.arrival
+            if not stu.departure_delay:
+                stu.departure_delay = stu.arrival_delay
+
+        if not stu.arrival_delay:
+            stu.arrival_delay = datetime.timedelta(0)
+
+        if not stu.departure_delay:
+            stu.departure_delay = datetime.timedelta(0)
+
+        if previous_stu and previous_stu.departure > stu.arrival:
+            delay_diff = previous_stu.departure_delay - stu.arrival_delay
+            stu.arrival += delay_diff
+            stu.arrival_delay += delay_diff
+
+        if stu.arrival > stu.departure:
+            stu.departure_delay += stu.arrival - stu.departure
+            stu.departure = stu.arrival
+
+        current_order += 1
+        previous_stu = stu
+
+    return True
+
+
+
 def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
@@ -59,9 +107,11 @@ def handle(real_time_update, trip_updates, contributor):
         #merge the theoric, the current realtime, and the new relatime
         current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
 
-        # we have to link the current_vj_update with the new real_time_update
-        # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
-        current_trip_update.real_time_updates.append(real_time_update)
+        #manage and adjust consistency if possible
+        if manage_consistency(current_trip_update):
+            # we have to link the current_vj_update with the new real_time_update
+            # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
+            current_trip_update.real_time_updates.append(real_time_update)
 
     persist(real_time_update)
 
