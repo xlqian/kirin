@@ -191,8 +191,10 @@ class KirinModelBuilder(object):
 
                 dep_delay, dep_status = self._get_delay(downstream_point.find('TypeHoraire/Depart'))
                 arr_delay, arr_status = self._get_delay(downstream_point.find('TypeHoraire/Arrivee'))
+
+                message = get_value(downstream_point, 'MotifExterne')
                 st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                                 dep_status=dep_status, arr_status=arr_status)
+                                                 dep_status=dep_status, arr_status=arr_status, message=message)
                 trip_update.stop_time_updates.append(st_update)
 
         removal = xml_modification.find('Suppression')
@@ -264,6 +266,10 @@ class KirinModelBuilder(object):
 
         Note: if the XML is not here, or if the state ('Etat') is deleted ('supprimé')
         we consider that we do not have any information, thus the status is set to 'none'
+
+        returns:
+        * the delay
+        * the status
         """
         if xml is None or get_value(xml, 'Etat') == u'supprimé' or xml.find('EcartExterne') is None:
             return None, 'none'

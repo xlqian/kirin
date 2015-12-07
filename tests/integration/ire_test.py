@@ -112,6 +112,7 @@ def check_db_ire_96231_delayed():
         assert first_st.departure == datetime.datetime(2015, 9, 21, 15, 21)
         assert first_st.departure_delay is None
         assert first_st.departure_status == 'none'
+        assert first_st.message is None
 
         second_st = db_trip_delayed.stop_time_updates[1]
         assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
@@ -121,6 +122,7 @@ def check_db_ire_96231_delayed():
         assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
+        assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -132,6 +134,7 @@ def check_db_ire_96231_delayed():
         assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 39)
         assert last_st.departure_delay is None
         assert last_st.departure_status == 'none'
+        assert last_st.message == 'Affluence exceptionnelle de voyageurs'
 
         assert db_trip_delayed.contributor == 'realtime.ire'
 

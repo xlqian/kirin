@@ -71,7 +71,7 @@ def test_populate_pb_with_one_stop_time():
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
         assert pb_stop_time.stop_id == 'sa:1'
 
-        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == False
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
 
 
@@ -99,7 +99,8 @@ def test_populate_pb_with_two_stop_time():
 
         st = StopTimeUpdate({'id': 'sa:2'},
                             departure=_dt("8:21"),
-                            arrival=_dt("8:20"))
+                            arrival=_dt("8:20"),
+                            message="bob's on the track")
         real_time_update.trip_updates[0].stop_time_updates.append(st)
 
         db.session.add(real_time_update)
@@ -113,7 +114,7 @@ def test_populate_pb_with_two_stop_time():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.HasExtension(kirin_pb2.message) == False
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == False
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
@@ -123,11 +124,13 @@ def test_populate_pb_with_two_stop_time():
         assert pb_stop_time.stop_id == 'sa:1'
         assert pb_stop_time.arrival.time == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == ""
 
         pb_stop_time = pb_trip_update.stop_time_update[1]
         assert pb_stop_time.stop_id == 'sa:2'
         assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
 
 
 def test_populate_pb_with_cancelation():
@@ -156,12 +159,8 @@ def test_populate_pb_with_cancelation():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.HasExtension(kirin_pb2.message) == True
-        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
-        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        for type in chaos_pb2._CHANNEL_TYPE.values:
-            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == True
+        assert pb_trip_update.Extensions[kirin_pb2.trip_message] == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
@@ -196,12 +195,8 @@ def test_populate_pb_with_full_dataset():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.HasExtension(kirin_pb2.message) == True
-        assert pb_trip_update.Extensions[kirin_pb2.message].text == 'Message Test'
-        assert chaos_pb2.Channel.web in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        assert chaos_pb2.Channel.sms in pb_trip_update.Extensions[kirin_pb2.message].channel.types
-        for type in chaos_pb2._CHANNEL_TYPE.values:
-            assert type.number in pb_trip_update.Extensions[kirin_pb2.message].channel.types
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == True
+        assert pb_trip_update.Extensions[kirin_pb2.trip_message] == 'Message Test'
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.CANCELED
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
