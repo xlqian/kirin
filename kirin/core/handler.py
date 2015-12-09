@@ -45,48 +45,62 @@ def persist(real_time_update):
     model.db.session.commit()
 
 
+def log_stu_modif(logger, trip_update, stu, string_additional_info):
+    logger.info("TripUpdate {vj_id} on {date}, StopTimeUpdate {order} modified: ".format(
+                    vj_id=trip_update.vj_id, date=trip_update.vj.circulation_date, order=stu.order)
+                + string_additional_info)
+
+
 def manage_consistency(trip_update):
     """
     receive a TripUpdate, then manage and adjust it's consistency
     returns False if trip update cannot be managed
     """
-    current_order = 0
+    logger = logging.getLogger(__name__)
     previous_stu = None
-    for stu in trip_update.stop_time_updates:
+    for current_order, stu in enumerate(trip_update.stop_time_updates):
         # rejections
         if stu.order != current_order:
-            return False
-
-        if not stu.arrival and not stu.departure:
+            logger.warning("TripUpdate {vj_id} on {date} rejected: order problem".format(
+                vj_id=trip_update.vj_id, date=trip_update.vj.circulation_date))
             return False
 
         # modifications
         if not stu.arrival:
             stu.arrival = stu.departure
+            log_stu_modif(logger, trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay:
                 stu.arrival_delay = stu.departure_delay
+                log_stu_modif(logger, trip_update, stu, "arrival_delay = {v}".format(v=stu.arrival_delay))
 
         if not stu.departure:
             stu.departure = stu.arrival
+            log_stu_modif(logger, trip_update, stu, "departure = {v}".format(v=stu.departure))
             if not stu.departure_delay:
                 stu.departure_delay = stu.arrival_delay
+                log_stu_modif(logger, trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
         if not stu.arrival_delay:
             stu.arrival_delay = datetime.timedelta(0)
+            log_stu_modif(logger, trip_update, stu, "arrival_delay = {v}".format(v=stu.arrival_delay))
 
         if not stu.departure_delay:
             stu.departure_delay = datetime.timedelta(0)
+            log_stu_modif(logger, trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
         if previous_stu and previous_stu.departure > stu.arrival:
             delay_diff = previous_stu.departure_delay - stu.arrival_delay
             stu.arrival += delay_diff
             stu.arrival_delay += delay_diff
+            log_stu_modif(logger, trip_update, stu, "arrival = {a} and arrival_delay = {a_d}".format(
+                                                        a=stu.arrival, a_d=stu.arrival_delay))
 
         if stu.arrival > stu.departure:
             stu.departure_delay += stu.arrival - stu.departure
             stu.departure = stu.arrival
+            log_stu_modif(logger, trip_update, stu, "departure = {a} and departure_delay = {a_d}".format(
+                                                        a=stu.departure, a_d=stu.departure_delay))
 
-        current_order += 1
         previous_stu = stu
 
     return True
