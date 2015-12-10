@@ -108,9 +108,9 @@ def check_db_ire_96231_delayed():
         assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87212027'
         assert first_st.arrival == datetime.datetime(2015, 9, 21, 15, 21)
         assert first_st.arrival_status == 'none'
-        assert first_st.arrival_delay is None
+        assert first_st.arrival_delay == timedelta(0)
         assert first_st.departure == datetime.datetime(2015, 9, 21, 15, 21)
-        assert first_st.departure_delay is None
+        assert first_st.departure_delay == timedelta(0)
         assert first_st.departure_status == 'none'
         assert first_st.message is None
 
@@ -118,7 +118,7 @@ def check_db_ire_96231_delayed():
         assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
         assert second_st.arrival == datetime.datetime(2015, 9, 21, 15, 38)
         assert second_st.arrival_status == 'none'
-        assert second_st.arrival_delay is None
+        assert second_st.arrival_delay == timedelta(0)
         assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
@@ -130,9 +130,9 @@ def check_db_ire_96231_delayed():
         assert last_st.arrival == datetime.datetime(2015, 9, 21, 16, 54)
         assert last_st.arrival_status == 'update'
         assert last_st.arrival_delay == timedelta(minutes=15)
-        #For the moment no check, the departure can be before the arrival
-        assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 39)
-        assert last_st.departure_delay is None
+        #The departure is consistent with arrival
+        assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 54)
+        assert last_st.departure_delay == timedelta(minutes=15)
         assert last_st.departure_status == 'none'
         assert last_st.message == 'Affluence exceptionnelle de voyageurs'
 

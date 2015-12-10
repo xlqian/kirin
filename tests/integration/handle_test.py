@@ -133,10 +133,10 @@ def test_handle_new_vj():
 
         assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
         assert trip_update.stop_time_updates[0].departure == _dt("8:15")
-        assert trip_update.stop_time_updates[0].arrival is None
+        assert trip_update.stop_time_updates[0].arrival == _dt("8:15")
 
         assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
-        assert trip_update.stop_time_updates[1].departure is None
+        assert trip_update.stop_time_updates[1].departure == _dt("9:10")
         assert trip_update.stop_time_updates[1].arrival == _dt("9:10")
 
         # testing that RealTimeUpdate is persisted in db
@@ -148,11 +148,11 @@ def test_handle_new_vj():
         assert len(db_st_updates) == 2
         assert db_st_updates[0].stop_id == 'sa:1'
         assert db_st_updates[0].departure == _dt("8:15")
-        assert db_st_updates[0].arrival is None
+        assert db_st_updates[0].arrival == _dt("8:15")
         assert db_st_updates[0].trip_update_id == db_trip_updates[0].vj_id
 
         assert db_st_updates[1].stop_id == 'sa:2'
-        assert db_st_updates[1].departure is None
+        assert db_st_updates[1].departure == _dt("9:10")
         assert db_st_updates[1].arrival == _dt("9:10")
         assert db_st_updates[1].trip_update_id == db_trip_updates[0].vj_id
 
@@ -177,15 +177,56 @@ def test_handle_new_trip_out_of_order(navitia_vj):
 
         assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
         assert trip_update.stop_time_updates[0].departure == _dt("8:10")
-        assert trip_update.stop_time_updates[0].arrival is None
+        assert trip_update.stop_time_updates[0].arrival == _dt("8:10")
 
         assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
         assert trip_update.stop_time_updates[1].departure == _dt("9:50")
         assert trip_update.stop_time_updates[1].arrival == _dt("9:49")
 
         assert trip_update.stop_time_updates[2].stop_id == 'sa:3'
-        assert trip_update.stop_time_updates[2].departure is None
+        assert trip_update.stop_time_updates[2].departure == _dt("10:05")
         assert trip_update.stop_time_updates[2].arrival == _dt("10:05")
+
+def test_manage_consistency(navitia_vj):
+    """
+    we receive an update for a vj already in the database
+
+                          sa:1           sa:2             sa:3
+    VJ navitia           08:10        09:05-09:10        10:05
+    update kirin           -         *10:15-09:20*         -
+    expected result   08:10-08:10     10:15-10:15     11:10-11:10
+    """
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        st = StopTimeUpdate({'id': 'sa:2'},
+                            arrival_delay=timedelta(minutes=70), dep_status='update',
+                            departure_delay=timedelta(minutes=10), arr_status='update')
+        st.arrival_status = st.departure_status = 'update'
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
+        trip_update.stop_time_updates.append(st)
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        assert len(res.trip_updates) == 1
+        trip_update = res.trip_updates[0]
+        assert trip_update.status == 'update'
+        assert len(trip_update.real_time_updates) == 1
+        assert len(trip_update.stop_time_updates) == 3
+
+        stu_map = {stu.stop_id: stu for stu in trip_update.stop_time_updates}
+
+        assert 'sa:1' in stu_map
+        assert stu_map['sa:1'].arrival == _dt("8:10")
+        assert stu_map['sa:1'].departure == _dt("8:10")
+
+        assert 'sa:2' in stu_map
+        assert stu_map['sa:2'].arrival == _dt("10:15")
+        assert stu_map['sa:2'].departure == _dt("10:15")
+
+        assert 'sa:3' in stu_map
+        assert stu_map['sa:3'].arrival == _dt("11:10")
+        assert stu_map['sa:3'].departure == _dt("11:10")
+
 
 
 def test_handle_update_vj(setup_database, navitia_vj):
@@ -217,7 +258,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         stu_map = {stu.stop_id: stu for stu in trip_update.stop_time_updates}
 
         assert 'sa:1' in stu_map
-        assert stu_map['sa:1'].arrival is None
+        assert stu_map['sa:1'].arrival == _dt("8:15")
         assert stu_map['sa:1'].departure == _dt("8:15")
 
         assert 'sa:2' in stu_map
@@ -226,7 +267,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
 
         assert 'sa:3' in stu_map
         assert stu_map['sa:3'].arrival == _dt("10:05")
-        assert stu_map['sa:3'].departure is None
+        assert stu_map['sa:3'].departure == _dt("10:05")
 
         # testing that RealTimeUpdate is persisted in db
         db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
@@ -256,7 +297,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         db_stu_map = {stu.stop_id: stu for stu in db_trip_updates[1].stop_time_updates}
 
         assert 'sa:1' in db_stu_map
-        assert db_stu_map['sa:1'].arrival is None
+        assert db_stu_map['sa:1'].arrival == _dt("8:15")
         assert db_stu_map['sa:1'].departure == _dt("8:15")
 
         assert 'sa:2' in db_stu_map
@@ -265,7 +306,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
 
         assert 'sa:3' in db_stu_map
         assert db_stu_map['sa:3'].arrival == _dt("10:05")
-        assert db_stu_map['sa:3'].departure is None
+        assert db_stu_map['sa:3'].departure == _dt("10:05")
 
 
 def test_simple_delay(navitia_vj):
@@ -284,7 +325,7 @@ def test_simple_delay(navitia_vj):
         assert len(trip_update.stop_time_updates) == 3
 
         assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
-        assert trip_update.stop_time_updates[0].arrival is None
+        assert trip_update.stop_time_updates[0].arrival == _dt('8:20')  # departure
         assert trip_update.stop_time_updates[0].arrival_delay == timedelta(minutes=5)
         assert trip_update.stop_time_updates[0].arrival_status == 'update'
         assert trip_update.stop_time_updates[0].departure == _dt('8:20')  # 8:10 + 10mn
@@ -293,10 +334,10 @@ def test_simple_delay(navitia_vj):
 
         assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
         assert trip_update.stop_time_updates[1].arrival == _dt('9:05')
-        assert trip_update.stop_time_updates[1].arrival_delay is None
+        assert trip_update.stop_time_updates[1].arrival_delay == timedelta(0)
         assert trip_update.stop_time_updates[1].arrival_status == 'none'
         assert trip_update.stop_time_updates[1].departure == _dt('9:10')
-        assert trip_update.stop_time_updates[1].departure_delay is None
+        assert trip_update.stop_time_updates[1].departure_delay == timedelta(0)
         assert trip_update.stop_time_updates[1].departure_status == 'none'
 
         # testing that RealTimeUpdate is persisted in db
@@ -307,7 +348,7 @@ def test_simple_delay(navitia_vj):
         db_st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()
         assert len(db_st_updates) == 3
         assert db_st_updates[0].stop_id == 'sa:1'
-        assert db_st_updates[0].arrival is None
+        assert db_st_updates[0].arrival == _dt('8:20')  # departure
         assert db_st_updates[0].arrival_delay == timedelta(minutes=5)
         assert db_st_updates[0].arrival_status == 'update'
         assert db_st_updates[0].departure == _dt('8:20')  # 8:10 + 10mn
@@ -332,7 +373,6 @@ def _check_multiples_delay(res):
     stu = trip_update.stop_time_updates
     # Note: order is important
     assert stu[0].stop_id == 'sa:1'
-    assert stu[0].arrival is None
     assert stu[0].arrival_status == 'none'
     assert stu[0].departure == _dt("8:20")
     assert stu[0].departure_status == 'update'
@@ -343,12 +383,12 @@ def _check_multiples_delay(res):
     assert stu[1].arrival_delay == timedelta(minutes=2)
     assert stu[1].departure == _dt("9:10")
     assert stu[1].departure_status == 'none'
-    assert stu[1].departure_delay is None
+    assert stu[1].departure_delay == timedelta(0)
 
     assert stu[2].stop_id == 'sa:3'
     assert stu[2].arrival == _dt("10:05")
     assert stu[2].arrival_status == 'none'
-    assert stu[2].departure is None
+    assert stu[2].departure == _dt("10:05")
     assert stu[2].departure_status == 'none'
 
 
@@ -467,7 +507,7 @@ def _check_cancellation_then_delay(res):
     stu = trip_update.stop_time_updates
     # Note: order is important
     assert stu[0].stop_id == 'sa:1'
-    assert stu[0].arrival is None
+    assert stu[0].arrival == _dt("8:10")
     assert stu[0].arrival_status == 'none'
     assert stu[0].departure == _dt("8:10")
     assert stu[0].departure_status == 'none'
@@ -475,15 +515,15 @@ def _check_cancellation_then_delay(res):
     assert stu[1].stop_id == 'sa:2'
     assert stu[1].arrival == _dt("9:05")
     assert stu[1].arrival_status == 'none'
-    assert stu[1].arrival_delay is None
+    assert stu[1].arrival_delay == timedelta(0)
     assert stu[1].departure == _dt("9:10")
     assert stu[1].departure_status == 'none'
-    assert stu[1].departure_delay is None
+    assert stu[1].departure_delay == timedelta(0)
 
     assert stu[2].stop_id == 'sa:3'
     assert stu[2].arrival == _dt("10:45")
     assert stu[2].arrival_status == 'update'
-    assert stu[2].departure is None
+    assert stu[2].departure == _dt("10:45")
     assert stu[2].departure_status == 'none'
 
     #db checks
