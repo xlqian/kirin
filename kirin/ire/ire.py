@@ -73,11 +73,12 @@ class Ire(Resource):
         self.contributor = current_app.config['CONTRIBUTOR']
 
     def post(self):
-        try:
-            raw_xml = get_ire(flask.globals.request)
 
-            # create a raw ire obj, save the raw_xml into the db
-            rt_update = _make_rt_update(raw_xml)
+        raw_xml = get_ire(flask.globals.request)
+
+        # create a raw ire obj, save the raw_xml into the db
+        rt_update = _make_rt_update(raw_xml)
+        try:
             # assuming UTF-8 encoding for all ire input
             rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
