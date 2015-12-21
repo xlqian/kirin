@@ -31,7 +31,7 @@ from flask.globals import current_app
 from flask_restful import Resource
 from kirin import core
 from kirin.core import model
-from kirin.exceptions import InvalidArguments
+from kirin.exceptions import KirinException, InvalidArguments
 from model_maker import KirinModelBuilder
 import navitia_wrapper
 
@@ -83,7 +83,7 @@ class Ire(Resource):
 
             # raw_xml is interpreted
             trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
-        except InvalidArguments as e:
+        except KirinException as e:
             rt_update.status = 'KO'
             rt_update.error = e.data['error']
             model.db.session.add(rt_update)
