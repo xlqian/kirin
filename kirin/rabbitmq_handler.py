@@ -38,6 +38,8 @@ from kirin.core.model import TripUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 import gtfs_realtime_pb2
 from kirin.utils import str_to_date
+from socket import error
+import time
 
 
 class RabbitMQHandler(object):
@@ -45,7 +47,6 @@ class RabbitMQHandler(object):
         self._connection = BrokerConnection(connection_string)
         self._connections = set([self._connection])  # set of connection for the heartbeat
         self._exchange = Exchange(exchange, durable=True, delivry_mode=2, type='topic')
-        self._connection.connect()
         monitor_heartbeats(self._connections)
 
     def _get_producer(self):
@@ -59,12 +60,14 @@ class RabbitMQHandler(object):
 
     def info(self):
         with self._get_producer() as producer:
+            if not producer.connection.connected:
+                return {}
             res = producer.connection.info()
             if 'password' in res:
                 del res['password']
             return res
 
-    def listen_load_realtime(self, queue_name):
+    def listen_load_realtime(self, queue_name, retry_timeout=10):
         log = logging.getLogger(__name__)
 
         def callback(body, message):
@@ -108,14 +111,19 @@ class RabbitMQHandler(object):
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
         rt_queue = Queue(queue_name, routing_key=route, exchange=self._exchange, durable=False)
-        with connections[self._connection].acquire(block=True) as conn:
-            self._connections.add(conn)
-            with Consumer(conn, no_ack=True, queues=[rt_queue], callbacks=[callback]):
-                while True:
-                    try:
-                        conn.drain_events(timeout=1)
-                    except socket.timeout:
-                        pass
+        while True:
+            try:
+                with connections[self._connection].acquire(block=True) as conn:
+                    self._connections.add(conn)
+                    with Consumer(conn, no_ack=True, queues=[rt_queue], callbacks=[callback]):
+                        while True:
+                            try:
+                                conn.drain_events(timeout=1)
+                            except socket.timeout:
+                                pass
+            except socket.error:
+                log.exception('disconnected, retrying in %s sec', retry_timeout)
+                time.sleep(retry_timeout)
 
 
 def monitor_heartbeats(connections, rate=2):
@@ -136,15 +144,20 @@ def monitor_heartbeats(connections, rate=2):
     logging.getLogger(__name__).info('start rabbitmq monitoring')
 
     def heartbeat_check():
+        to_remove = []
         for conn in connections:
             if conn.connected:
                 logging.getLogger(__name__).debug('heartbeat_check for %s', conn)
                 try:
                     conn.heartbeat_check(rate=rate)
-                except ConnectionForced:
-                    #I don't know why, but pyamqp fail to detect the heartbeat
-                    #So even if it fail we don't do anything
-                    pass
+                except socket.error:
+                    logging.getLogger(__name__).info('connection %s dead: closing it!', conn)
+                    #actualy we don't do a close(), else we won't be able to reopen it after...
+                    to_remove.append(conn)
+            else:
+                to_remove.append(conn)
+        for conn in to_remove:
+            connections.remove(conn)
         gevent.spawn_later(interval, heartbeat_check)
 
     gevent.spawn_later(interval, heartbeat_check)
