@@ -369,3 +369,18 @@ def test_ire_trip_removal_parity(mock_rabbitmq):
         assert len(StopTimeUpdate.query.all()) == 0
     check_db_ire_6113_trip_removal()
     assert mock_rabbitmq.call_count == 1
+
+
+def test_save_bad_raw_ire():
+    """
+    send a bad formatted ire, the bad raw ire should be saved in db
+    """
+    bad_ire = get_ire_data('bad_ire.xml')
+    res = api_post('/ire', data=bad_ire, check=False)
+    assert res[1] == 400
+    assert res[0]['message'] == 'Invalid arguments'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == \
+            'invalid xml, impossible to find "Train" in xml elt InfoRetard'
