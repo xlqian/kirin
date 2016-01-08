@@ -384,3 +384,4 @@ def test_save_bad_raw_ire():
         assert RealTimeUpdate.query.first().status == 'KO'
         assert RealTimeUpdate.query.first().error == \
             'invalid xml, impossible to find "Train" in xml elt InfoRetard'
+        assert RealTimeUpdate.query.first().raw_data == bad_ire
