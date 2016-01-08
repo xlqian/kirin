@@ -31,7 +31,7 @@ from flask.globals import current_app
 from flask_restful import Resource
 from kirin import core
 from kirin.core import model
-from kirin.exceptions import InvalidArguments
+from kirin.exceptions import KirinException, InvalidArguments
 from model_maker import KirinModelBuilder
 import navitia_wrapper
 
@@ -68,17 +68,28 @@ def make_navitia_wrapper():
 
 class Ire(Resource):
 
+    def __init__(self):
+        self.navitia_wrapper = make_navitia_wrapper()
+        self.contributor = current_app.config['CONTRIBUTOR']
+
     def post(self):
+
         raw_xml = get_ire(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
         rt_update = _make_rt_update(raw_xml)
-        # assuming UTF-8 encoding for all ire input
-        rt_update.raw_data = rt_update.raw_data.encode('utf-8')
+        try:
+            # assuming UTF-8 encoding for all ire input
+            rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
-        # raw_xml is interpreted
-        trip_updates = KirinModelBuilder(make_navitia_wrapper(), current_app.config['CONTRIBUTOR']).build(rt_update)
-
+            # raw_xml is interpreted
+            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
+        except KirinException as e:
+            rt_update.status = 'KO'
+            rt_update.error = e.data['error']
+            model.db.session.add(rt_update)
+            model.db.session.commit()
+            raise
         core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
 
         return 'OK', 200
