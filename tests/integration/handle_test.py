@@ -157,6 +157,48 @@ def test_handle_new_vj():
         assert db_st_updates[1].trip_update_id == db_trip_updates[0].vj_id
 
 
+def test_past_midnight():
+    """
+    integration of a past midnight
+    """
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
+        {'arrival_time': datetime.time(22, 10), 'departure_time': datetime.time(22, 15),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'UTC'}}},
+        # arrive at sa:2 at 23:10 and leave the day after
+        {'arrival_time': datetime.time(23, 10), 'departure_time': datetime.time(2, 15),
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'UTC'}}},
+        {'arrival_time': datetime.time(3, 20), 'departure_time': datetime.time(3, 25),
+         'stop_point': {'id': 'sa:3', 'stop_area': {'timezone': 'UTC'}}}
+    ]}
+    with app.app_context():
+        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        st = StopTimeUpdate({'id': 'sa:2'}, departure_delay=timedelta(minutes=31), dep_status='update')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        trip_update.stop_time_updates.append(st)
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
+
+        assert len(res.trip_updates) == 1
+        trip_update = res.trip_updates[0]
+        assert trip_update.status == 'update'
+        assert len(trip_update.stop_time_updates) == 3
+
+        assert trip_update.stop_time_updates[0].stop_id == 'sa:1'
+        assert trip_update.stop_time_updates[0].arrival == _dt("22:10")
+        assert trip_update.stop_time_updates[0].departure == _dt("22:15")
+
+        assert trip_update.stop_time_updates[1].stop_id == 'sa:2'
+        assert trip_update.stop_time_updates[1].arrival == _dt("23:10")
+        assert trip_update.stop_time_updates[1].arrival_delay == timedelta(0)
+        assert trip_update.stop_time_updates[1].departure == _dt("2:46", day=9)
+        assert trip_update.stop_time_updates[1].departure_delay == timedelta(minutes=31)
+
+        assert trip_update.stop_time_updates[2].stop_id == 'sa:3'
+        assert trip_update.stop_time_updates[2].arrival == _dt("3:20", day=9)
+        assert trip_update.stop_time_updates[2].arrival_delay == timedelta(0)
+        assert trip_update.stop_time_updates[2].departure == _dt("3:25", day=9)
+        assert trip_update.stop_time_updates[2].departure_delay == timedelta(0)
+
+
 def test_handle_new_trip_out_of_order(navitia_vj):
     """
     We have one vj with only one stop time updated, but it's not the first
@@ -186,6 +228,7 @@ def test_handle_new_trip_out_of_order(navitia_vj):
         assert trip_update.stop_time_updates[2].stop_id == 'sa:3'
         assert trip_update.stop_time_updates[2].departure == _dt("10:05")
         assert trip_update.stop_time_updates[2].arrival == _dt("10:05")
+
 
 def test_manage_consistency(navitia_vj):
     """
