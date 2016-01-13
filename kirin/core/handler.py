@@ -27,6 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import logging
+from datetime import timedelta
 import pytz
 import kirin
 from kirin import gtfs_realtime_pb2
@@ -199,6 +200,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         res.stop_time_updates = []
         return res
 
+    last_nav_dep = None
+    circulation_date = new_trip_update.vj.circulation_date
     for navitia_stop in navitia_vj.get('stop_times', []):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id)
@@ -209,13 +212,17 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         nav_arrival_time = navitia_stop.get('arrival_time')
         timezone = _get_timezone(navitia_stop)
 
-        departure = arrival = None
-        if nav_departure_time:
-            departure = _get_datetime(new_trip_update.vj.circulation_date, nav_departure_time, timezone)
+        arrival = departure = None
         if nav_arrival_time:
-            arrival = _get_datetime(new_trip_update.vj.circulation_date, nav_arrival_time, timezone)
-
-        #TODO handle past midnight
+            if last_nav_dep and last_nav_dep > nav_arrival_time:
+                # last departure is after arrival, it's a past-midnight
+                circulation_date += timedelta(days=1)
+            arrival = _get_datetime(circulation_date, nav_arrival_time, timezone)
+        if nav_departure_time:
+            if nav_arrival_time and nav_arrival_time > nav_departure_time:
+                # departure is before arrival, it's a past-midnight
+                circulation_date += timedelta(days=1)
+            departure = _get_datetime(circulation_date, nav_departure_time, timezone)
 
         if new_st:
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])
@@ -255,6 +262,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             new_st = StopTimeUpdate(navitia_stop['stop_point'], departure=departure, arrival=arrival)
             new_st.order = len(res_stoptime_updates)
             res_stoptime_updates.append(new_st)
+
+        last_nav_dep = nav_departure_time
 
     res.stop_time_updates = res_stoptime_updates
 
