@@ -51,3 +51,7 @@ class ObjectNotFound(KirinException):
     code = 404
     message = 'object not found'
 
+
+class MessageNotPublished(KirinException):
+    code = 500
+    message = 'impossible to publish message on network'

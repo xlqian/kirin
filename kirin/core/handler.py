@@ -28,6 +28,7 @@
 # www.navitia.io
 import logging
 from datetime import timedelta
+import socket
 import pytz
 import kirin
 from kirin import gtfs_realtime_pb2
@@ -36,6 +37,7 @@ from kirin.core import model
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 import datetime
 from kirin.core.populate_pb import convert_to_gtfsrt
+from kirin.exceptions import MessageNotPublished
 
 
 def persist(real_time_update):
@@ -274,4 +276,8 @@ def publish(feed, contributor):
     """
     send RT feed to navitia
     """
-    kirin.rabbitmq_handler.publish(feed.SerializeToString(), contributor)
+    try:
+        kirin.rabbitmq_handler.publish(feed.SerializeToString(), contributor)
+    except socket.error:
+        logging.getLogger(__name__).exception('impossible to publish in rabbitmq')
+        raise MessageNotPublished()

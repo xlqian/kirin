@@ -31,6 +31,7 @@ from kombu.pools import producers, connections
 import logging
 from amqp.exceptions import ConnectionForced
 import gevent
+from retrying import retry
 from kirin import task_pb2
 from google.protobuf.message import DecodeError
 import socket
@@ -54,9 +55,13 @@ class RabbitMQHandler(object):
         self._connections.add(producer.connection)
         return producer
 
+    @retry(wait_fixed=200, stop_max_attempt_number=3)
+    def _publish(self, producer, item, contributor):
+        producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
+
     def publish(self, item, contributor):
         with self._get_producer() as producer:
-            producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
+            self._publish(producer, item, contributor)
 
     def info(self):
         with self._get_producer() as producer:
