@@ -35,7 +35,7 @@ from retrying import retry
 from kirin import task_pb2
 from google.protobuf.message import DecodeError
 import socket
-from kirin.core.model import TripUpdate
+from kirin.core.model import TripUpdate, db
 from kirin.core.populate_pb import convert_to_gtfsrt
 import gtfs_realtime_pb2
 from kirin.utils import str_to_date
@@ -76,42 +76,45 @@ class RabbitMQHandler(object):
         log = logging.getLogger(__name__)
 
         def callback(body, message):
-            task = task_pb2.Task()
             try:
-                # `body` is of unicode type, but we need str type for
-                # `ParseFromString()` to work.  It seems to work.
-                # Maybe kombu estimate that, without any information,
-                # the body should be something as json, and thus a
-                # unicode string.  On the c++ side, I didn't manage to
-                # find a way to give a content-type or something like
-                # that.
-                body = str(body)
-                task.ParseFromString(body)
-            except DecodeError as e:
-                log.warn('invalid protobuf: {}'.format(str(e)))
-                return
+                task = task_pb2.Task()
+                try:
+                    # `body` is of unicode type, but we need str type for
+                    # `ParseFromString()` to work.  It seems to work.
+                    # Maybe kombu estimate that, without any information,
+                    # the body should be something as json, and thus a
+                    # unicode string.  On the c++ side, I didn't manage to
+                    # find a way to give a content-type or something like
+                    # that.
+                    body = str(body)
+                    task.ParseFromString(body)
+                except DecodeError as e:
+                    log.warn('invalid protobuf: {}'.format(str(e)))
+                    return
 
-            log.info('getting a request: {}'.format(task))
-            if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
-                return
-            begin_date = None
-            end_date = None
-            if hasattr(task.load_realtime, "begin_date"):
-                if task.load_realtime.begin_date:
-                    begin_date = str_to_date(task.load_realtime.begin_date)
+                log.info('getting a request: {}'.format(task))
+                if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
+                    return
+                begin_date = None
+                end_date = None
+                if hasattr(task.load_realtime, "begin_date"):
+                    if task.load_realtime.begin_date:
+                        begin_date = str_to_date(task.load_realtime.begin_date)
 
-            if hasattr(task.load_realtime, "end_date"):
-                if task.load_realtime.end_date:
-                    end_date = str_to_date(task.load_realtime.end_date)
-            feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
-                                                                           begin_date,
-                                                                           end_date),
-                                     gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
+                if hasattr(task.load_realtime, "end_date"):
+                    if task.load_realtime.end_date:
+                        end_date = str_to_date(task.load_realtime.end_date)
+                feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
+                                                                               begin_date,
+                                                                               end_date),
+                                         gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
 
-            with self._get_producer() as producer:
-                log.info('Publishing full feed...')
-                producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
-                log.info('Full feed published.')
+                with self._get_producer() as producer:
+                    log.info('Publishing full feed...')
+                    producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
+                    log.info('Full feed published.')
+            finally:
+                db.session.remove()
 
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
