@@ -70,6 +70,7 @@ class Ire(Resource):
 
     def __init__(self):
         self.navitia_wrapper = make_navitia_wrapper()
+        self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
         self.contributor = current_app.config['CONTRIBUTOR']
 
     def post(self):
@@ -90,6 +91,13 @@ class Ire(Resource):
             model.db.session.add(rt_update)
             model.db.session.commit()
             raise
+        except Exception as e:
+            rt_update.status = 'KO'
+            rt_update.error = e.message
+            model.db.session.add(rt_update)
+            model.db.session.commit()
+            raise
+
         core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
 
         return 'OK', 200

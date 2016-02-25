@@ -5,6 +5,8 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://navitia:navitia@localhost/kirin'
 
 NAVITIA_URL = 'https://api.navitia.io/'
 
+NAVITIA_TIMEOUT = 5
+
 NAVITIA_INSTANCE = 'sncf'
 
 NAVITIA_TOKEN = None
