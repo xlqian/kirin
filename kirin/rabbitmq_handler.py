@@ -56,12 +56,9 @@ class RabbitMQHandler(object):
         return producer
 
     @retry(wait_fixed=200, stop_max_attempt_number=3)
-    def _publish(self, producer, item, contributor):
-        producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
-
     def publish(self, item, contributor):
         with self._get_producer() as producer:
-            self._publish(producer, item, contributor)
+            producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
 
     def info(self):
         with self._get_producer() as producer:
