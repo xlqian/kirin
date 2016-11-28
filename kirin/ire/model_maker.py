@@ -82,11 +82,32 @@ def to_str(date):
     return date.strftime("%Y%m%dT%H%M%S")
 
 
-def headsign(str):
+def headsigns(str):
     """
-    we remove leading 0 for the headsigns and everything after a '/'
+    we remove leading 0 for the headsigns and handle the train's parity
+
+    the parity is the number after the '/'. it gives an alternative train number
+
+    >>> headsigns('2038')
+    ['2038']
+    >>> headsigns('002038')
+    ['2038']
+    >>> headsigns('002038/12')
+    ['2038', '2012']
+    >>> headsigns('2038/3')
+    ['2038', '2033']
+    >>> headsigns('2038/123')
+    ['2038', '2123']
+    >>> headsigns('2038/12345')
+    ['2038', '12345']
+
     """
-    return str.lstrip('0').split('/', 1)[0]
+    h = str.lstrip('0')
+    if '/' not in h:
+        return [h]
+    signs = h.split('/', 1)
+    alternative_headsign = signs[0][:-len(signs[1])] + signs[1]
+    return [signs[0], alternative_headsign]
 
 
 def as_bool(s):
@@ -136,37 +157,39 @@ class KirinModelBuilder(object):
 
     def _get_vjs(self, xml_train):
         log = logging.getLogger(__name__)
-        train_number = headsign(get_value(xml_train, 'NumeroTrain'))
+        train_numbers = headsigns(get_value(xml_train, 'NumeroTrain'))
 
-        # to get the date of the vj we use the start/end of the vj + some tolerance
-        # since the ire data and navitia data might not be synchronized
-        vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
-        since = vj_start - timedelta(hours=1)
-        vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
-        until = vj_end + timedelta(hours=1)
+        vjs = {}
 
-        log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
+        for train_number in train_numbers:
+            # to get the date of the vj we use the start/end of the vj + some tolerance
+            # since the ire data and navitia data might not be synchronized
+            vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
+            since = vj_start - timedelta(hours=1)
+            vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
+            until = vj_end + timedelta(hours=1)
 
-        navitia_vjs = self.navitia.vehicle_journeys(q={
-            'headsign': train_number,
-            'since': to_str(since),
-            'until': to_str(until),
-            'depth': '2',  # we need this depth to get the stoptime's stop_area
-            'show_codes': 'true'  # we need the stop_points CRCICH codes
-        })
+            log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
 
-        if not navitia_vjs:
-            raise ObjectNotFound(
-                'impossible to find train {t} on [{s}, {u}['.format(t=train_number,
-                                                                    s=since,
-                                                                    u=until))
+            navitia_vjs = self.navitia.vehicle_journeys(q={
+                'headsign': train_number,
+                'since': to_str(since),
+                'until': to_str(until),
+                'depth': '2',  # we need this depth to get the stoptime's stop_area
+                'show_codes': 'true'  # we need the stop_points CRCICH codes
+            })
 
-        vjs = []
-        for nav_vj in navitia_vjs:
-            vj = model.VehicleJourney(nav_vj, vj_start.date())
-            vjs.append(vj)
+            if not navitia_vjs:
+                raise ObjectNotFound(
+                    'impossible to find train {t} on [{s}, {u}['.format(t=train_number,
+                                                                        s=since,
+                                                                        u=until))
 
-        return vjs
+            for nav_vj in navitia_vjs:
+                vj = model.VehicleJourney(nav_vj, vj_start.date())
+                vjs[nav_vj['id']] = vj
+
+        return vjs.values()
 
     def _make_trip_update(self, vj, xml_modification):
         """
