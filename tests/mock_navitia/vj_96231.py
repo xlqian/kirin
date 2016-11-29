@@ -34,7 +34,7 @@ response.query = 'vehicle_journeys/?depth=2&since=20150921T153000&headsign=96231
 
 response.response_code = 200
 
-response.json_response = {
+response.json_response = """{
     "vehicle_journeys": [
         {
             "codes": [
@@ -85,7 +85,7 @@ response.json_response = {
                     "links": [
 
                     ],
-                    "is_frequence": "False",
+                    "is_frequence": "false",
                     "geojson": {
                         "type": "MultiLineString",
                         "coordinates": [
@@ -106,13 +106,13 @@ response.json_response = {
                         }
                     ],
                     "week_pattern": {
-                        "monday": True,
-                        "tuesday": True,
-                        "friday": True,
-                        "wednesday": True,
-                        "thursday": True,
-                        "sunday": False,
-                        "saturday": False
+                        "monday": true,
+                        "tuesday": true,
+                        "friday": true,
+                        "wednesday": true,
+                        "thursday": true,
+                        "sunday": false,
+                        "saturday": false
                     }
                 }
             ],
@@ -452,42 +452,42 @@ response.json_response = {
             "href": "http://localhost:5000/v1/coverage/default/stop_points/{stop_point.id}",
             "type": "stop_point",
             "rel": "stop_points",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/stop_areas/{stop_area.id}",
             "type": "stop_area",
             "rel": "stop_areas",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/journey_patterns/{journey_pattern.id}",
             "type": "journey_pattern",
             "rel": "journey_patterns",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/routes/{route.id}",
             "type": "route",
             "rel": "routes",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/journey_pattern_points/{journey_pattern_point.id}",
             "type": "journey_pattern_point",
             "rel": "journey_pattern_points",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/vehicle_journeys/{vehicle_journeys.id}",
             "type": "vehicle_journeys",
             "rel": "vehicle_journeys",
-            "templated": True
+            "templated": true
         },
         {
             "href": "http://localhost:5000/v1/coverage/default/vehicle_journeys",
             "type": "first",
-            "templated": False
+            "templated": false
         }
     ],
     "feed_publishers": [
@@ -498,4 +498,4 @@ response.json_response = {
             "name": ""
         }
     ]
-}
+}"""

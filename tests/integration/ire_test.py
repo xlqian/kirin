@@ -394,7 +394,7 @@ def test_ire_trip_with_parity(mock_rabbitmq):
 
     check_db_ire_6113_trip_removal()
     check_db_ire_6114_trip_removal()
-    
+
     assert mock_rabbitmq.call_count == 1
 
 

@@ -25,6 +25,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import json
 import vj_john
 import vj_6113
 import vj_6114
@@ -55,4 +56,4 @@ def mock_navitia_query(self, query, q=None):
 
     mock = _mock_navitia_call[query_str]
 
-    return mock.json_response, mock.response_code
+    return json.loads(mock.json_response), mock.response_code
