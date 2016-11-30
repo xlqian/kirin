@@ -180,14 +180,17 @@ class KirinModelBuilder(object):
             })
 
             if not navitia_vjs:
-                raise ObjectNotFound(
-                    'impossible to find train {t} on [{s}, {u}['.format(t=train_number,
-                                                                        s=since,
-                                                                        u=until))
+                logging.getLogger(__name__).warn('impossible to find train {t} on [{s}, {u}['
+                                                 .format(t=train_number,
+                                                         s=since,
+                                                         u=until))
 
             for nav_vj in navitia_vjs:
                 vj = model.VehicleJourney(nav_vj, vj_start.date())
                 vjs[nav_vj['id']] = vj
+
+        if not vjs:
+            raise ObjectNotFound('no train found for headsigns {}'.format(train_numbers))
 
         return vjs.values()
 

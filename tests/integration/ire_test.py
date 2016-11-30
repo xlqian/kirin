@@ -398,6 +398,27 @@ def test_ire_trip_with_parity(mock_rabbitmq):
     assert mock_rabbitmq.call_count == 1
 
 
+def test_ire_trip_with_parity_one_unknown_vj(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, but the train 6112 is not known by navitia
+    there should be only the train 6113 impacted
+    """
+    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6112_13 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
+                                   '<NumeroTrain>006112/3</NumeroTrain>')
+    res = api_post('/ire', data=ire_6112_13)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+
+    check_db_ire_6113_trip_removal()
+
+    assert mock_rabbitmq.call_count == 1
+
+
 def test_save_bad_raw_ire():
     """
     send a bad formatted ire, the bad raw ire should be saved in db
