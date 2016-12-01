@@ -156,6 +156,25 @@ def check_db_ire_96231_trip_removal():
         assert len(db_trip_removal.stop_time_updates) == 0
 
 
+def check_db_ire_6114_trip_removal():
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) >= 1
+        assert len(StopTimeUpdate.query.all()) >= 0
+        db_trip_removal = TripUpdate.find_by_dated_vj('trip:OCETGV-87686006-87751008-2:25768-2',
+                                                      datetime.date(2015, 10, 6))
+        assert db_trip_removal
+
+        assert db_trip_removal.vj.navitia_trip_id == 'trip:OCETGV-87686006-87751008-2:25768-2'
+        assert db_trip_removal.vj.circulation_date == datetime.date(2015, 10, 6)
+        assert db_trip_removal.vj_id == db_trip_removal.vj.id
+        assert db_trip_removal.status == 'delete'
+        print db_trip_removal.message
+        assert db_trip_removal.message == u'Accident à un Passage à Niveau'
+        # full trip removal : no stop_time to precise
+        assert len(db_trip_removal.stop_time_updates) == 0
+
+
 def check_db_ire_6113_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
@@ -353,21 +372,50 @@ def test_ire_two_trip_removal_post_twice(mock_rabbitmq):
     assert mock_rabbitmq.call_count == 2
 
 
-def test_ire_trip_removal_parity(mock_rabbitmq):
+def test_ire_trip_with_parity(mock_rabbitmq):
     """
-    simple parity trip removal post
+    a trip with a parity has been impacted, there should be 2 VJ impacted
     """
     ire_6113 = get_ire_data('train_6113_trip_removal.xml')
     ire_6113_14 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
-                                   '<NumeroTrain>006113/14</NumeroTrain>')
+                                   '<NumeroTrain>006113/4</NumeroTrain>')
     res = api_post('/ire', data=ire_6113_14)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+
+        # there should be 2 trip updated,
+        # - trip:OCETGV-87686006-87751008-2:25768-2 for the headsign 6114
+        # - trip:OCETGV-87686006-87751008-2:25768 for the headsign 6113
+
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+
+    check_db_ire_6113_trip_removal()
+    check_db_ire_6114_trip_removal()
+
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_ire_trip_with_parity_one_unknown_vj(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, but the train 6112 is not known by navitia
+    there should be only the train 6113 impacted
+    """
+    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6112_13 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
+                                   '<NumeroTrain>006112/3</NumeroTrain>')
+    res = api_post('/ire', data=ire_6112_13)
     assert res == 'OK'
 
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
+
     check_db_ire_6113_trip_removal()
+
     assert mock_rabbitmq.call_count == 1
 
 
