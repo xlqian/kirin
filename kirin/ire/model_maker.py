@@ -159,15 +159,16 @@ class KirinModelBuilder(object):
         log = logging.getLogger(__name__)
         train_numbers = headsigns(get_value(xml_train, 'NumeroTrain'))
 
+        # to get the date of the vj we use the start/end of the vj + some tolerance
+        # since the ire data and navitia data might not be synchronized
+        vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
+        since = vj_start - timedelta(hours=1)
+        vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
+        until = vj_end + timedelta(hours=1)
+
         vjs = {}
 
         for train_number in train_numbers:
-            # to get the date of the vj we use the start/end of the vj + some tolerance
-            # since the ire data and navitia data might not be synchronized
-            vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
-            since = vj_start - timedelta(hours=1)
-            vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
-            until = vj_end + timedelta(hours=1)
 
             log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
 
