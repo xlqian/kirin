@@ -348,3 +348,16 @@ def test_find_activate():
 
         rtu = TripUpdate.find_by_contributor_period(['C1', 'C2'], datetime.date(2015, 9, 12))
         assert len(rtu) == 2
+
+
+def test_update_stoptime():
+    with app.app_context():
+        st = StopTimeUpdate({'id': 'foo'},
+                 departure_delay=datetime.timedelta(minutes=10), arrival_delay=datetime.timedelta(minutes=10),
+                 dep_status='update', arr_status='update')
+
+        st.update_arrival(time=None, status=None, delay=datetime.timedelta(minutes=0))
+        assert st.arrival_delay == datetime.timedelta(minutes=0)
+
+        st.update_departure(time=None, status=None, delay=datetime.timedelta(minutes=0))
+        assert st.departure_delay == datetime.timedelta(minutes=0)
