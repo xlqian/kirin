@@ -1,23 +1,28 @@
+# encoding: utf-8
+
+import os
+from flask_restful.inputs import boolean
+
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
 #http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
-SQLALCHEMY_DATABASE_URI = 'postgresql://navitia:navitia@localhost/kirin'
+SQLALCHEMY_DATABASE_URI = os.getenv('JORMUNGANDR_SQLALCHEMY_DATABASE_URI', 'postgresql://navitia:navitia@localhost/kirin')
 
-NAVITIA_URL = 'https://api.navitia.io/'
+NAVITIA_URL = os.getenv('JORMUNGANDR_NAVITIA_URL', 'https://api.navitia.io/')
 
 NAVITIA_TIMEOUT = 5
 
-NAVITIA_INSTANCE = 'sncf'
+NAVITIA_INSTANCE = os.getenv('JORMUNGANDR_NAVITIA_INSTANCE', 'sncf')
 
-NAVITIA_TOKEN = None
+NAVITIA_TOKEN = os.getenv('JORMUNGANDR_NAVITIA_TOKEN', None)
 
-CONTRIBUTOR = 'realtime.ire'
+CONTRIBUTOR = os.getenv('JORMUNGANDR_CONTRIBUTOR', 'realtime.ire')
 
 
-DEBUG = True
+DEBUG = boolean(os.getenv('DEBUG', False))
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
-RABBITMQ_CONNECTION_STRING = 'pyamqp://guest:guest@localhost:5672//?heartbeat=60'
+RABBITMQ_CONNECTION_STRING = os.getenv('KIRIN_RABBITMQ_CONNECTION_STRING', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
 
 #time before trying to reconnect to rabbitmq
 RETRY_TIMEOUT = 10
@@ -27,9 +32,12 @@ RETRY_TIMEOUT = 10
 LOAD_REALTIME_QUEUE = 'kirin_load_realtime'
 
 #amqp exhange used for sending disruptions
-EXCHANGE = 'navitia'
+EXCHANGE = os.getenv('RABBITMQ_EXCHANGE', 'navitia')
 
-ENABLE_RABBITMQ = True
+ENABLE_RABBITMQ = bool(os.getenv('ENABLE_RABBITMQ', True))
+
+log_level = os.getenv('JORMUNGANDR_LOG_LEVEL', 'DEBUG')
+log_format = os.getenv('JORMUNGANDR_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
 
 #Log Level available
 # - DEBUG
@@ -43,12 +51,12 @@ LOGGER = {
     'disable_existing_loggers': True,
     'formatters': {
         'default': {
-            'format': '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s',
+            'format': log_format,
         },
     },
     'handlers': {
         'default': {
-            'level': 'DEBUG',
+            'level': log_level,
             'class': 'logging.StreamHandler',
             'formatter': 'default',
         },
