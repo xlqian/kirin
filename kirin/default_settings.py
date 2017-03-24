@@ -6,20 +6,20 @@ from flask_restful.inputs import boolean
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
 #http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
-SQLALCHEMY_DATABASE_URI = os.getenv('JORMUNGANDR_SQLALCHEMY_DATABASE_URI', 'postgresql://navitia:navitia@localhost/kirin')
+SQLALCHEMY_DATABASE_URI = os.getenv('KIRIN_SQLALCHEMY_DATABASE_URI', 'postgresql://navitia:navitia@localhost/kirin')
 
-NAVITIA_URL = os.getenv('JORMUNGANDR_NAVITIA_URL', 'https://api.navitia.io/')
+NAVITIA_URL = os.getenv('KIRIN_NAVITIA_URL', None)
 
 NAVITIA_TIMEOUT = 5
 
-NAVITIA_INSTANCE = os.getenv('JORMUNGANDR_NAVITIA_INSTANCE', 'sncf')
+NAVITIA_INSTANCE = os.getenv('KIRIN_NAVITIA_INSTANCE', 'sncf')
 
-NAVITIA_TOKEN = os.getenv('JORMUNGANDR_NAVITIA_TOKEN', None)
+NAVITIA_TOKEN = os.getenv('KIRIN_NAVITIA_TOKEN', None)
 
-CONTRIBUTOR = os.getenv('JORMUNGANDR_CONTRIBUTOR', 'realtime.ire')
+CONTRIBUTOR = os.getenv('KIRIN_CONTRIBUTOR', 'realtime.ire')
 
 
-DEBUG = boolean(os.getenv('DEBUG', False))
+DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
 RABBITMQ_CONNECTION_STRING = os.getenv('KIRIN_RABBITMQ_CONNECTION_STRING', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
@@ -32,12 +32,12 @@ RETRY_TIMEOUT = 10
 LOAD_REALTIME_QUEUE = 'kirin_load_realtime'
 
 #amqp exhange used for sending disruptions
-EXCHANGE = os.getenv('RABBITMQ_EXCHANGE', 'navitia')
+EXCHANGE = os.getenv('KIRIN_RABBITMQ_EXCHANGE', 'navitia')
 
-ENABLE_RABBITMQ = bool(os.getenv('ENABLE_RABBITMQ', True))
+ENABLE_RABBITMQ = boolean(os.getenv('KIRIN_ENABLE_RABBITMQ', True))
 
-log_level = os.getenv('JORMUNGANDR_LOG_LEVEL', 'DEBUG')
-log_format = os.getenv('JORMUNGANDR_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
+log_level = os.getenv('KIRIN_LOG_LEVEL', 'DEBUG')
+log_format = os.getenv('KIRIN_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
 
 #Log Level available
 # - DEBUG
