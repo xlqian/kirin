@@ -226,12 +226,28 @@ class KirinModelBuilder(object):
 
         removal = xml_modification.find('Suppression')
         if removal:
+            xml_prdebut = removal.find('PRDebut')
             if get_value(removal, 'TypeSuppression') == 'T':
                 trip_update.status = 'delete'
                 trip_update.stop_time_updates = []
             elif get_value(removal, 'TypeSuppression') == 'P':
                 trip_update.status = 'update'
-            xml_prdebut = removal.find('PRDebut')
+                for deleted_points in removal.iter('PointSupprime'):
+                    # we need only to consider the stations
+                    if not as_bool(get_value(deleted_points, 'IndicateurPRGare')):
+                        continue
+                    nav_st = self._get_navitia_stop_time(deleted_points, vj.navitia_vj)
+
+                    if nav_st is None:
+                        continue
+
+                    nav_stop = nav_st.get('stop_point', {})
+
+                    message = get_value(deleted_points, 'MotifExterne')
+                    st_update = model.StopTimeUpdate(nav_stop, dep_status='delete', arr_status='delete',
+                                                     message=message)
+                    trip_update.stop_time_updates.append(st_update)
+
             if xml_prdebut:
                 trip_update.message = get_value(xml_prdebut, 'MotifExterne')
 

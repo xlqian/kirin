@@ -232,6 +232,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             if new_st.departure_status == 'update':
                 dep = departure + new_st.departure_delay if departure else None
                 res_st.update_departure(time=dep, status='update', delay=new_st.departure_delay)
+            elif new_st.departure_status == 'delete':
+                # the stoptime has been deleted, we skip the stoptime
+                res_st.update_departure(status='delete')
             elif db_st:
                 # we have no update on the departure for this st, we take it from the db (if it exists)
                 res_st.update_departure(time=db_st.departure,

@@ -182,10 +182,7 @@ def check_db_ire_96231_delayed(modif_externe_is_null=False):
         assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
-        if modif_externe_is_null:
-            assert second_st.message is None
-        else:
-            assert second_st.message == 'Affluence exceptionnelle de voyageurs'
+        assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -197,10 +194,7 @@ def check_db_ire_96231_delayed(modif_externe_is_null=False):
         assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 54)
         assert last_st.departure_delay == timedelta(minutes=15)
         assert last_st.departure_status == 'none'
-        if modif_externe_is_null:
-            assert last_st.message is None
-        else:
-            assert last_st.message == 'Affluence exceptionnelle de voyageurs'
+        assert last_st.message == 'Affluence exceptionnelle de voyageurs'
 
         assert db_trip_delayed.contributor == 'realtime.ire'
 
@@ -545,4 +539,56 @@ def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
     check_db_ire_96231_delayed(modif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_ire_partial_removal(mock_rabbitmq):
+    """
+    the trip 840427 has been partialy deleted
+
+    Normally there is 7 stops in this VJ, but 2 (Bar-sur-Aube and Vendeuvre) have been removed
+    """
+    ire_080427 = get_ire_data('train_840427_partial_removal.xml')
+    res = api_post('/ire', data=ire_080427)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 7
+
+        db_trip_partial_removed = TripUpdate.find_by_dated_vj('OCE:SN840427F03001',
+                                                      datetime.date(2017, 3, 18))
+        assert db_trip_partial_removed
+
+        assert db_trip_partial_removed.vj.navitia_trip_id == 'OCE:SN840427F03001'
+        assert db_trip_partial_removed.vj.circulation_date == datetime.date(2017, 3, 18)
+        assert db_trip_partial_removed.vj_id == db_trip_partial_removed.vj.id
+        assert db_trip_partial_removed.status == 'update'
+
+        # 7 stop times must have been created
+        assert len(db_trip_partial_removed.stop_time_updates) == 7
+
+        # the first stop have not been changed
+        first_st = db_trip_partial_removed.stop_time_updates[0]
+        assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87713040'
+        assert first_st.arrival_status == 'none'
+        assert first_st.departure_status == 'none'
+        assert first_st.message is None
+
+        for s in db_trip_partial_removed.stop_time_updates[0:3]:
+            assert s.arrival_status == 'none'
+            assert s.departure_status == 'none'
+            assert s.message is None
+
+        # the stops Bar-sur-Aube and Vendeuvre should have been marked as deleted
+        bar_st = db_trip_partial_removed.stop_time_updates[4]
+        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118299'
+        assert bar_st.arrival_status == 'delete'
+        assert bar_st.departure_status == 'delete'
+        assert bar_st.message == u"Défaut d'alimentation électrique"
+
+
+        assert db_trip_partial_removed.contributor == 'realtime.ire'
+
     assert mock_rabbitmq.call_count == 1
