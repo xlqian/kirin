@@ -59,7 +59,11 @@ def convert_to_gtfsrt(trip_updates, incrementality = gtfs_realtime_pb2.FeedHeade
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
     pb_stop_time.arrival.time = to_posix_time(stop_time.arrival)
+    if stop_time.arrival_delay:
+        pb_stop_time.arrival.delay = int(stop_time.arrival_delay.total_seconds())
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
+    if stop_time.departure_delay:
+        pb_stop_time.departure.delay = int(stop_time.departure_delay.total_seconds())
     if stop_time.message:
         pb_stop_time.Extensions[kirin_pb2.stoptime_message] = stop_time.message
 
