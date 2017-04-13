@@ -48,12 +48,34 @@ Setup
  - Install dependencies with ``` pip install -r requirements.txt``` (virtualenv is strongly advised)
  - Create a configuration file by copying and editing ```kirin/default_settings.py```
  - You have to create a database as defined in the configuration file
+```
+sudo -i -u postgres
+# Create a user
+createuser -P navitia (password "navitia")
+
+# Create database
+createdb -O navitia kirin
+
+# Create database for tests
+createdb -O navitia chaos_testing
+ctrl + d
+```
+
  - Create a file ```.env``` with the path to you configuration file:
  ```
-    KIRIN_CONFIG_FILE=/absolute/path/to/settings.py
+    KIRIN_CONFIG_FILE=default_settings.py
  ```
- - Build the protocol buffer files: ```./setup.py build_pbf```
+ - Build the protocol buffer files
+```
+git submodule init
+git submodule update
+./setup.py build_pbf
+```
  - Build the version file: ```./setup.py build_version```
- - Setup the database: ```honcho run ./manage.py db upgrade```
+ - Setup the database (requires honcho):
+```
+pip install honcho
+honcho run ./manage.py db upgrade
+```
  - Run the developement server: ```honcho start```
  - Enjoy

@@ -1,3 +1,4 @@
+.env
 *.pyc
 *_pb2.py
 kirin/version.py
