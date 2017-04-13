@@ -1,7 +1,5 @@
 FROM python:2.7-onbuild
 
-VOLUME /usr/src/config
-ENV KIRIN_CONFIG_FILE /usr/src/config/settings.py
 RUN pip install gunicorn
 RUN apt-get update && apt-get install -y protobuf-compiler
 WORKDIR /usr/src/app
