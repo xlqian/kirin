@@ -26,6 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import timedelta
 
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
@@ -92,14 +93,15 @@ def test_populate_pb_with_two_stop_time():
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
-        st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), arrival=None)
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.trip_updates.append(trip_update)
+        st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), departure_delay=timedelta(minutes=5),
+                            arrival=None)
         trip_update.stop_time_updates.append(st)
 
         st = StopTimeUpdate({'id': 'sa:2'},
-                            departure=_dt("8:21"),
-                            arrival=_dt("8:20"),
+                            departure=_dt("8:21"), departure_delay=timedelta(minutes=-40),
+                            arrival=_dt("8:20"), arrival_delay=timedelta(minutes=-40),
                             message="bob's on the track")
         real_time_update.trip_updates[0].stop_time_updates.append(st)
 
@@ -114,8 +116,8 @@ def test_populate_pb_with_two_stop_time():
         pb_trip_update = feed_entity.entity[0].trip_update
         assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
         assert pb_trip_update.trip.start_date == '20150908'
-        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == False
-        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 2
@@ -123,13 +125,82 @@ def test_populate_pb_with_two_stop_time():
         pb_stop_time = pb_trip_update.stop_time_update[0]
         assert pb_stop_time.stop_id == 'sa:1'
         assert pb_stop_time.arrival.time == 0
+        assert pb_stop_time.arrival.delay == 0
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+        assert pb_stop_time.departure.delay == 5*60
         assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == ""
 
         pb_stop_time = pb_trip_update.stop_time_update[1]
         assert pb_stop_time.stop_id == 'sa:2'
         assert pb_stop_time.arrival.time == to_posix_time(_dt("8:20"))
+        assert pb_stop_time.arrival.delay == -40*60
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:21"))
+        assert pb_stop_time.departure.delay == -40*60
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
+
+
+
+def test_populate_pb_with_deleted_stop_time():
+    """
+    test protobuf for partial delete
+    """
+
+    #we add another impacted stop time to the Model
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
+        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        ]}
+
+    with app.app_context():
+        trip_update = TripUpdate()
+        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        trip_update.vj = vj
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update.trip_updates.append(trip_update)
+        st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), departure_delay=timedelta(minutes=5),
+                            arrival=None)
+        trip_update.stop_time_updates.append(st)
+
+        st = StopTimeUpdate({'id': 'sa:2'},
+                            # Note: we still send the departure/arrival for coherence
+                            arrival=_dt("8:10"), dep_status='delete',
+                            departure=_dt("9:10"), arr_status='delete',
+                            message="bob's on the track")
+        real_time_update.trip_updates[0].stop_time_updates.append(st)
+
+        db.session.add(real_time_update)
+        db.session.commit()
+
+        feed_entity = convert_to_gtfsrt(real_time_update.trip_updates)
+
+        assert feed_entity.header.incrementality == gtfs_realtime_pb2.FeedHeader.DIFFERENTIAL
+        assert feed_entity.header.gtfs_realtime_version, '1'
+        assert len(feed_entity.entity) == 1
+        pb_trip_update = feed_entity.entity[0].trip_update
+        assert pb_trip_update.trip.trip_id == 'vehicle_journey:1'
+        assert pb_trip_update.trip.start_date == '20150908'
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
+        assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
+
+        assert len(pb_trip_update.stop_time_update) == 2
+
+        pb_stop_time = pb_trip_update.stop_time_update[0]
+        assert pb_stop_time.stop_id == 'sa:1'
+        assert pb_stop_time.arrival.time == 0
+        assert pb_stop_time.arrival.delay == 0
+        assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
+        assert pb_stop_time.departure.delay == 5*60
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == ""
+
+        pb_stop_time = pb_trip_update.stop_time_update[1]
+        assert pb_stop_time.stop_id == 'sa:2'
+        # the stop should have been marked has SKIPPED
+        assert pb_stop_time.schedule_relationship == gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+        assert pb_stop_time.arrival.time == to_posix_time(_dt("8:10"))
+        assert pb_stop_time.arrival.delay == 0
+        assert pb_stop_time.departure.time == to_posix_time(_dt("9:10"))
+        assert pb_stop_time.departure.delay == 0
         assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
 
 

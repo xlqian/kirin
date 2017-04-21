@@ -231,6 +231,7 @@ class KirinModelBuilder(object):
                 trip_update.status = 'delete'
                 trip_update.stop_time_updates = []
             elif get_value(removal, 'TypeSuppression') == 'P':
+                # it's a partial delete
                 trip_update.status = 'update'
                 for deleted_points in removal.iter('PointSupprime'):
                     # we need only to consider the stations

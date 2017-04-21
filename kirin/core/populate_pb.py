@@ -64,6 +64,10 @@ def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
     if stop_time.departure_delay:
         pb_stop_time.departure.delay = int(stop_time.departure_delay.total_seconds())
+    if stop_time.arrival_status == 'delete' and stop_time.departure_status == 'delete':
+        # if both departure and arrival have been deleted, we delete the stop
+        pb_stop_time.schedule_relationship = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+
     if stop_time.message:
         pb_stop_time.Extensions[kirin_pb2.stoptime_message] = stop_time.message
 

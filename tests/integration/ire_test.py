@@ -588,7 +588,6 @@ def test_ire_partial_removal(mock_rabbitmq):
         assert bar_st.departure_status == 'delete'
         assert bar_st.message == u"Défaut d'alimentation électrique"
 
-
         assert db_trip_partial_removed.contributor == 'realtime.ire'
 
     assert mock_rabbitmq.call_count == 1
