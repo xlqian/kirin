@@ -145,7 +145,7 @@ def check_db_ire_96231_normal():
         assert db_trip_delayed.contributor == 'realtime.ire'
 
 
-def check_db_ire_96231_delayed():
+def check_db_ire_96231_delayed(modif_externe_is_null=False):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -182,7 +182,10 @@ def check_db_ire_96231_delayed():
         assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
-        assert second_st.message == 'Affluence exceptionnelle de voyageurs'
+        if modif_externe_is_null:
+            assert second_st.message is None
+        else:
+            assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -194,7 +197,10 @@ def check_db_ire_96231_delayed():
         assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 54)
         assert last_st.departure_delay == timedelta(minutes=15)
         assert last_st.departure_status == 'none'
-        assert last_st.message == 'Affluence exceptionnelle de voyageurs'
+        if modif_externe_is_null:
+            assert last_st.message is None
+        else:
+            assert last_st.message == 'Affluence exceptionnelle de voyageurs'
 
         assert db_trip_delayed.contributor == 'realtime.ire'
 
@@ -494,6 +500,7 @@ def test_save_bad_raw_ire():
             'invalid xml, impossible to find "Train" in xml elt InfoRetard'
         assert RealTimeUpdate.query.first().raw_data == bad_ire
 
+
 def test_ire_delayed_then_OK(mock_rabbitmq):
     """
     We delay a stop, then the vj is back on time
@@ -519,3 +526,22 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
         assert len(StopTimeUpdate.query.all()) == 6
     check_db_ire_96231_normal()
     assert mock_rabbitmq.call_count == 2
+
+
+def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, but the train 6112 is not known by navitia
+    there should be only the train 6113 impacted
+    """
+    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231_without_MotifExterne = ire_96231.replace('<MotifExterne>Affluence exceptionnelle de voyageurs</MotifExterne>',
+                                                       '')
+    res = api_post('/ire', data=ire_96231_without_MotifExterne)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_ire_96231_delayed(modif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 1
