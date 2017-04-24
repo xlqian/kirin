@@ -530,10 +530,11 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
 
 def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
     """
-    a trip with a parity has been impacted, but the train 6112 is not known by navitia
-    there should be only the train 6113 impacted
+    a trip with a parity has been impacted, but the ExternModif is missing,
+    the IRE should still be acceptable
     """
     ire_96231 = get_ire_data('train_96231_delayed.xml')
+    # Removing MotifExterne
     ire_96231_without_MotifExterne = ire_96231.replace('<MotifExterne>Affluence exceptionnelle de voyageurs</MotifExterne>',
                                                        '')
     res = api_post('/ire', data=ire_96231_without_MotifExterne)
