@@ -38,20 +38,20 @@ import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments, ObjectNotFound
 
 
-def get_node(elt, xpath):
+def get_node(elt, xpath, nullabe=False):
     """
     get a unique element in an xml node
     raise an exception if the element does not exists
     """
     res = elt.find(xpath)
-    if res is None:
+    if res is None and not nullabe:
         raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
             node=xpath, elt=elt.tag))
     return res
 
 
-def get_value(elt, xpath):
-    node = get_node(elt, xpath)
+def get_value(elt, xpath, nullabe=False):
+    node = get_node(elt, xpath, nullabe)
     return node.text if node is not None else None
 
 
@@ -219,7 +219,7 @@ class KirinModelBuilder(object):
                 dep_delay, dep_status = self._get_delay(downstream_point.find('TypeHoraire/Depart'))
                 arr_delay, arr_status = self._get_delay(downstream_point.find('TypeHoraire/Arrivee'))
 
-                message = get_value(downstream_point, 'MotifExterne')
+                message = get_value(downstream_point, 'MotifExterne', nullabe=True)
                 st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
                                                  dep_status=dep_status, arr_status=arr_status, message=message)
                 trip_update.stop_time_updates.append(st_update)
