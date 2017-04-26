@@ -587,12 +587,32 @@ def test_ire_partial_removal(mock_rabbitmq):
             assert s.departure_status == 'none'
             assert s.message is None
 
-        # the stops Bar-sur-Aube and Vendeuvre should have been marked as deleted
-        bar_st = db_trip_partial_removed.stop_time_updates[4]
-        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118299'
+        # the stops Chaumont, Bar-sur-Aube, Vendeuvre and Troyes should have been marked as deleted
+        # (even if Chaumont and Vendeuvre were in a 'PRDebut'/'PRFin' tag
+        bar_st = db_trip_partial_removed.stop_time_updates[3]
+        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87142000'  # Chaumont
         assert bar_st.arrival_status == 'delete'
         assert bar_st.departure_status == 'delete'
         assert bar_st.message == u"Défaut d'alimentation électrique"
+
+        bar_st = db_trip_partial_removed.stop_time_updates[4]
+        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118299'  # Bar-sur-Aube
+        assert bar_st.arrival_status == 'delete'
+        assert bar_st.departure_status == 'delete'
+        assert bar_st.message == u"Défaut d'alimentation électrique"
+
+        bar_st = db_trip_partial_removed.stop_time_updates[5]
+        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118257'  # Vendeuvre
+        assert bar_st.arrival_status == 'delete'
+        assert bar_st.departure_status == 'delete'
+        assert bar_st.message == u"Défaut d'alimentation électrique"
+
+        bar_st = db_trip_partial_removed.stop_time_updates[6]
+        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118000'  # Troyes
+        assert bar_st.arrival_status == 'delete'
+        assert bar_st.departure_status == 'delete'
+        assert bar_st.message == u"Défaut d'alimentation électrique"
+
 
         assert db_trip_partial_removed.contributor == 'realtime.ire'
 

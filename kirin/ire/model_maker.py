@@ -27,6 +27,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import itertools
 import logging
 from datetime import timedelta, datetime
 from dateutil import parser
@@ -233,18 +234,21 @@ class KirinModelBuilder(object):
             elif get_value(removal, 'TypeSuppression') == 'P':
                 # it's a partial delete
                 trip_update.status = 'update'
-                for deleted_points in removal.iter('PointSupprime'):
+                deleted_points = itertools.chain([removal.find('PRDebut')],
+                                                 removal.iter('PointSupprime'),
+                                                 [removal.find('PRFin')])
+                for deleted_point in deleted_points:
                     # we need only to consider the stations
-                    if not as_bool(get_value(deleted_points, 'IndicateurPRGare')):
+                    if not as_bool(get_value(deleted_point, 'IndicateurPRGare')):
                         continue
-                    nav_st = self._get_navitia_stop_time(deleted_points, vj.navitia_vj)
+                    nav_st = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
 
                     if nav_st is None:
                         continue
 
                     nav_stop = nav_st.get('stop_point', {})
 
-                    message = get_value(deleted_points, 'MotifExterne', nullabe=True)
+                    message = get_value(deleted_point, 'MotifExterne', nullabe=True)
                     st_update = model.StopTimeUpdate(nav_stop, dep_status='delete', arr_status='delete',
                                                      message=message)
                     trip_update.stop_time_updates.append(st_update)
