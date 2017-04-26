@@ -248,8 +248,16 @@ class KirinModelBuilder(object):
 
                     nav_stop = nav_st.get('stop_point', {})
 
+                    # if the <Depart>/<Arrivee> tags are there, the departure/arrival has been deleted
+                    # regardless of the <Etat> tag
+                    dep_deleted = deleted_point.find('TypeHoraire/Depart') is not None
+                    arr_deleted = deleted_point.find('TypeHoraire/Arrivee') is not None
+
+                    dep_status = 'delete' if dep_deleted else 'none'
+                    arr_status = 'delete' if arr_deleted else 'none'
+
                     message = get_value(deleted_point, 'MotifExterne', nullabe=True)
-                    st_update = model.StopTimeUpdate(nav_stop, dep_status='delete', arr_status='delete',
+                    st_update = model.StopTimeUpdate(nav_stop, dep_status=dep_status, arr_status=arr_status,
                                                      message=message)
                     trip_update.stop_time_updates.append(st_update)
 

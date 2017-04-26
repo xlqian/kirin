@@ -139,16 +139,28 @@ def test_populate_pb_with_two_stop_time():
         assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
 
 
-
 def test_populate_pb_with_deleted_stop_time():
     """
     test protobuf for partial delete
-    """
 
+    nav vj
+    sa:1 * ---- * sa:2 * ---- * sa:3 * ---- * sa:4
+
+    we stop the vj from going to sa:3 and sa:4
+
+    sa:1 * ---- * sa:2
+
+    And we delay sa:1 of 5 minutes
+
+    Note: sa:2 departure must be removed as well as sa:3 departures/arrival and sa:4' arrival
+    """
     #we add another impacted stop time to the Model
+    from datetime import time
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        {'arrival_time': None, 'departure_time': time(8, 11), 'stop_point': {'id': 'sa:1'}},
+        {'arrival_time': time(9, 10), 'departure_time': time(9, 11), 'stop_point': {'id': 'sa:2'}},
+        {'arrival_time': time(10, 10), 'departure_time': time(10, 11), 'stop_point': {'id': 'sa:3'}},
+        {'arrival_time': time(11, 10), 'departure_time': None, 'stop_point': {'id': 'sa:4'}}
         ]}
 
     with app.app_context():
@@ -162,9 +174,21 @@ def test_populate_pb_with_deleted_stop_time():
         trip_update.stop_time_updates.append(st)
 
         st = StopTimeUpdate({'id': 'sa:2'},
+                            arrival=_dt("9:10"),
+                            departure=_dt("9:11"), dep_status='delete',  # we delete the departure
+                            message="bob's on the track")
+        real_time_update.trip_updates[0].stop_time_updates.append(st)
+
+        st = StopTimeUpdate({'id': 'sa:3'},
                             # Note: we still send the departure/arrival for coherence
-                            arrival=_dt("8:10"), dep_status='delete',
-                            departure=_dt("9:10"), arr_status='delete',
+                            arrival=_dt("10:10"), dep_status='delete',  # we delete both departure and arrival
+                            departure=_dt("10:11"), arr_status='delete',
+                            message="bob's on the track")
+        real_time_update.trip_updates[0].stop_time_updates.append(st)
+
+        st = StopTimeUpdate({'id': 'sa:4'},
+                            arrival=_dt("11:10"), arr_status='delete',  # we delete only the arrival
+                            departure=_dt("11:11"),
                             message="bob's on the track")
         real_time_update.trip_updates[0].stop_time_updates.append(st)
 
@@ -183,7 +207,7 @@ def test_populate_pb_with_deleted_stop_time():
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
-        assert len(pb_trip_update.stop_time_update) == 2
+        assert len(pb_trip_update.stop_time_update) == 4
 
         pb_stop_time = pb_trip_update.stop_time_update[0]
         assert pb_stop_time.stop_id == 'sa:1'
@@ -195,12 +219,41 @@ def test_populate_pb_with_deleted_stop_time():
 
         pb_stop_time = pb_trip_update.stop_time_update[1]
         assert pb_stop_time.stop_id == 'sa:2'
-        # the stop should have been marked has SKIPPED
-        assert pb_stop_time.schedule_relationship == gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
-        assert pb_stop_time.arrival.time == to_posix_time(_dt("8:10"))
+        assert pb_stop_time.arrival.time == to_posix_time(_dt("9:10"))
         assert pb_stop_time.arrival.delay == 0
-        assert pb_stop_time.departure.time == to_posix_time(_dt("9:10"))
+        # the arrival at the stop is still scheduled, but the departure is skipped
+        assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SCHEDULED
+        assert pb_stop_time.departure.time == to_posix_time(_dt("9:11"))
         assert pb_stop_time.departure.delay == 0
+        assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
+
+        pb_stop_time = pb_trip_update.stop_time_update[2]
+        assert pb_stop_time.stop_id == 'sa:3'
+        # both departure and arrival are SKIPPED
+        assert pb_stop_time.arrival.time == to_posix_time(_dt("10:10"))
+        assert pb_stop_time.arrival.delay == 0
+        assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+        assert pb_stop_time.departure.time == to_posix_time(_dt("10:11"))
+        assert pb_stop_time.departure.delay == 0
+        assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+        assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
+
+        pb_stop_time = pb_trip_update.stop_time_update[3]
+        assert pb_stop_time.stop_id == 'sa:4'
+        # only the arrival is skipped, the departure does not exists as it's the last stop
+        assert pb_stop_time.arrival.time == to_posix_time(_dt("11:10"))
+        assert pb_stop_time.arrival.delay == 0
+        assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+        assert pb_stop_time.departure.time == to_posix_time(_dt("11:11"))
+        assert pb_stop_time.departure.delay == 0
+        assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] == \
+               gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SCHEDULED
         assert pb_stop_time.Extensions[kirin_pb2.stoptime_message] == "bob's on the track"
 
 

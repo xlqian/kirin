@@ -591,7 +591,7 @@ def test_ire_partial_removal(mock_rabbitmq):
         # (even if Chaumont and Vendeuvre were in a 'PRDebut'/'PRFin' tag
         bar_st = db_trip_partial_removed.stop_time_updates[3]
         assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87142000'  # Chaumont
-        assert bar_st.arrival_status == 'delete'
+        assert bar_st.arrival_status == 'none'  # the train still arrives in this stop
         assert bar_st.departure_status == 'delete'
         assert bar_st.message == u"Défaut d'alimentation électrique"
 
@@ -610,9 +610,8 @@ def test_ire_partial_removal(mock_rabbitmq):
         bar_st = db_trip_partial_removed.stop_time_updates[6]
         assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118000'  # Troyes
         assert bar_st.arrival_status == 'delete'
-        assert bar_st.departure_status == 'delete'
+        assert bar_st.departure_status == 'none'  # the train still does not leave from this stop
         assert bar_st.message == u"Défaut d'alimentation électrique"
-
 
         assert db_trip_partial_removed.contributor == 'realtime.ire'
 
