@@ -145,7 +145,7 @@ def check_db_ire_96231_normal():
         assert db_trip_delayed.contributor == 'realtime.ire'
 
 
-def check_db_ire_96231_delayed(modif_externe_is_null=False):
+def check_db_ire_96231_delayed(motif_externe_is_null=False):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -182,7 +182,10 @@ def check_db_ire_96231_delayed(modif_externe_is_null=False):
         assert second_st.departure == datetime.datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
-        assert second_st.message == 'Affluence exceptionnelle de voyageurs'
+        if motif_externe_is_null:
+            assert second_st.message is None
+        else:
+            assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -194,7 +197,10 @@ def check_db_ire_96231_delayed(modif_externe_is_null=False):
         assert last_st.departure == datetime.datetime(2015, 9, 21, 16, 54)
         assert last_st.departure_delay == timedelta(minutes=15)
         assert last_st.departure_status == 'none'
-        assert last_st.message == 'Affluence exceptionnelle de voyageurs'
+        if motif_externe_is_null:
+            assert second_st.message is None
+        else:
+            assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         assert db_trip_delayed.contributor == 'realtime.ire'
 
@@ -538,7 +544,7 @@ def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_ire_96231_delayed(modif_externe_is_null=True)
+    check_db_ire_96231_delayed(motif_externe_is_null=True)
     assert mock_rabbitmq.call_count == 1
 
 

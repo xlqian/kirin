@@ -244,13 +244,13 @@ class KirinModelBuilder(object):
 
                     nav_stop = nav_st.get('stop_point', {})
 
-                    message = get_value(deleted_points, 'MotifExterne')
+                    message = get_value(deleted_points, 'MotifExterne', nullabe=True)
                     st_update = model.StopTimeUpdate(nav_stop, dep_status='delete', arr_status='delete',
                                                      message=message)
                     trip_update.stop_time_updates.append(st_update)
 
             if xml_prdebut:
-                trip_update.message = get_value(xml_prdebut, 'MotifExterne')
+                trip_update.message = get_value(xml_prdebut, 'MotifExterne', nullabe=True)
 
         return trip_update
 
