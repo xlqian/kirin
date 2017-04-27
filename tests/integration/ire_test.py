@@ -552,7 +552,7 @@ def test_ire_partial_removal(mock_rabbitmq):
     """
     the trip 840427 has been partialy deleted
 
-    Normally there is 7 stops in this VJ, but 2 (Bar-sur-Aube and Vendeuvre) have been removed
+    Normally there are 7 stops in this VJ, but 2 (Bar-sur-Aube and Vendeuvre) have been removed
     """
     ire_080427 = get_ire_data('train_840427_partial_removal.xml')
     res = api_post('/ire', data=ire_080427)

@@ -241,9 +241,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                 # we store the base's schedule
                 res_st.update_departure(time=departure, status='none', delay=None)
             if new_st.departure_status == 'delete':
-                # the stoptime has been deleted, we skip the stoptime
-                # Note: we also update the departure time to be able to better identify the stoptime in the vj
-                # (for lolipop lines for example)
+                # passing status delete on the stoptime
+                # Note: we keep providing base_schedule stoptime to better identify the stoptime
+                # in the vj (for lolipop lines for example)
                 res_st.update_departure(status='delete')
 
             if new_st.arrival_status == 'update':

@@ -152,7 +152,8 @@ def test_populate_pb_with_deleted_stop_time():
 
     And we delay sa:1 of 5 minutes
 
-    Note: sa:2 departure must be removed as well as sa:3 departures/arrival and sa:4' arrival
+    Note: in the message sent sa:2 departure will be removed as well
+    as sa:3 departures/arrival and sa:4' arrival
     """
     #we add another impacted stop time to the Model
     from datetime import time
