@@ -71,9 +71,13 @@ def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.arrival.time = to_posix_time(stop_time.arrival)
     if stop_time.arrival_delay:
         pb_stop_time.arrival.delay = int(stop_time.arrival_delay.total_seconds())
+    else:
+        pb_stop_time.arrival.delay = 0
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
     if stop_time.departure_delay:
         pb_stop_time.departure.delay = int(stop_time.departure_delay.total_seconds())
+    else:
+        pb_stop_time.departure.delay = 0
 
     pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] = \
         get_st_event(stop_time.departure_status)
