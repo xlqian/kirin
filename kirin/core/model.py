@@ -130,7 +130,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.arrival = arrival
         self.message = message
 
-    def update_departure(self, time, delay, status):
+    def update_departure(self, time=None, delay=None, status=None):
         if time:
             self.departure = time
         if delay is not None:
@@ -138,7 +138,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         if status:
             self.departure_status = status
 
-    def update_arrival(self, time, delay, status):
+    def update_arrival(self, time=None, delay=None, status=None):
         if time:
             self.arrival = time
         if delay is not None:

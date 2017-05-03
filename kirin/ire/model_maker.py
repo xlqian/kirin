@@ -27,6 +27,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import itertools
 import logging
 from datetime import timedelta, datetime
 from dateutil import parser
@@ -226,14 +227,42 @@ class KirinModelBuilder(object):
 
         removal = xml_modification.find('Suppression')
         if removal:
+            xml_prdebut = removal.find('PRDebut')
             if get_value(removal, 'TypeSuppression') == 'T':
                 trip_update.status = 'delete'
                 trip_update.stop_time_updates = []
             elif get_value(removal, 'TypeSuppression') == 'P':
+                # it's a partial delete
                 trip_update.status = 'update'
-            xml_prdebut = removal.find('PRDebut')
+                deleted_points = itertools.chain([removal.find('PRDebut')],
+                                                 removal.iter('PointSupprime'),
+                                                 [removal.find('PRFin')])
+                for deleted_point in deleted_points:
+                    # we need only to consider the stations
+                    if not as_bool(get_value(deleted_point, 'IndicateurPRGare')):
+                        continue
+                    nav_st = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
+
+                    if nav_st is None:
+                        continue
+
+                    nav_stop = nav_st.get('stop_point', {})
+
+                    # if the <Depart>/<Arrivee> tags are there, the departure/arrival has been deleted
+                    # regardless of the <Etat> tag
+                    dep_deleted = deleted_point.find('TypeHoraire/Depart') is not None
+                    arr_deleted = deleted_point.find('TypeHoraire/Arrivee') is not None
+
+                    dep_status = 'delete' if dep_deleted else 'none'
+                    arr_status = 'delete' if arr_deleted else 'none'
+
+                    message = get_value(deleted_point, 'MotifExterne', nullabe=True)
+                    st_update = model.StopTimeUpdate(nav_stop, dep_status=dep_status, arr_status=arr_status,
+                                                     message=message)
+                    trip_update.stop_time_updates.append(st_update)
+
             if xml_prdebut:
-                trip_update.message = get_value(xml_prdebut, 'MotifExterne')
+                trip_update.message = get_value(xml_prdebut, 'MotifExterne', nullabe=True)
 
         return trip_update
 

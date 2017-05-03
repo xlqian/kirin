@@ -56,10 +56,34 @@ def convert_to_gtfsrt(trip_updates, incrementality = gtfs_realtime_pb2.FeedHeade
     return feed
 
 
+def get_st_event(st_status):
+    if st_status == 'delete':
+        return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+    elif st_status == 'add':
+        return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.ADDED
+    else:
+        # 'update' or 'none' are modeled as 'SCHEDULED'
+        return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SCHEDULED
+
+
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
     pb_stop_time.arrival.time = to_posix_time(stop_time.arrival)
+    if stop_time.arrival_delay:
+        pb_stop_time.arrival.delay = int(stop_time.arrival_delay.total_seconds())
+    else:
+        pb_stop_time.arrival.delay = 0
     pb_stop_time.departure.time = to_posix_time(stop_time.departure)
+    if stop_time.departure_delay:
+        pb_stop_time.departure.delay = int(stop_time.departure_delay.total_seconds())
+    else:
+        pb_stop_time.departure.delay = 0
+
+    pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] = \
+        get_st_event(stop_time.departure_status)
+    pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_relationship] = \
+        get_st_event(stop_time.arrival_status)
+
     if stop_time.message:
         pb_stop_time.Extensions[kirin_pb2.stoptime_message] = stop_time.message
 

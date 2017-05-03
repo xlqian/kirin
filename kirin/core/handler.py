@@ -73,14 +73,14 @@ def manage_consistency(trip_update):
         if not stu.arrival:
             stu.arrival = stu.departure
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
-            if not stu.arrival_delay:
+            if not stu.arrival_delay and stu.departure_delay:
                 stu.arrival_delay = stu.departure_delay
                 log_stu_modif(trip_update, stu, "arrival_delay = {v}".format(v=stu.arrival_delay))
 
         if not stu.departure:
             stu.departure = stu.arrival
             log_stu_modif(trip_update, stu, "departure = {v}".format(v=stu.departure))
-            if not stu.departure_delay:
+            if not stu.departure_delay and stu.arrival_delay:
                 stu.departure_delay = stu.arrival_delay
                 log_stu_modif(trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
@@ -240,6 +240,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             else:
                 # we store the base's schedule
                 res_st.update_departure(time=departure, status='none', delay=None)
+            if new_st.departure_status == 'delete':
+                # passing status delete on the stoptime
+                # Note: we keep providing base_schedule stoptime to better identify the stoptime
+                # in the vj (for lolipop lines for example)
+                res_st.update_departure(status='delete')
 
             if new_st.arrival_status == 'update':
                 arr = arrival + new_st.arrival_delay if arrival else None
@@ -251,6 +256,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             else:
                 # we store the base's schedule
                 res_st.update_arrival(time=arrival, status='none', delay=None)
+
+            if new_st.arrival_status == 'delete':
+                res_st.update_arrival(status='delete')
 
             res_st.message = new_st.message
             # we might need to update the st's order
