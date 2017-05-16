@@ -48,6 +48,7 @@ from flask_sqlalchemy import SQLAlchemy
 import logging.config
 import sys
 from flask_script import Manager
+import utils
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')

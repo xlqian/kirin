@@ -2,6 +2,7 @@
 
 import os
 from flask_restful.inputs import boolean
+import json
 
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
@@ -39,6 +40,10 @@ ENABLE_RABBITMQ = boolean(os.getenv('KIRIN_ENABLE_RABBITMQ', True))
 log_level = os.getenv('KIRIN_LOG_LEVEL', 'DEBUG')
 log_format = os.getenv('KIRIN_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
 
+log_formatter = os.getenv('KIRIN_LOG_FORMATTER', 'default')  # can be 'default' or 'json'
+
+log_extras = json.loads(os.getenv('KIRIN_LOG_EXTRAS', '{}')) # fields to add to the logger
+
 #Log Level available
 # - DEBUG
 # - INFO
@@ -46,6 +51,7 @@ log_format = os.getenv('KIRIN_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(pr
 # - ERROR
 
 # logger configuration
+
 LOGGER = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -53,12 +59,17 @@ LOGGER = {
         'default': {
             'format': log_format,
         },
+        'json': {
+            'format': log_format,
+            'extras': log_extras,
+            '()': 'kirin.utils.CustomJsonFormatter',
+        },
     },
     'handlers': {
         'default': {
             'level': log_level,
             'class': 'logging.StreamHandler',
-            'formatter': 'default',
+            'formatter': log_formatter,
         },
     },
     'loggers': {
