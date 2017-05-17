@@ -28,6 +28,7 @@
 
 import logging
 from aniso8601 import parse_date
+from pythonjsonlogger import jsonlogger
 
 
 def str_to_date(value):
@@ -38,3 +39,18 @@ def str_to_date(value):
     except:
         logging.getLogger(__name__).info('[{value} invalid date.'.format(value=value))
         return None
+
+
+class CustomJsonFormatter(jsonlogger.JsonFormatter):
+    """
+    jsonformatter with extra params
+
+    you can add additional params to it (like the environment name) at configuration time
+    """
+    def __init__(self, *args, **kwargs):
+        self.extras = kwargs.pop('extras', {})
+        jsonlogger.JsonFormatter.__init__(self, *args, **kwargs)
+
+    def process_log_record(self, log_record):
+        log_record.update(self.extras)
+        return log_record
