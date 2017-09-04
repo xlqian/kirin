@@ -32,13 +32,7 @@ import pytest
 from kirin import db, app
 from kirin.core import model
 from kirin.ire.model_maker import KirinModelBuilder
-import navitia_wrapper
-from tests.check_utils import get_ire_data, _dt
-
-
-def dumb_nav_wrapper():
-    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
-    return navitia_wrapper.Navitia(url='').instance('')
+from tests.check_utils import get_ire_data, _dt, dumb_nav_wrapper
 
 
 def test_train_delayed(mock_navitia_fixture):

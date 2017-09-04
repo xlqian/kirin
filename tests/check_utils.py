@@ -26,10 +26,10 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import os
-
 from kirin import app
 import json
 from dateutil.parser import parse
+import navitia_wrapper
 
 
 def api_get(url, display=False, *args, **kwargs):
@@ -84,3 +84,7 @@ def _dt(dt_to_parse, year=2015, month=9, day=8):
     """
     d = parse(dt_to_parse)
     return d.replace(year=year, month=month, day=day)
+
+def dumb_nav_wrapper():
+    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
+    return navitia_wrapper.Navitia(url='').instance('')
