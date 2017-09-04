@@ -29,6 +29,8 @@
 import logging
 from aniso8601 import parse_date
 from pythonjsonlogger import jsonlogger
+from flask.globals import current_app
+import navitia_wrapper
 
 
 def str_to_date(value):
@@ -54,3 +56,13 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
     def process_log_record(self, log_record):
         log_record.update(self.extras)
         return log_record
+
+
+def make_navitia_wrapper():
+    """
+    return a navitia wrapper to call the navitia API
+    """
+    url = current_app.config['NAVITIA_URL']
+    token = current_app.config.get('NAVITIA_TOKEN')
+    instance = current_app.config['NAVITIA_INSTANCE']
+    return navitia_wrapper.Navitia(url=url, token=token).instance(instance)

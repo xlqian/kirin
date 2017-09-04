@@ -86,5 +86,5 @@ def _dt(dt_to_parse, year=2015, month=9, day=8):
     return d.replace(year=year, month=month, day=day)
 
 def dumb_nav_wrapper():
-    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked"""
+    """return a dumb navitia wrapper (all the param are useless since the 'query' call has been mocked)"""
     return navitia_wrapper.Navitia(url='').instance('')

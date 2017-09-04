@@ -32,8 +32,8 @@ from flask_restful import Resource
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
+from kirin.utils import make_navitia_wrapper
 from model_maker import KirinModelBuilder
-import navitia_wrapper
 
 
 def _make_rt_update(data):
@@ -54,16 +54,6 @@ def get_ire(req):
     if not req.data:
         raise InvalidArguments('no ire data provided')
     return req.data
-
-
-def make_navitia_wrapper():
-    """
-    return a navitia wrapper to call the navitia API
-    """
-    url = current_app.config['NAVITIA_URL']
-    token = current_app.config.get('NAVITIA_TOKEN')
-    instance = current_app.config['NAVITIA_INSTANCE']
-    return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
 
 
 class Ire(Resource):

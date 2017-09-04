@@ -32,6 +32,7 @@ from flask_restful import Resource
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException
+from kirin.utils import make_navitia_wrapper
 
 
 def _get_gtfs_rt(request):
