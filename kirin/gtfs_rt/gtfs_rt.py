@@ -49,10 +49,11 @@ def make_model(rt_update):
 class GtfsRT(Resource):
 
     def __init__(self):
-        pass
+        self.navitia_wrapper = make_navitia_wrapper()
+        self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
+        self.contributor = current_app.config['CONTRIBUTOR']
 
     def post(self):
-
         raw_proto = _get_gtfs_rt(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
