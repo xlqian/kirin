@@ -33,6 +33,12 @@ class KirinModelBuilder(object):
         self.navitia = nav
         self.contributor = contributor
 
-    def build(self, gtfs_rt):
+    def build(self, rt_update):
+        """
+        parse the protobuf in the rt_update object
+        and return a list of trip updates
+
+        The TripUpdates are not yet associated with the RealTimeUpdate
+        """
         # TODO!
         pass

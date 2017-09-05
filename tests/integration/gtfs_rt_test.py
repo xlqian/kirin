@@ -32,7 +32,20 @@ from kirin import gtfs_realtime_pb2
 @pytest.fixture()
 def basic_gtfs_rt_data():
     feed = gtfs_realtime_pb2.FeedMessage()
-    # TODO!
+
+    entity = feed.entity.add()
+    entity.trip.trip_id = "bob"
+
+    stu = entity.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.stop_sequence = 2
+    stu.stop_id = "first_stop"
+
+    stu = entity.stop_time_update.add()
+    stu.arrival.delay = 180
+    stu.stop_sequence = 4
+    stu.stop_id = "fourth_stop"
+
     return feed
 
 def gtfs_model_builder_test(basic_gtfs_rt_data):

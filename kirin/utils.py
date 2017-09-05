@@ -32,6 +32,8 @@ from pythonjsonlogger import jsonlogger
 from flask.globals import current_app
 import navitia_wrapper
 
+from kirin.core import model
+
 
 def str_to_date(value):
     if not value:
@@ -66,3 +68,14 @@ def make_navitia_wrapper():
     token = current_app.config.get('NAVITIA_TOKEN')
     instance = current_app.config['NAVITIA_INSTANCE']
     return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
+
+
+def make_rt_update(data, connector):
+    """
+    Create an RealTimeUpdate object for the query and persist it
+    """
+    rt_update = model.RealTimeUpdate(data, connector=connector)
+
+    model.db.session.add(rt_update)
+    model.db.session.commit()
+    return rt_update

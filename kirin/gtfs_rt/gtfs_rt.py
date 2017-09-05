@@ -32,15 +32,14 @@ from flask_restful import Resource
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException
-from kirin.utils import make_navitia_wrapper
+from kirin.utils import make_navitia_wrapper, make_rt_update
+from kirin.gtfs_rt.model_maker import KirinModelBuilder
 
 
-def _get_gtfs_rt(request):
-    pass
-
-
-def _make_rt_update(raw_proto):
-    pass
+def _get_gtfs_rt(req):
+    if not req.data:
+        raise InvalidArguments('no gtfs_rt data provided')
+    return req.data
 
 
 def make_model(rt_update):
@@ -57,11 +56,10 @@ class GtfsRT(Resource):
     def post(self):
         raw_proto = _get_gtfs_rt(flask.globals.request)
 
-        # create a raw ire obj, save the raw_xml into the db
-        rt_update = _make_rt_update(raw_proto)
+        # create a raw ire obj, save the raw protobuf into the db
+        rt_update = make_rt_update(raw_proto, 'gtfs-rt')
         try:
-            # raw_xml is interpreted
-            trip_updates = make_model(rt_update)
+            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
         except KirinException as e:
             rt_update.status = 'KO'
             rt_update.error = e.data['error']
