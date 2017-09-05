@@ -29,22 +29,12 @@
 import flask
 from flask.globals import current_app
 from flask_restful import Resource
+
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
-from kirin.utils import make_navitia_wrapper
+from kirin.utils import make_navitia_wrapper, make_rt_update
 from model_maker import KirinModelBuilder
-
-
-def _make_rt_update(data):
-    """
-    Create an RealTimeUpdate object for the query and persist it
-    """
-    rt_update = model.RealTimeUpdate(data, connector='ire')
-
-    model.db.session.add(rt_update)
-    model.db.session.commit()
-    return rt_update
 
 
 def get_ire(req):
@@ -64,11 +54,10 @@ class Ire(Resource):
         self.contributor = current_app.config['CONTRIBUTOR']
 
     def post(self):
-
         raw_xml = get_ire(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
-        rt_update = _make_rt_update(raw_xml)
+        rt_update = make_rt_update(raw_xml, 'ire')
         try:
             # assuming UTF-8 encoding for all ire input
             rt_update.raw_data = rt_update.raw_data.encode('utf-8')
