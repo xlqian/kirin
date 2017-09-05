@@ -31,7 +31,7 @@ from flask.globals import current_app
 from flask_restful import Resource
 from kirin import core
 from kirin.core import model
-from kirin.exceptions import KirinException
+from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin.gtfs_rt.model_maker import KirinModelBuilder
 
@@ -56,7 +56,7 @@ class GtfsRT(Resource):
     def post(self):
         raw_proto = _get_gtfs_rt(flask.globals.request)
 
-        # create a raw ire obj, save the raw protobuf into the db
+        # create a raw gtfs-rt obj, save the raw protobuf into the db
         rt_update = make_rt_update(raw_proto, 'gtfs-rt')
         try:
             trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)

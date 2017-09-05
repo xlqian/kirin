@@ -26,8 +26,10 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import pytest
+from kirin.core.model import RealTimeUpdate, db
+from kirin.gtfs_rt import gtfs_rt
 from tests.check_utils import dumb_nav_wrapper
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, app
 
 @pytest.fixture()
 def basic_gtfs_rt_data():
@@ -38,7 +40,7 @@ def basic_gtfs_rt_data():
 
     stu = entity.stop_time_update.add()
     stu.arrival.delay = 60
-    stu.stop_sequence = 2
+    stu.stop_sequence = 1
     stu.stop_id = "first_stop"
 
     stu = entity.stop_time_update.add()
@@ -50,7 +52,7 @@ def basic_gtfs_rt_data():
 
 def gtfs_model_builder_test(basic_gtfs_rt_data):
     with app.app_context():
-        rt_update = model.RealTimeUpdate(basic_gtfs_rt_data, connector='gtfs-rt')
+        rt_update = RealTimeUpdate(basic_gtfs_rt_data, connector='gtfs-rt')
         trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
 
         # we associate the trip_update manually for sqlalchemy to make the links

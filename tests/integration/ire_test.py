@@ -36,7 +36,7 @@ import datetime
 from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_ire_data
-from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
+from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 
 
 @pytest.fixture(scope='function', autouse=True)
