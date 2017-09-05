@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2017, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -29,24 +29,24 @@
 import flask
 from flask.globals import current_app
 from flask_restful import Resource
-
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update
-from model_maker import KirinModelBuilder
+from kirin.gtfs_rt.model_maker import KirinModelBuilder
 
 
-def get_ire(req):
-    """
-    get IRE stream, for the moment, it's the raw xml
-    """
+def _get_gtfs_rt(req):
     if not req.data:
-        raise InvalidArguments('no ire data provided')
+        raise InvalidArguments('no gtfs_rt data provided')
     return req.data
 
 
-class Ire(Resource):
+def make_model(rt_update):
+    pass
+
+
+class GtfsRT(Resource):
 
     def __init__(self):
         self.navitia_wrapper = make_navitia_wrapper()
@@ -54,15 +54,11 @@ class Ire(Resource):
         self.contributor = current_app.config['CONTRIBUTOR']
 
     def post(self):
-        raw_xml = get_ire(flask.globals.request)
+        raw_proto = _get_gtfs_rt(flask.globals.request)
 
-        # create a raw ire obj, save the raw_xml into the db
-        rt_update = make_rt_update(raw_xml, 'ire')
+        # create a raw gtfs-rt obj, save the raw protobuf into the db
+        rt_update = make_rt_update(raw_proto, 'gtfs-rt')
         try:
-            # assuming UTF-8 encoding for all ire input
-            rt_update.raw_data = rt_update.raw_data.encode('utf-8')
-
-            # raw_xml is interpreted
             trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
         except KirinException as e:
             rt_update.status = 'KO'
