@@ -34,6 +34,7 @@ from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin.gtfs_rt.model_maker import KirinModelBuilder
+import navitia_wrapper
 
 
 def _get_gtfs_rt(req):
@@ -42,24 +43,28 @@ def _get_gtfs_rt(req):
     return req.data
 
 
-def make_model(rt_update):
-    pass
-
-
 class GtfsRT(Resource):
 
     def __init__(self):
-        self.navitia_wrapper = make_navitia_wrapper()
+        url = current_app.config['NAVITIA_URL']
+        token = current_app.config.get('NAVITIA_GTFS_RT_TOKEN')
+        instance = current_app.config['NAVITIA_GTFS_RT_INSTANCE']
+        self.navitia_wrapper = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
         self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
-        self.contributor = current_app.config['CONTRIBUTOR']
+        self.contributor = current_app.config['GTFS_RT_CONTRIBUTOR']
 
     def post(self):
         raw_proto = _get_gtfs_rt(flask.globals.request)
 
+        from kirin import gtfs_realtime_pb2
         # create a raw gtfs-rt obj, save the raw protobuf into the db
-        rt_update = make_rt_update(raw_proto, 'gtfs-rt')
+        proto = gtfs_realtime_pb2.FeedMessage()
+        proto.ParseFromString(raw_proto)
+        data = str(proto)  # temp, for the moment, we save the protobuf as text
+        rt_update = make_rt_update(data, 'gtfs-rt')
         try:
-            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
+            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update,
+                                                                                           data=proto)
         except KirinException as e:
             rt_update.status = 'KO'
             rt_update.error = e.data['error']
@@ -73,6 +78,6 @@ class GtfsRT(Resource):
             model.db.session.commit()
             raise
 
-        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
+        core.handle(rt_update, trip_updates, self.contributor)
 
         return 'OK', 200

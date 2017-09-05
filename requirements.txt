@@ -24,7 +24,7 @@ six==1.9.0
 wsgiref==0.1.2
 protobuf==2.6.1
 python-dateutil==2.4.2
--e git+https://github.com//CanalTP/navitia_python_wrapper#egg=navitia_wrapper
+-e git+https://github.com//CanalTP/navitia_python_wrapper@bad_filter#egg=navitia_wrapper
 requests==2.4.3
 blinker==1.4
 sh==1.11

@@ -20,6 +20,12 @@ NAVITIA_TOKEN = os.getenv('KIRIN_NAVITIA_TOKEN', None)
 CONTRIBUTOR = os.getenv('KIRIN_CONTRIBUTOR', 'realtime.ire')
 
 
+# TODO better conf for multi GTFS-RT
+NAVITIA_GTFS_RT_INSTANCE = os.getenv('KIRIN_NAVITIA_GTFS_RT_INSTANCE', 'sherbrooke')
+NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
+GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
+
+
 DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
