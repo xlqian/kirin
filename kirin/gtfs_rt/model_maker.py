@@ -46,6 +46,7 @@ class KirinModelBuilder(object):
         self.navitia = nav
         self.contributor = contributor
         self.log = logging.getLogger(__name__)
+        # TODO better period handling
         self.period_filter_tolerance = datetime.timedelta(hours=3)
         self.stop_code_key = 'source'
 
