@@ -221,7 +221,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     raw_data = db.Column(db.Text, nullable=True)
 
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, cascade='all',
-                                   lazy='joined', backref=backref('real_time_updates', cascade='all'))
+                                   lazy='select', backref=backref('real_time_updates', cascade='all'))
 
     __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),)
 

@@ -110,7 +110,6 @@ def manage_consistency(trip_update):
     return True
 
 
-
 def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
@@ -120,12 +119,12 @@ def handle(real_time_update, trip_updates, contributor):
         raise TypeError()
 
     for trip_update in trip_updates:
-        #find if there already a row in db
+        # find if there already a row in db
         old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.circulation_date)
-        #merge the theoric, the current realtime, and the new relatime
+        # merge the theoric, the current realtime, and the new realtime
         current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
 
-        #manage and adjust consistency if possible
+        # manage and adjust consistency if possible
         if manage_consistency(current_trip_update):
             # we have to link the current_vj_update with the new real_time_update
             # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
