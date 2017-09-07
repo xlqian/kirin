@@ -84,6 +84,7 @@ def test_ire_post_no_data():
         assert len(TripUpdate.query.all()) == 0
         assert len(StopTimeUpdate.query.all()) == 0
 
+
 def check_db_ire_96231_normal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
