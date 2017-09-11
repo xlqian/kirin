@@ -36,7 +36,7 @@ from kirin.exceptions import ObjectNotFound
 
 def to_str(date):
     # the date is in UTC, thus we don't have to care about the coverage's timezone
-    # Note: it doesn't work with UTC, for now it's in  local
+    # TODO I don't understand why it doesn't work with UTC, so for now it's in  local
     return date.strftime("%Y%m%dT%H%M%S")
 
 
@@ -48,7 +48,7 @@ class KirinModelBuilder(object):
         self.log = logging.getLogger(__name__)
         # TODO better period handling
         self.period_filter_tolerance = datetime.timedelta(hours=3)
-        self.stop_code_key = 'source'
+        self.stop_code_key = 'source'  # TODO conf
 
     def build(self, rt_update, data):
         """

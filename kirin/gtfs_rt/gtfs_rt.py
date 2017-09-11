@@ -26,9 +26,12 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import logging
+
 import flask
 from flask.globals import current_app
 from flask_restful import Resource
+from google.protobuf.message import DecodeError
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
@@ -59,7 +62,11 @@ class GtfsRT(Resource):
         from kirin import gtfs_realtime_pb2
         # create a raw gtfs-rt obj, save the raw protobuf into the db
         proto = gtfs_realtime_pb2.FeedMessage()
-        proto.ParseFromString(raw_proto)
+        try:
+            proto.ParseFromString(raw_proto)
+        except DecodeError:
+            raise InvalidArguments('invalid protobuf')
+
         data = str(proto)  # temp, for the moment, we save the protobuf as text
         rt_update = make_rt_update(data, 'gtfs-rt')
         try:
