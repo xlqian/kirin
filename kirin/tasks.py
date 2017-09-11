@@ -30,7 +30,7 @@
 import logging
 from kirin.core import model
 
-from celery.signals import task_postrun
+from celery.signals import task_postrun, setup_logging
 from kirin.helper import make_celery
 
 from kirin import app
@@ -41,6 +41,12 @@ import navitia_wrapper
 from kirin.utils import make_rt_update
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.gtfs_rt.model_maker import KirinModelBuilder
+
+
+#we don't want celery to mess with our logging configuration
+@setup_logging.connect
+def celery_setup_logging(*args, **kwargs):
+    pass
 
 celery = make_celery(app)
 

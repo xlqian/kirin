@@ -88,7 +88,7 @@ LOGGER = {
             'propagate': False
         },
         'amqp': {
-            'level': 'DEBUG',
+            'level': 'INFO',
         },
         'sqlalchemy.engine': {
             'handlers': ['default'],
@@ -110,6 +110,11 @@ LOGGER = {
             'level': 'WARN',
             'propagate': False
         },
+        'celery.bootsteps': {
+            'handlers': ['default'],
+            'level': 'WARN',
+            'propagate': False
+        }
     }
 }
 

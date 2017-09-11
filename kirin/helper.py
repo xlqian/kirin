@@ -29,6 +29,7 @@
 import celery
 
 
+#http://flask.pocoo.org/docs/0.12/patterns/celery/
 def make_celery(app):
     celery_app = celery.Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
     celery_app.conf.update(app.config)
@@ -36,9 +37,6 @@ def make_celery(app):
 
     class ContextTask(TaskBase):
         abstract = True
-
-        def __init__(self):
-            pass
 
         def __call__(self, *args, **kwargs):
             with app.app_context():

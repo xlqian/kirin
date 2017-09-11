@@ -48,21 +48,17 @@ class InvalidFeed(Exception):
 
 @celery.task(bind=True)
 def gtfs_poller(self, config):
-    logger = logging.getLogger(__name__)
-    logger.info('polling of %s', config['feed_url'])
-    response = requests.get(config['feed_url'])
-    if response.status_code != 200:
-        raise InvalidFeed()
+    logger =  logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
+    logger.debug('polling of %s', config['feed_url'])
+    response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
+    response.raise_for_status()
 
     nav = navitia_wrapper.Navitia(url=config['navitia_url'], token=config['token'])\
                          .instance(config['coverage'])
     nav.timeout = 5
 
     proto = gtfs_realtime_pb2.FeedMessage()
-    try:
-        proto.ParseFromString(response.content)
-    except DecodeError:
-        raise InvalidFeed()
+    proto.ParseFromString(response.content)
     model_maker.handle(proto, navitia_wrapper, config['contributor'])
     logger.debug('gtfsrt polling finished')
 
