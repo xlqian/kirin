@@ -30,8 +30,32 @@ import datetime
 from kirin import gtfs_realtime_pb2
 import logging
 
+from kirin import core
 from kirin.core import model
-from kirin.exceptions import ObjectNotFound
+from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
+from kirin.utils import make_navitia_wrapper, make_rt_update
+
+
+
+def handle(proto, navitia_wrapper, contributor):
+    data = str(proto)  # temp, for the moment, we save the protobuf as text
+    rt_update = make_rt_update(data, 'gtfs-rt')
+    try:
+        trip_updates = KirinModelBuilder(navitia_wrapper, contributor).build(rt_update, data=proto)
+    except KirinException as e:
+        rt_update.status = 'KO'
+        rt_update.error = e.data['error']
+        model.db.session.add(rt_update)
+        model.db.session.commit()
+        raise
+    except Exception as e:
+        rt_update.status = 'KO'
+        rt_update.error = e.message
+        model.db.session.add(rt_update)
+        model.db.session.commit()
+        raise
+
+    core.handle(rt_update, trip_updates, contributor)
 
 
 def to_str(date):

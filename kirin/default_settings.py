@@ -19,11 +19,14 @@ NAVITIA_TOKEN = os.getenv('KIRIN_NAVITIA_TOKEN', None)
 
 CONTRIBUTOR = os.getenv('KIRIN_CONTRIBUTOR', 'realtime.ire')
 
+CELERY_BROKER_URL = os.getenv('KIRIN_CELERY_BROKER_URL', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
+
 
 # TODO better conf for multi GTFS-RT
 NAVITIA_GTFS_RT_INSTANCE = os.getenv('KIRIN_NAVITIA_GTFS_RT_INSTANCE', 'sherbrooke')
 NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
 GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
+GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
 
 
 DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
@@ -109,3 +112,6 @@ LOGGER = {
         },
     }
 }
+
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'

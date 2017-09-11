@@ -38,6 +38,7 @@ from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin.gtfs_rt.model_maker import KirinModelBuilder
 import navitia_wrapper
+from kirin.gtfs_rt import model_maker
 
 
 def _get_gtfs_rt(req):
@@ -67,24 +68,7 @@ class GtfsRT(Resource):
         except DecodeError:
             raise InvalidArguments('invalid protobuf')
 
-        data = str(proto)  # temp, for the moment, we save the protobuf as text
-        rt_update = make_rt_update(data, 'gtfs-rt')
-        try:
-            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update,
-                                                                                           data=proto)
-        except KirinException as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.data['error']
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            raise
-        except Exception as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.message
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            raise
-
-        core.handle(rt_update, trip_updates, self.contributor)
+        proto.ParseFromString(raw_proto)
+        model_maker.handle(proto, self.navitia_wrapper, self.contributor)
 
         return 'OK', 200
