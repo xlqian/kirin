@@ -3,6 +3,8 @@
 import os
 from flask_restful.inputs import boolean
 import json
+from datetime import timedelta
+from celery import schedules
 
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
@@ -120,3 +122,11 @@ LOGGER = {
 
 CELERYD_HIJACK_ROOT_LOGGER = False
 CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'
+
+CELERYBEAT_SCHEDULE = {
+    'poller': {
+        'task': 'kirin.tasks.poller',
+        'schedule': timedelta(seconds=60),
+        'options': {'expires': 30}
+    },
+}
