@@ -59,6 +59,6 @@ def gtfs_poller(self, config):
 
     proto = gtfs_realtime_pb2.FeedMessage()
     proto.ParseFromString(response.content)
-    model_maker.handle(proto, navitia_wrapper, config['contributor'])
+    model_maker.handle(proto, nav, config['contributor'])
     logger.debug('gtfsrt polling finished')
 
