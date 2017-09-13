@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2017, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -26,57 +26,49 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+import logging
+
 import flask
 from flask.globals import current_app
 from flask_restful import Resource
-
+from google.protobuf.message import DecodeError
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update
-from model_maker import KirinModelBuilder
+from kirin.gtfs_rt.model_maker import KirinModelBuilder
+import navitia_wrapper
+from kirin.gtfs_rt import model_maker
 
 
-def get_ire(req):
-    """
-    get IRE stream, for the moment, it's the raw xml
-    """
+def _get_gtfs_rt(req):
     if not req.data:
-        raise InvalidArguments('no ire data provided')
+        raise InvalidArguments('no gtfs_rt data provided')
     return req.data
 
 
-class Ire(Resource):
+class GtfsRT(Resource):
 
     def __init__(self):
-        self.navitia_wrapper = make_navitia_wrapper()
+        url = current_app.config['NAVITIA_URL']
+        token = current_app.config.get('NAVITIA_GTFS_RT_TOKEN')
+        instance = current_app.config['NAVITIA_GTFS_RT_INSTANCE']
+        self.navitia_wrapper = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
         self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
-        self.contributor = current_app.config['CONTRIBUTOR']
+        self.contributor = current_app.config['GTFS_RT_CONTRIBUTOR']
 
     def post(self):
-        raw_xml = get_ire(flask.globals.request)
+        raw_proto = _get_gtfs_rt(flask.globals.request)
 
-        # create a raw ire obj, save the raw_xml into the db
-        rt_update = make_rt_update(raw_xml, 'ire')
+        from kirin import gtfs_realtime_pb2
+        # create a raw gtfs-rt obj, save the raw protobuf into the db
+        proto = gtfs_realtime_pb2.FeedMessage()
         try:
-            # assuming UTF-8 encoding for all ire input
-            rt_update.raw_data = rt_update.raw_data.encode('utf-8')
+            proto.ParseFromString(raw_proto)
+        except DecodeError:
+            raise InvalidArguments('invalid protobuf')
 
-            # raw_xml is interpreted
-            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
-        except KirinException as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.data['error']
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            raise
-        except Exception as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.message
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            raise
-
-        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
+        proto.ParseFromString(raw_proto)
+        model_maker.handle(proto, self.navitia_wrapper, self.contributor)
 
         return 'OK', 200

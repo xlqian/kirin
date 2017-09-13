@@ -32,6 +32,7 @@ import flask_restful
 from flask import request
 from werkzeug.exceptions import HTTPException
 from kirin import resources
+from kirin.gtfs_rt import gtfs_rt
 from kirin.ire import ire
 from kirin import app
 
@@ -52,6 +53,10 @@ api.add_resource(resources.Status,
 api.add_resource(ire.Ire,
                  '/ire',
                  endpoint='ire')
+
+api.add_resource(gtfs_rt.GtfsRT,
+                 '/gtfs_rt',
+                 endpoint='gtfs_rt')
 
 
 def log_exception(sender, exception):

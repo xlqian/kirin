@@ -1,8 +1,9 @@
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2014, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
+# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -25,41 +26,22 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import json
-import vj_john
-import vj_6113
-import vj_6112
-import vj_6114
-import vj_96231
-import vj_80426
-import vj_R_vj1
-
-mocks = [
-    vj_john.response,
-    vj_6112.response,
-    vj_6113.response,
-    vj_6114.response,
-    vj_96231.response,
-    vj_80426.response,
-    vj_R_vj1.response,
-]
-_mock_navitia_call = {r.query: r for r in mocks}
+import celery
 
 
-def mock_navitia_query(self, query, q=None):
-    """
-    mock the call to navitia wrapper.
+#http://flask.pocoo.org/docs/0.12/patterns/celery/
+def make_celery(app):
+    celery_app = celery.Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+    celery_app.conf.update(app.config)
+    TaskBase = celery_app.Task
 
-    a file with the query name is looked for in the tests/fixtures dir
-    """
-    query_str = query
-    if q:
-        query_str += '?'
-        sep = ''
-        for param_name, param_value in q.iteritems():
-            query_str += sep + param_name + '=' + param_value
-            sep = '&'
+    class ContextTask(TaskBase):
+        abstract = True
 
-    mock = _mock_navitia_call[query_str]
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
 
-    return json.loads(mock.json_response), mock.response_code
+    celery_app.Task = ContextTask
+    return celery_app
+

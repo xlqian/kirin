@@ -36,7 +36,7 @@ import datetime
 from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_ire_data
-from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
+from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -83,6 +83,7 @@ def test_ire_post_no_data():
         assert len(RealTimeUpdate.query.all()) == 0
         assert len(TripUpdate.query.all()) == 0
         assert len(StopTimeUpdate.query.all()) == 0
+
 
 def check_db_ire_96231_normal():
     with app.app_context():
