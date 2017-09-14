@@ -60,8 +60,7 @@ def handle(proto, navitia_wrapper, contributor):
 
 def to_str(date):
     # the date is in UTC, thus we don't have to care about the coverage's timezone
-    # TODO I don't understand why it doesn't work with UTC, so for now it's in  local
-    return date.strftime("%Y%m%dT%H%M%S")
+    return date.strftime("%Y%m%dT%H%M%SZ")
 
 
 class KirinModelBuilder(object):
