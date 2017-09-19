@@ -35,6 +35,7 @@ from kirin import resources
 from kirin.gtfs_rt import gtfs_rt
 from kirin.ire import ire
 from kirin import app
+from  kirin.new_relic import record_custom_parameter
 
 #we always want pretty json
 flask_restful.representations.json.settings = {'indent': 4}
@@ -80,4 +81,22 @@ got_request_exception.connect(log_exception, app)
 def access_log(response, *args, **kwargs):
     logger = logging.getLogger('kirin.access')
     logger.info('"%s %s" %s', request.method, request.full_path, response.status_code)
+    return response
+
+@app.after_request
+def add_request_id(response, *args, **kwargs):
+    response.headers['kirin-request-id'] = request.id
+    return response
+
+@app.after_request
+def add_info_newrelic(response, *args, **kwargs):
+    try:
+        record_custom_parameter('kirin-request-id', request.id)
+        record_custom_parameter('method', request.method)
+        record_custom_parameter('full_path', request.full_path)
+        record_custom_parameter('url', request.url)
+        record_custom_parameter('status_code', request.status_code)
+    except:
+        logger = logging.getLogger(__name__)
+        logger.exception('error while reporting to newrelic:')
     return response

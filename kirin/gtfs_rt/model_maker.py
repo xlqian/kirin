@@ -34,25 +34,28 @@ from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update
-
-
+from kirin import new_relic
+from kirin.utils import record_internal_failure, record_extenal_failure, record_call
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
     rt_update = make_rt_update(data, 'gtfs-rt')
     try:
         trip_updates = KirinModelBuilder(navitia_wrapper, contributor).build(rt_update, data=proto)
+        record_call('gtfs-rt', 'OK')
     except KirinException as e:
         rt_update.status = 'KO'
         rt_update.error = e.data['error']
         model.db.session.add(rt_update)
         model.db.session.commit()
+        record_call('gtfs-rt', 'failure', reason=str(e))
         raise
     except Exception as e:
         rt_update.status = 'KO'
         rt_update.error = e.message
         model.db.session.add(rt_update)
         model.db.session.commit()
+        record_call('gtfs-rt', 'failure', reason=str(e))
         raise
 
     core.handle(rt_update, trip_updates, contributor)
@@ -124,10 +127,11 @@ class KirinModelBuilder(object):
         })
 
         if not navitia_vjs:
-            logging.getLogger(__name__).info('impossible to find vj {t} on [{s}, {u}['
-                                             .format(t=vj_source_code,
-                                                     s=since,
-                                                     u=until))
+            self.log.warn('impossible to find vj {t} on [{s}, {u}['
+                          .format(t=vj_source_code,
+                                  s=since,
+                                  u=until))
+            record_internal_failure('gtfs-rt', 'missing vj')
 
         return [model.VehicleJourney(nav_vj, since.date()) for nav_vj in navitia_vjs]
 
@@ -135,8 +139,9 @@ class KirinModelBuilder(object):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
 
         if nav_st is None:
-            self.log.debug('impossible to find stop point {} in the vj {}, skipping it'.format(
+            self.log.info('impossible to find stop point {} in the vj {}, skipping it'.format(
                 input_st_update.stop_id, navitia_vj.get('id')))
+            record_internal_failure('gtfs-rt', 'missing stop point')
             return None
 
         nav_stop = nav_st.get('stop_point', {})
