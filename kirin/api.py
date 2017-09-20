@@ -83,15 +83,10 @@ def access_log(response, *args, **kwargs):
     logger.info('"%s %s" %s', request.method, request.full_path, response.status_code)
     return response
 
-@app.after_request
-def add_request_id(response, *args, **kwargs):
-    response.headers['kirin-request-id'] = request.id
-    return response
 
 @app.after_request
 def add_info_newrelic(response, *args, **kwargs):
     try:
-        record_custom_parameter('kirin-request-id', request.id)
         record_custom_parameter('method', request.method)
         record_custom_parameter('full_path', request.full_path)
         record_custom_parameter('url', request.url)
