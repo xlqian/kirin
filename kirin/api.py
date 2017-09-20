@@ -92,7 +92,6 @@ def add_info_newrelic(response, *args, **kwargs):
         record_custom_parameter('method', request.method)
         record_custom_parameter('full_path', request.full_path)
         record_custom_parameter('url', request.url)
-        record_custom_parameter('status_code', request.status_code)
     except:
         logger = logging.getLogger(__name__)
         logger.exception('error while reporting to newrelic:')

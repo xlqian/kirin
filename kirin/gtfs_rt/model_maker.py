@@ -127,11 +127,20 @@ class KirinModelBuilder(object):
         })
 
         if not navitia_vjs:
-            self.log.warn('impossible to find vj {t} on [{s}, {u}['
+            self.log.info('impossible to find vj {t} on [{s}, {u}['
                           .format(t=vj_source_code,
                                   s=since,
                                   u=until))
             record_internal_failure('gtfs-rt', 'missing vj')
+            return None
+
+        if len(navitia_vjs) > 1:
+            self.log.info('too many  vjs found for {t} on [{s}, {u}['
+                          .format(t=vj_source_code,
+                                  s=since,
+                                  u=until))
+            record_internal_failure('gtfs-rt', 'duplicate vjs')
+            return None
 
         return [model.VehicleJourney(nav_vj, since.date()) for nav_vj in navitia_vjs]
 
