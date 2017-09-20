@@ -132,7 +132,7 @@ class KirinModelBuilder(object):
                                   s=since,
                                   u=until))
             record_internal_failure('gtfs-rt', 'missing vj')
-            return None
+            return []
 
         if len(navitia_vjs) > 1:
             self.log.info('too many  vjs found for {t} on [{s}, {u}['
@@ -140,7 +140,7 @@ class KirinModelBuilder(object):
                                   s=since,
                                   u=until))
             record_internal_failure('gtfs-rt', 'duplicate vjs')
-            return None
+            return []
 
         return [model.VehicleJourney(nav_vj, since.date()) for nav_vj in navitia_vjs]
 
