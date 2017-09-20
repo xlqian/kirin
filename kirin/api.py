@@ -35,7 +35,7 @@ from kirin import resources
 from kirin.gtfs_rt import gtfs_rt
 from kirin.ire import ire
 from kirin import app
-from  kirin.new_relic import record_custom_parameter
+from kirin.new_relic import record_custom_parameter, record_exception
 
 #we always want pretty json
 flask_restful.representations.json.settings = {'indent': 4}
@@ -72,8 +72,10 @@ def log_exception(sender, exception):
 
     if isinstance(exception, HTTPException):
         logger.debug(error)
+        record_exception()
     else:
         logger.exception(error)
+        record_exception()
 
 got_request_exception.connect(log_exception, app)
 
