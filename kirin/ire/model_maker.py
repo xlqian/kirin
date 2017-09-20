@@ -37,7 +37,7 @@ from kirin.core import model
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments, ObjectNotFound
-from kirin.utils import record_internal_failure, record_extenal_failure, record_call
+from kirin.utils import record_internal_failure
 
 
 def get_node(elt, xpath, nullabe=False):
@@ -145,7 +145,6 @@ class KirinModelBuilder(object):
         try:
             root = ElementTree.fromstring(rt_update.raw_data)
         except ElementTree.ParseError as e:
-            record_call('ire', 'failure', reason=str(e))
             raise InvalidArguments("invalid xml: {}".format(e.message))
 
         if root.tag != 'InfoRetard':

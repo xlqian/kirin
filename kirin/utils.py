@@ -83,19 +83,14 @@ def make_rt_update(data, connector):
 
 
 def record_internal_failure(system_id, message):
-    params = {'system_id': system_id, 'message': message}
+    params = {'kirin_system_id': system_id, 'message': message}
     new_relic.record_custom_event('kirin_internal_failure', params)
-
-
-def record_extenal_failure(system_id, message):
-    params = {'system_id': system_id, 'message': message}
-    new_relic.record_custom_event('kirin_extenal_failure', params)
 
 
 def record_call(system_id, status, **kwargs):
     """
     status can be in: ok, failure
     """
-    params = {'system_id': system_id, 'status': status}
+    params = {'kirin_system_id': system_id, 'status': status}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_status', params)

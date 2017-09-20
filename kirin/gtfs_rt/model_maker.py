@@ -35,7 +35,7 @@ from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin import new_relic
-from kirin.utils import record_internal_failure, record_extenal_failure, record_call
+from kirin.utils import record_internal_failure, record_call
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
