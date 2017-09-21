@@ -35,6 +35,7 @@ from kirin import resources
 from kirin.gtfs_rt import gtfs_rt
 from kirin.ire import ire
 from kirin import app
+from kirin.new_relic import record_custom_parameter, record_exception
 
 #we always want pretty json
 flask_restful.representations.json.settings = {'indent': 4}
@@ -69,6 +70,7 @@ def log_exception(sender, exception):
         message = exception.data
     error = "{ex} {data} {url}".format(ex=exception.__class__.__name__, data=message, url=request.url)
 
+    record_exception()
     if isinstance(exception, HTTPException):
         logger.debug(error)
     else:

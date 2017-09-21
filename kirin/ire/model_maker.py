@@ -37,6 +37,7 @@ from kirin.core import model
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments, ObjectNotFound
+from kirin.utils import record_internal_failure
 
 
 def get_node(elt, xpath, nullabe=False):
@@ -182,10 +183,11 @@ class KirinModelBuilder(object):
             })
 
             if not navitia_vjs:
-                logging.getLogger(__name__).warn('impossible to find train {t} on [{s}, {u}['
+                logging.getLogger(__name__).info('impossible to find train {t} on [{s}, {u}['
                                                  .format(t=train_number,
                                                          s=since,
                                                          u=until))
+                record_internal_failure('IRE', 'missing train')
 
             for nav_vj in navitia_vjs:
                 vj = model.VehicleJourney(nav_vj, vj_start.date())
@@ -291,12 +293,14 @@ class KirinModelBuilder(object):
         if not nav_stop_times:
             logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
                                              .format(nav_external_code))
+            record_internal_failure('IRE', 'missing stop point')
             return None
 
         if len(nav_stop_times) > 1:
-            logging.getLogger(__name__).warning('too many stops found for code "{}" in the vj, '
-                                                'we take the first one'
-                                                .format(nav_external_code))
+            logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, '
+                                             'we take the first one'
+                                             .format(nav_external_code))
+            record_internal_failure('IRE', 'duplicate stops')
 
         return nav_stop_times[0]
 
