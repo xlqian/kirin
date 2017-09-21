@@ -133,7 +133,7 @@ class KirinModelBuilder(object):
                                   u=until))
             record_internal_failure('gtfs-rt', 'missing vj')
             return []
-
+ 
         if len(navitia_vjs) > 1:
             vj_ids = [vj.get('id') for vj in navitia_vjs]
             self.log.info('too many vjs found for {t} on [{s}, {u}]: {ids}'
@@ -144,8 +144,28 @@ class KirinModelBuilder(object):
                                   ))
             record_internal_failure('gtfs-rt', 'duplicate vjs')
             return []
+       
+        VJs = []
+        for nav_vj in navitia_vjs:
+            # Now we compute the real cirluate_date of VJ from since, until and vj's first stop_time
+            # We do this to prevent cases like pass midnight when [since, until] is too large
+            if since.date() == until.date():
+                circulate_date = since.date()
+            else:
+                first_stop_time = nav_vj.get('stop_times', [{}])[0]
 
-        return [model.VehicleJourney(nav_vj, since.date()) for nav_vj in navitia_vjs]
+                def to_seconds(t):
+                    return t.hour * 3600 + t.minute * 60 + t.second
+
+                earliest_time_in_second = min(to_seconds(first_stop_time['arrival_time']),
+                                              to_seconds(first_stop_time['departure_time']))
+                
+                if earliest_time_in_second > to_seconds(since):
+                    circulate_date = since.date()
+                else:
+                    circulate_date = until.date()
+            VJs.append(model.VehicleJourney(nav_vj, circulate_date))
+        return VJs
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
