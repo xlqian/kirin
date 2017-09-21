@@ -117,7 +117,7 @@ class KirinModelBuilder(object):
 
         since = data_time - self.period_filter_tolerance
         until = data_time + self.period_filter_tolerance
-        self.log.debug('searching for vj {} on [{}, {}[ in navitia'.format(vj_source_code, since, until))
+        self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
 
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'filter': 'vehicle_journey.has_code({}, {})'.format(self.stop_code_key, vj_source_code),
@@ -127,7 +127,7 @@ class KirinModelBuilder(object):
         })
 
         if not navitia_vjs:
-            self.log.info('impossible to find vj {t} on [{s}, {u}['
+            self.log.info('impossible to find vj {t} on [{s}, {u}]'
                           .format(t=vj_source_code,
                                   s=since,
                                   u=until))
@@ -135,10 +135,13 @@ class KirinModelBuilder(object):
             return []
 
         if len(navitia_vjs) > 1:
-            self.log.info('too many  vjs found for {t} on [{s}, {u}['
+            vj_ids = [vj.get('id') for vj in navitia_vjs]
+            self.log.info('too many vjs found for {t} on [{s}, {u}]: {ids}'
                           .format(t=vj_source_code,
                                   s=since,
-                                  u=until))
+                                  u=until,
+                                  ids=vj_ids
+                                  ))
             record_internal_failure('gtfs-rt', 'duplicate vjs')
             return []
 
