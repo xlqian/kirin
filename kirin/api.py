@@ -70,12 +70,11 @@ def log_exception(sender, exception):
         message = exception.data
     error = "{ex} {data} {url}".format(ex=exception.__class__.__name__, data=message, url=request.url)
 
+    record_exception()
     if isinstance(exception, HTTPException):
         logger.debug(error)
-        record_exception()
     else:
         logger.exception(error)
-        record_exception()
 
 got_request_exception.connect(log_exception, app)
 
@@ -83,16 +82,4 @@ got_request_exception.connect(log_exception, app)
 def access_log(response, *args, **kwargs):
     logger = logging.getLogger('kirin.access')
     logger.info('"%s %s" %s', request.method, request.full_path, response.status_code)
-    return response
-
-
-@app.after_request
-def add_info_newrelic(response, *args, **kwargs):
-    try:
-        record_custom_parameter('method', request.method)
-        record_custom_parameter('full_path', request.full_path)
-        record_custom_parameter('url', request.url)
-    except:
-        logger = logging.getLogger(__name__)
-        logger.exception('error while reporting to newrelic:')
     return response
