@@ -150,13 +150,15 @@ class KirinModelBuilder(object):
        
         vjs = []
         for nav_vj in navitia_vjs:
-            # Now we compute the real cirluate_date of VJ from since, until and vj's first stop_time
+            # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
             # We do this to prevent cases like pass midnight when [since, until] is too large
+            # the final circulate_date in database in local timezone
+
             first_stop_time = nav_vj.get('stop_times', [{}])[0]
 
             tzinfo = get_timezone(first_stop_time)
-            # 'since' and 'until' must have a timezone before being converted to local timezone
 
+            # 'since' and 'until' must have a timezone before being converted to local timezone
             local_since = pytz.utc.localize(since).astimezone(tzinfo)
             local_until = pytz.utc.localize(until).astimezone(tzinfo)
 

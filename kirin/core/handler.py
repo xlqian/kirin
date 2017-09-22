@@ -36,7 +36,7 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
-from kirin.utils import get_timezone, get_datetime
+from kirin.utils import get_timezone
 
 
 def persist(real_time_update):
@@ -138,6 +138,15 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update
 
 
+
+def _get_datetime(circulation_date, time, timezone):
+    dt = datetime.datetime.combine(circulation_date, time)
+    dt = timezone.localize(dt).astimezone(pytz.UTC)
+    # in the db dt with timezone cannot coexist with dt without tz
+    # since at the beginning there was dt without tz, we need to erase the tz info
+    return dt.replace(tzinfo=None)
+
+
 def merge(navitia_vj, db_trip_update, new_trip_update):
     """
     We need to merge the info from 3 sources:
@@ -198,12 +207,12 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             if last_nav_dep and last_nav_dep > nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
-            arrival = get_datetime(circulation_date, nav_arrival_time, timezone)
+            arrival = _get_datetime(circulation_date, nav_arrival_time, timezone)
         if nav_departure_time:
             if nav_arrival_time and nav_arrival_time > nav_departure_time:
                 # departure is before arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
-            departure = get_datetime(circulation_date, nav_departure_time, timezone)
+            departure = _get_datetime(circulation_date, nav_departure_time, timezone)
 
         if new_st:
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])

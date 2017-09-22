@@ -98,6 +98,8 @@ def record_call(system_id, status, **kwargs):
     new_relic.record_custom_event('kirin_status', params)
 
 def get_timezone(stop_time):
+    # TODO: we must use the coverage timezone, not the stop_area timezone, as they can be different.
+    # We don't have this information now but we should have it in the near future
     str_tz = stop_time.get('stop_point', {}).get('stop_area', {}).get('timezone')
     if not str_tz:
         raise Exception('impossible to convert local to utc without the timezone')
@@ -107,10 +109,3 @@ def get_timezone(stop_time):
         raise Exception("impossible to find timezone: '{}'".format(str_tz))
     return tz
 
-
-def get_datetime(circulation_date, time, timezone):
-    dt = datetime.datetime.combine(circulation_date, time)
-    dt = timezone.localize(dt).astimezone(pytz.UTC)
-    # in the db dt with timezone cannot coexist with dt without tz
-    # since at the beginning there was dt without tz, we need to erase the tz info
-    return dt.replace(tzinfo=None)
