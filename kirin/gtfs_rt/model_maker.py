@@ -150,12 +150,10 @@ class KirinModelBuilder(object):
        
         vjs = []
         for nav_vj in navitia_vjs:
-            # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
+            # Now we compute the real circulate_date of VJ from since, until, data_time and vj's first stop_time
             # We do this to prevent cases like pass midnight when [since, until] is too large
-            # the final circulate_date in database in local timezone
-
+            # the final circulate_date in database is in local timezone
             first_stop_time = nav_vj.get('stop_times', [{}])[0]
-
             tzinfo = get_timezone(first_stop_time)
 
             # 'since' and 'until' must have a timezone before being converted to local timezone
@@ -167,16 +165,12 @@ class KirinModelBuilder(object):
             if local_since.date() == local_until.date():
                 circulate_date = local_since.date()
             else:
-
                 local_data_time = pytz.utc.localize(data_time).astimezone(tzinfo)
-
                 local_arr_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
                                                                            first_stop_time['arrival_time']))
                 local_dep_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
                                                                            first_stop_time['departure_time']))
-
                 min_time = min(local_arr_time, local_dep_time)
-
                 if local_since < min_time < local_until:
                     circulate_date = local_data_time.date()
                 elif min_time < local_since:
