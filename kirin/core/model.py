@@ -162,7 +162,8 @@ class TripUpdate(db.Model, TimestampMixin):
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
-                         backref=backref('trip_update', cascade='all, delete-orphan'))
+                         backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True),
+                         cascade='all, delete-orphan', single_parent=True)
     message = db.Column(db.Text, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
@@ -188,12 +189,20 @@ class TripUpdate(db.Model, TimestampMixin):
     def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
         query = cls.query.filter(cls.contributor.in_(contributors))
         if start_date:
-            query = query.filter("vehicle_journey_1.circulation_date >= '{start_date}'".
-                                 format(start_date=start_date))
+            query = query.filter(sqlalchemy.text("vehicle_journey_1.circulation_date >= '{start_date}'".
+                                 format(start_date=start_date)))
         if end_date:
-            query = query.filter("vehicle_journey_1.circulation_date <= '{end_date}'".
-                                 format(end_date=end_date))
+            query = query.filter(sqlalchemy.text("vehicle_journey_1.circulation_date <= '{end_date}'".
+                                 format(end_date=end_date)))
         return query.all()
+
+    @classmethod
+    def remove_by_contributors_and_period(cls, contributors, start_date=None, end_date=None):
+        trip_updates_to_remove = cls.find_by_contributor_period(contributors=contributors,
+                                                                start_date=start_date,
+                                                                end_date=end_date)
+        for t in trip_updates_to_remove:
+            db.session.delete(t)
 
     def find_stop(self, stop_id):
         #TODO: we will need to handle vj who deserve the same stop multiple times

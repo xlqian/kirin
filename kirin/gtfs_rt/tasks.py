@@ -28,27 +28,20 @@
 # www.navitia.io
 
 import logging
-from kirin.core import model
-
-from kirin import app
 import requests
 from kirin import gtfs_realtime_pb2
-from kirin import core
 import navitia_wrapper
-from kirin.utils import make_rt_update
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.gtfs_rt.model_maker import KirinModelBuilder
 from kirin.tasks import celery
 from kirin.gtfs_rt import model_maker
-from google.protobuf.message import DecodeError
-
+import datetime
+from kirin.core.model import TripUpdate
 
 class InvalidFeed(Exception):
     pass
 
 @celery.task(bind=True)
 def gtfs_poller(self, config):
-    logger =  logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
     logger.debug('polling of %s', config['feed_url'])
     response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
     response.raise_for_status()
@@ -62,3 +55,14 @@ def gtfs_poller(self, config):
     model_maker.handle(proto, nav, config['contributor'])
     logger.debug('gtfsrt polling finished')
 
+@celery.task
+def gtfs_purge_trip_update(config):
+    contributor = config['contributor']
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
+    logger.debug('purge trip update for %s', contributor)
+
+    until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+    logger.info('purge until %s', until)
+
+    TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
+    logger.debug('purge trip update finished')
