@@ -73,6 +73,7 @@ class VehicleJourney(db.Model):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
+    # in local time
     circulation_date = db.Column(db.Date, nullable=False)
 
     __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'circulation_date', name='vehicle_journey_navitia_trip_id_circulation_date_idx'),)

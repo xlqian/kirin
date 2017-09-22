@@ -29,6 +29,7 @@
 import datetime
 from kirin import gtfs_realtime_pb2
 import logging
+import pytz
 
 from kirin import core
 from kirin.core import model
@@ -147,30 +148,42 @@ class KirinModelBuilder(object):
             record_internal_failure('gtfs-rt', 'duplicate vjs')
             return []
        
-        VJs = []
+        vjs = []
         for nav_vj in navitia_vjs:
             # Now we compute the real cirluate_date of VJ from since, until and vj's first stop_time
             # We do this to prevent cases like pass midnight when [since, until] is too large
-            if since.date() == until.date():
-                circulate_date = since.date()
-            else:
-                first_stop_time = nav_vj.get('stop_times', [{}])[0]
+            first_stop_time = nav_vj.get('stop_times', [{}])[0]
 
-                tzinfo = get_timezone(first_stop_time)
+            tzinfo = get_timezone(first_stop_time)
+            # 'since' and 'until' must have a timezone before being converted to local timezone
+
+            local_since = pytz.utc.localize(since).astimezone(tzinfo)
+            local_until = pytz.utc.localize(until).astimezone(tzinfo)
+
+            circulate_date = None
+
+            if local_since.date() == local_until.date():
+                circulate_date = local_since.date()
+            else:
 
                 local_data_time = pytz.utc.localize(data_time).astimezone(tzinfo)
 
-                arr_time_utc = get_datetime(local_data_time.date(), first_stop_time['arrival_time'], tzinfo)
+                local_arr_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
+                                                                           first_stop_time['arrival_time']))
+                local_dep_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
+                                                                           first_stop_time['departure_time']))
 
-                if since < arr_time_utc < until:
+                min_time = min(local_arr_time, local_dep_time)
+
+                if local_since < min_time < local_until:
                     circulate_date = local_data_time.date()
-                elif arr_time_utc < since:
-                    circulate_date = until.date()
-                elif until > arr_time_utc:
-                    circulate_date = since.date()
+                elif min_time < local_since:
+                    circulate_date = local_until.date()
+                elif local_until > min_time:
+                    circulate_date = local_since.date()
 
-            VJs.append(model.VehicleJourney(nav_vj, circulate_date))
-        return VJs
+            vjs.append(model.VehicleJourney(nav_vj, circulate_date))
+        return vjs
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
