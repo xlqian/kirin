@@ -36,6 +36,8 @@ from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
+from kirin.utils import get_timezone, get_datetime
+
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -154,16 +156,19 @@ class KirinModelBuilder(object):
             else:
                 first_stop_time = nav_vj.get('stop_times', [{}])[0]
 
-                def to_seconds(t):
-                    return t.hour * 3600 + t.minute * 60 + t.second
+                tzinfo = get_timezone(first_stop_time)
 
-                earliest_time_in_second = min(to_seconds(first_stop_time['arrival_time']),
-                                              to_seconds(first_stop_time['departure_time']))
-                
-                if earliest_time_in_second > to_seconds(since):
-                    circulate_date = since.date()
-                else:
+                local_data_time = pytz.utc.localize(data_time).astimezone(tzinfo)
+
+                arr_time_utc = get_datetime(local_data_time.date(), first_stop_time['arrival_time'], tzinfo)
+
+                if since < arr_time_utc < until:
+                    circulate_date = local_data_time.date()
+                elif arr_time_utc < since:
                     circulate_date = until.date()
+                elif until > arr_time_utc:
+                    circulate_date = since.date()
+
             VJs.append(model.VehicleJourney(nav_vj, circulate_date))
         return VJs
 

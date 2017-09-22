@@ -26,18 +26,17 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import logging
-from datetime import timedelta
-import socket
-import pytz
-import kirin
-from kirin import gtfs_realtime_pb2
-
-from kirin.core import model
-from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 import datetime
+import logging
+import socket
+from datetime import timedelta
+
+import kirin
+from kirin.core import model
+from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
+from kirin.utils import get_timezone, get_datetime
 
 
 def persist(real_time_update):
@@ -139,25 +138,6 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update
 
 
-def _get_timezone(stop_time):
-    str_tz = stop_time.get('stop_point', {}).get('stop_area', {}).get('timezone')
-    if not str_tz:
-        raise Exception('impossible to convert local to utc without the timezone')
-
-    tz = pytz.timezone(str_tz)
-    if not tz:
-        raise Exception("impossible to find timezone: '{}'".format(str_tz))
-    return tz
-
-
-def _get_datetime(circulation_date, time, timezone):
-    dt = datetime.datetime.combine(circulation_date, time)
-    dt = timezone.localize(dt).astimezone(pytz.UTC)
-    # in the db dt with timezone cannot coexist with dt without tz
-    # since at the beginning there was dt without tz, we need to erase the tz info
-    return dt.replace(tzinfo=None)
-
-
 def merge(navitia_vj, db_trip_update, new_trip_update):
     """
     We need to merge the info from 3 sources:
@@ -211,19 +191,19 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
-        timezone = _get_timezone(navitia_stop)
+        timezone = get_timezone(navitia_stop)
 
         arrival = departure = None
         if nav_arrival_time:
             if last_nav_dep and last_nav_dep > nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
-            arrival = _get_datetime(circulation_date, nav_arrival_time, timezone)
+            arrival = get_datetime(circulation_date, nav_arrival_time, timezone)
         if nav_departure_time:
             if nav_arrival_time and nav_arrival_time > nav_departure_time:
                 # departure is before arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
-            departure = _get_datetime(circulation_date, nav_departure_time, timezone)
+            departure = get_datetime(circulation_date, nav_departure_time, timezone)
 
         if new_st:
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])

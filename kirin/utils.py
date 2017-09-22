@@ -25,8 +25,10 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-
+import datetime
 import logging
+
+import pytz
 from aniso8601 import parse_date
 from pythonjsonlogger import jsonlogger
 from flask.globals import current_app
@@ -94,3 +96,21 @@ def record_call(system_id, status, **kwargs):
     params = {'kirin_system_id': system_id, 'status': status}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_status', params)
+
+def get_timezone(stop_time):
+    str_tz = stop_time.get('stop_point', {}).get('stop_area', {}).get('timezone')
+    if not str_tz:
+        raise Exception('impossible to convert local to utc without the timezone')
+
+    tz = pytz.timezone(str_tz)
+    if not tz:
+        raise Exception("impossible to find timezone: '{}'".format(str_tz))
+    return tz
+
+
+def get_datetime(circulation_date, time, timezone):
+    dt = datetime.datetime.combine(circulation_date, time)
+    dt = timezone.localize(dt).astimezone(pytz.UTC)
+    # in the db dt with timezone cannot coexist with dt without tz
+    # since at the beginning there was dt without tz, we need to erase the tz info
+    return dt.replace(tzinfo=None)
