@@ -37,7 +37,7 @@ from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
-from kirin.utils import get_timezone, get_datetime
+from kirin.utils import get_timezone
 
 
 def handle(proto, navitia_wrapper, contributor):
