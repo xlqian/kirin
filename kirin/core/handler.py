@@ -26,18 +26,18 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import logging
-from datetime import timedelta
-import socket
-import pytz
-import kirin
-from kirin import gtfs_realtime_pb2
-
-from kirin.core import model
-from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 import datetime
+import logging
+import socket
+from datetime import timedelta
+import pytz
+
+import kirin
+from kirin.core import model
+from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
+from kirin.utils import get_timezone
 
 
 def persist(real_time_update):
@@ -139,17 +139,6 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update
 
 
-def _get_timezone(stop_time):
-    str_tz = stop_time.get('stop_point', {}).get('stop_area', {}).get('timezone')
-    if not str_tz:
-        raise Exception('impossible to convert local to utc without the timezone')
-
-    tz = pytz.timezone(str_tz)
-    if not tz:
-        raise Exception("impossible to find timezone: '{}'".format(str_tz))
-    return tz
-
-
 def _get_datetime(circulation_date, time, timezone):
     dt = datetime.datetime.combine(circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)
@@ -211,7 +200,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
-        timezone = _get_timezone(navitia_stop)
+        timezone = get_timezone(navitia_stop)
 
         arrival = departure = None
         if nav_arrival_time:

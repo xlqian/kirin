@@ -29,6 +29,7 @@
 import datetime
 from kirin import gtfs_realtime_pb2
 import logging
+import pytz
 
 from kirin import core
 from kirin.core import model
@@ -36,6 +37,8 @@ from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update
 from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
+from kirin.utils import get_timezone
+
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -144,8 +147,41 @@ class KirinModelBuilder(object):
                                   ))
             record_internal_failure('gtfs-rt', 'duplicate vjs')
             return []
+       
+        nav_vj = navitia_vjs[0]
 
-        return [model.VehicleJourney(nav_vj, since.date()) for nav_vj in navitia_vjs]
+        # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
+        # We do this to prevent cases like pass midnight when [since, until] is too large
+        # the final circulate_date in database is in local timezone
+        first_stop_time = nav_vj.get('stop_times', [{}])[0]
+        tzinfo = get_timezone(first_stop_time)
+
+        # 'since' and 'until' must have a timezone before being converted to local timezone
+        local_since = pytz.utc.localize(since).astimezone(tzinfo)
+        local_until = pytz.utc.localize(until).astimezone(tzinfo)
+
+        circulate_date = None
+
+        if local_since.date() == local_until.date():
+            circulate_date = local_since.date()
+        else:
+            arrival_time = first_stop_time['arrival_time']
+            # At first, we suppose that the circulate_date is local_since's date
+            if local_since < tzinfo.localize(datetime.datetime.combine(local_since.date(),
+                                                                       arrival_time)) < local_until:
+                circulate_date = local_since.date()
+            elif local_since < tzinfo.localize(datetime.datetime.combine(local_until.date(),
+                                                                         arrival_time)) < local_until:
+                circulate_date = local_until.date()
+            else:
+                self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
+                record_internal_failure('gtfs-rt', 'impossible to calculate the circulate date of vj')
+
+        if not circulate_date:
+            return []
+
+        return [model.VehicleJourney(nav_vj, circulate_date)]
+
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
