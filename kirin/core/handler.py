@@ -139,7 +139,6 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update
 
 
-
 def _get_datetime(circulation_date, time, timezone):
     dt = datetime.datetime.combine(circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)

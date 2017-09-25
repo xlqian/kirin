@@ -150,7 +150,7 @@ class KirinModelBuilder(object):
        
         nav_vj = navitia_vjs[0]
 
-        # Now we compute the real circulate_date of VJ from since, until, data_time and vj's first stop_time
+        # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
         # We do this to prevent cases like pass midnight when [since, until] is too large
         # the final circulate_date in database is in local timezone
         first_stop_time = nav_vj.get('stop_times', [{}])[0]
