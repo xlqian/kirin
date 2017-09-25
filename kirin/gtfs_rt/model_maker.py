@@ -175,6 +175,7 @@ class KirinModelBuilder(object):
                 circulate_date = local_until.date()
             else:
                 self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
+                record_internal_failure('gtfs-rt', 'impossible to calculate the circulate date of vj')
 
         if not circulate_date:
             return []
