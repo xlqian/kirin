@@ -136,7 +136,7 @@ class KirinModelBuilder(object):
                                   u=until))
             record_internal_failure('gtfs-rt', 'missing vj')
             return []
- 
+
         if len(navitia_vjs) > 1:
             vj_ids = [vj.get('id') for vj in navitia_vjs]
             self.log.info('too many vjs found for {t} on [{s}, {u}]: {ids}'
