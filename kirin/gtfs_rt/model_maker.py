@@ -165,20 +165,19 @@ class KirinModelBuilder(object):
             if local_since.date() == local_until.date():
                 circulate_date = local_since.date()
             else:
-                local_data_time = pytz.utc.localize(data_time).astimezone(tzinfo)
-                local_arr_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
-                                                                           first_stop_time['arrival_time']))
-                local_dep_time = tzinfo.localize(datetime.datetime.combine(local_data_time.date(),
-                                                                           first_stop_time['departure_time']))
-                min_time = min(local_arr_time, local_dep_time)
-                if local_since < min_time < local_until:
-                    circulate_date = local_data_time.date()
-                elif min_time < local_since:
-                    circulate_date = local_until.date()
-                elif local_until > min_time:
+                arrival_time = first_stop_time['arrival_time']
+                # At first, we suppose that the circulate_date is local_since's date
+                if local_since < tzinfo.localize(datetime.datetime.combine(local_since.date(),
+                                                                           arrival_time)) < local_until:
                     circulate_date = local_since.date()
+                elif local_since < tzinfo.localize(datetime.datetime.combine(local_until.date(),
+                                                                             arrival_time)) < local_until:
+                    circulate_date = local_until.date()
+                else:
+                    self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
 
-            vjs.append(model.VehicleJourney(nav_vj, circulate_date))
+            if circulate_date:
+                vjs.append(model.VehicleJourney(nav_vj, circulate_date))
         return vjs
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
