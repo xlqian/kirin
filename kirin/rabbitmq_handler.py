@@ -107,9 +107,10 @@ class RabbitMQHandler(object):
                                          gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
 
                 with self._get_producer() as producer:
-                    log.info('Publishing full feed...')
-                    producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
-                    log.info('Full feed published.')
+                    feed_str = feed.SerializeToString()
+                    log.info('Starting of full feed publication (size: {} b): {}'.format(len(feed_str), task))
+                    producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
+                    log.info('End of full feed publication: {}'.format(task))
             finally:
                 db.session.remove()
 
