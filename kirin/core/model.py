@@ -202,7 +202,11 @@ class TripUpdate(db.Model, TimestampMixin):
                                                                 start_date=start_date,
                                                                 end_date=end_date)
         for t in trip_updates_to_remove:
+            f = sqlalchemy.text("associate_realtimeupdate_tripupdate.trip_update_id='{}'".format(t.vj_id))
+            db.session.query(associate_realtimeupdate_tripupdate).filter(f).delete(synchronize_session=False)
             db.session.delete(t)
+
+        db.session.commit()
 
     def find_stop(self, stop_id):
         #TODO: we will need to handle vj who deserve the same stop multiple times
