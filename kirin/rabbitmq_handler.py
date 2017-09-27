@@ -89,7 +89,7 @@ class RabbitMQHandler(object):
                     log.warn('invalid protobuf: {}'.format(str(e)))
                     return
 
-                log.info('getting a request: {}'.format(task))
+                log.info('Getting a full feed publication request', extra={'task': task})
                 if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
                     return
                 begin_date = None
@@ -107,9 +107,10 @@ class RabbitMQHandler(object):
                                          gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
 
                 with self._get_producer() as producer:
-                    log.info('Publishing full feed...')
-                    producer.publish(feed.SerializeToString(), routing_key=task.load_realtime.queue_name)
-                    log.info('Full feed published.')
+                    feed_str = feed.SerializeToString()
+                    log.info('Starting of full feed publication'.format(len(feed_str), task), extra={'size': len(feed_str), 'task': task})
+                    producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
+                    log.info('End of full feed publication'.format(task), extra={'task': task})
             finally:
                 db.session.remove()
 
