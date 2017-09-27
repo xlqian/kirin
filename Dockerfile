@@ -29,10 +29,12 @@ RUN apk --update --no-cache add \
         musl-dev \
         postgresql-dev \
         git
+RUN chmod +x entrypoint.sh
 
 
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
 
-CMD python ./manage.py db upgrade; gunicorn -b 0.0.0.0:9090 --access-logfile - kirin:app
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+CMD ["gunicorn", "-b", "0.0.0.0:9090", "--access-logfile", "-", "kirin:app"]
 
