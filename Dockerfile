@@ -1,14 +1,40 @@
-FROM python:2.7-onbuild
+FROM navitia/python
 
-RUN pip install gunicorn
-RUN apt-get update && apt-get install -y protobuf-compiler
 WORKDIR /usr/src/app
 
-# pg client is needed to test the postgres cnx
-RUN apt-get install -y postgresql-client
+COPY . .
 
-RUN python setup.py build_version
-RUN python setup.py build_pbf
+#we remove protobuf from the dependancy since it's already installed with c++ extension built in
 
-CMD python ./manage.py db upgrade; gunicorn -b 0.0.0.0:9090 --access-logfile - kirin:app
+RUN apk --update --no-cache add \
+        g++ \
+        build-base \
+        python-dev \
+        libstdc++ \
+        git \
+        postgresql-dev \
+        postgresql-client \
+        libpq && \
+    sed -i -e '/protobuf/d' requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn && \
+    python setup.py build_version && \
+    python setup.py build_pbf && \
+    apk del \
+        g++ \
+        build-base \
+        python-dev \
+        zlib-dev \
+        musl \
+        musl-dev \
+        postgresql-dev \
+        git
+RUN chmod +x entrypoint.sh
+
+
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
+
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+CMD ["gunicorn", "-b", "0.0.0.0:9090", "--access-logfile", "-", "kirin:app"]
 
