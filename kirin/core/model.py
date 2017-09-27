@@ -162,8 +162,7 @@ class TripUpdate(db.Model, TimestampMixin):
     vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
-                         backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True),
-                         cascade='all, delete-orphan', single_parent=True)
+                         backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True))
     message = db.Column(db.Text, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
