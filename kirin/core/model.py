@@ -250,3 +250,14 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     def get_last_update_by_contributor(cls):
         query = db.session.query(TripUpdate.contributor, db.func.max(cls.created_at)).join(associate_realtimeupdate_tripupdate).join(cls).group_by(TripUpdate.contributor).all()
         return {row[0]: row[1].strftime('%Y-%m-%dT%H:%M:%SZ') for row in query}
+
+    @classmethod
+    def remove_by_connectors_until(cls, connectors, until):
+        sub_query = db.session.query(associate_realtimeupdate_tripupdate.c.real_time_update_id)
+        query = cls.query.\
+            filter(cls.connector.in_(connectors)).\
+            filter(cls.received_at <= until).\
+            filter(cls.id.notin_(sub_query))
+        query.delete(synchronize_session=False)
+        db.session.commit()
+

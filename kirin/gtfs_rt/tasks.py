@@ -34,7 +34,7 @@ import navitia_wrapper
 from kirin.tasks import celery
 from kirin.gtfs_rt import model_maker
 import datetime
-from kirin.core.model import TripUpdate
+from kirin.core.model import TripUpdate, RealTimeUpdate
 
 class InvalidFeed(Exception):
     pass
@@ -59,10 +59,21 @@ def gtfs_poller(self, config):
 def gtfs_purge_trip_update(config):
     contributor = config['contributor']
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
-    logger.debug('purge trip update for %s', contributor)
+    logger.info('purge gtfs-rt trip update for %s', contributor)
 
     until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
-    logger.info('purge until %s', until)
+    logger.info('purge gtfs-rt trip update until %s', until)
 
     TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
-    logger.debug('purge trip update finished')
+    logger.info('purge gtfs-rt trip update finished')
+
+@celery.task
+def gtfs_purge_rt_update(config):
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': 'gtfs-rt'})
+    logger.info('purge gtfs-rt realtime update for %s', 'gtfs-rt')
+
+    until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+    logger.info('purge gtfs-rt realtime update until %s', until)
+
+    RealTimeUpdate.remove_by_connectors_until(connectors=['gtfs-rt'], until=until)
+    logger.info('purge gtfs-rt realtime update finished')

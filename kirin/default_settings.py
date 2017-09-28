@@ -29,7 +29,8 @@ NAVITIA_GTFS_RT_INSTANCE = os.getenv('KIRIN_NAVITIA_GTFS_RT_INSTANCE', 'sherbroo
 NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
 GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
 GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
-NB_DAYS_TO_KEEP_TRIP_UPDATE = 2
+NB_DAYS_TO_KEEP_TRIP_UPDATE = os.getenv('NB_DAYS_TO_KEEP_TRIP_UPDATE', 2)
+NB_DAYS_TO_KEEP_RT_UPDATE = os.getenv('NB_DAYS_TO_KEEP_RT_UPDATE', 10)
 
 USE_GEVENT = boolean(os.getenv('KIRIN_USE_GEVENT', False))
 
@@ -131,9 +132,14 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=60),
         'options': {'expires': 30}
     },
-    'purge_trip_update': {
-        'task': 'kirin.tasks.purge_trip_update',
+    'purge_gtfs_trip_update': {
+        'task': 'kirin.tasks.purge_gtfs_trip_update',
         'schedule': timedelta(days=1),
         'options': {'expires': 2400}
+    },
+    'purge_gtfs_rt_update': {
+        'task': 'kirin.tasks.purge_gtfs_rt_update',
+        'schedule': timedelta(days=1),
+        'options': {'expires': 1200}
     }
 }
