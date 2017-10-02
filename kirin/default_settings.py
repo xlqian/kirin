@@ -31,6 +31,8 @@ GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrook
 GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
 
 
+USE_GEVENT = os.getenv('USE_GEVENT', False)
+
 DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls

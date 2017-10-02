@@ -86,7 +86,7 @@ class KirinModelBuilder(object):
 
         The TripUpdates are not yet associated with the RealTimeUpdate
         """
-        self.log.info("proto = {}".format(data))
+        self.log.debug("proto = {}".format(data))
         data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
 
         trip_updates = []

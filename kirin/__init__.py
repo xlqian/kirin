@@ -40,8 +40,6 @@ if 'threading' in sys.modules:
     print 'deleting threading from import'
     del sys.modules['threading']
 #end of conflict's patch
-from gevent import monkey
-monkey.patch_all()
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -54,6 +52,11 @@ app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
 if 'KIRIN_CONFIG_FILE' in os.environ:
     app.config.from_envvar('KIRIN_CONFIG_FILE')
+
+if app.config['USE_GEVENT']:
+    print 'using gevent and monkey patch'
+    from gevent import monkey
+    monkey.patch_all()
 
 manager = Manager(app)
 
