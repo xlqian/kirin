@@ -41,6 +41,7 @@ if 'threading' in sys.modules:
     del sys.modules['threading']
 #end of conflict's patch
 
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging.config
