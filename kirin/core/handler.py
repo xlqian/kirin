@@ -50,7 +50,7 @@ def persist(real_time_update):
 
 def log_stu_modif(trip_update, stu, string_additional_info):
     logger = logging.getLogger(__name__)
-    logger.info("TripUpdate {vj_id} on {date}, StopTimeUpdate {order} modified: {add_info}".format(
+    logger.debug("TripUpdate {vj_id} on {date}, StopTimeUpdate {order} modified: {add_info}".format(
                     vj_id=trip_update.vj_id, date=trip_update.vj.circulation_date, order=stu.order,
                     add_info=string_additional_info))
 
