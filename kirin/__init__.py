@@ -37,7 +37,6 @@ from kirin.rabbitmq_handler import RabbitMQHandler
 # so we need to remove threading from the import
 import sys
 if 'threading' in sys.modules:
-    print 'deleting threading from import'
     del sys.modules['threading']
 #end of conflict's patch
 
@@ -55,7 +54,6 @@ if 'KIRIN_CONFIG_FILE' in os.environ:
     app.config.from_envvar('KIRIN_CONFIG_FILE')
 
 if app.config['USE_GEVENT']:
-    print 'using gevent and monkey patch'
     from gevent import monkey
     monkey.patch_all()
 
@@ -74,6 +72,13 @@ else:  # Default is std out
     handler = logging.StreamHandler(stream=sys.stdout)
     app.logger.addHandler(handler)
     app.logger.setLevel('INFO')
+
+# We need to log all kinds of patch, all patch must be done as soon as possible
+logger = logging.getLogger(__name__)
+if 'threading' not in sys.modules:
+    logger.info('threading is deleted from import')
+if app.config['USE_GEVENT']:
+    logger.info('using gevent and monkey patch')
 
 rabbitmq_handler = RabbitMQHandler(app.config['RABBITMQ_CONNECTION_STRING'],
                                    app.config['EXCHANGE'])
