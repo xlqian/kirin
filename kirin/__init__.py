@@ -75,6 +75,8 @@ else:  # Default is std out
 
 # We need to log all kinds of patch, all patch must be done as soon as possible
 logger = logging.getLogger(__name__)
+if 'threading' not in sys.modules:
+    logger.info("threading is deleted from sys.modules")
 logger.info('Configs: %s', app.config)
 
 
