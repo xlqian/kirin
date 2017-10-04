@@ -30,7 +30,7 @@ NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
 GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
 GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
 
-USE_GEVENT = os.getenv('KIRIN_USE_GEVENT', False)
+USE_GEVENT = boolean(os.getenv('KIRIN_USE_GEVENT', False))
 
 DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 
