@@ -75,10 +75,8 @@ else:  # Default is std out
 
 # We need to log all kinds of patch, all patch must be done as soon as possible
 logger = logging.getLogger(__name__)
-if 'threading' not in sys.modules:
-    logger.info('threading is deleted from import')
-if app.config['USE_GEVENT']:
-    logger.info('using gevent and monkey patch')
+logger.info('Configs: %s', app.config)
+
 
 rabbitmq_handler = RabbitMQHandler(app.config['RABBITMQ_CONNECTION_STRING'],
                                    app.config['EXCHANGE'])
