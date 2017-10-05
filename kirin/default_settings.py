@@ -126,6 +126,15 @@ LOGGER = {
 CELERYD_HIJACK_ROOT_LOGGER = False
 CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'
 
+REDIS_HOST = os.getenv('KIRIN_REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
+#index of the database use in redis, between 0 and 15 by default
+REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 0))
+REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD')
+
+TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10))
+TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2))
+
 CELERYBEAT_SCHEDULE = {
     'poller': {
         'task': 'kirin.tasks.poller',

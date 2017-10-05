@@ -29,51 +29,120 @@
 
 import logging
 import requests
-from kirin import gtfs_realtime_pb2
+from kirin import gtfs_realtime_pb2, redis
 import navitia_wrapper
 from kirin.tasks import celery
 from kirin.gtfs_rt import model_maker
 import datetime
 from kirin.core.model import TripUpdate, RealTimeUpdate
+from redis.exceptions import ConnectionError
+from contextlib import contextmanager
+from retrying import retry
+from kirin import app
+
+TASK_STOP_MAX_DELAY = app.config['TASK_STOP_MAX_DELAY']
+TASK_WAIT_FIXED = app.config['TASK_WAIT_FIXED']
+
+
+def should_retry_exception(exception):
+    return isinstance(exception, ConnectionError)
+
+
+def make_kirin_lock_name(*args):
+    return '|'.join(['kirin.lock'] + [str(a) for a in args])
+
+
+@contextmanager
+def get_lock(logger, lock_name):
+    logger.debug('getting lock %s', lock_name)
+    try:
+        lock = redis.lock(lock_name)
+        locked = lock.acquire(blocking=False)
+    except ConnectionError:
+        logging.exception('Exception with redis while locking')
+        raise
+
+    yield locked
+
+    if locked:
+        logger.debug("releasing lock %s", lock_name)
+        lock.release()
+
 
 class InvalidFeed(Exception):
     pass
 
+
 @celery.task(bind=True)
+@retry(stop_max_delay=TASK_STOP_MAX_DELAY,
+       wait_fixed=TASK_WAIT_FIXED,
+       retry_on_exception=should_retry_exception)
 def gtfs_poller(self, config):
+    func_name = 'gtfs_poller'
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
     logger.debug('polling of %s', config['feed_url'])
-    response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
-    response.raise_for_status()
 
-    nav = navitia_wrapper.Navitia(url=config['navitia_url'], token=config['token'])\
-                         .instance(config['coverage'])
-    nav.timeout = 5
+    contributor = config['contributor']
+    lock_name = make_kirin_lock_name(func_name, contributor)
+    with get_lock(logger, lock_name) as locked:
+        if not locked:
+            logger.warning('%s for %s is already in progress', func_name, contributor)
+            return
 
-    proto = gtfs_realtime_pb2.FeedMessage()
-    proto.ParseFromString(response.content)
-    model_maker.handle(proto, nav, config['contributor'])
-    logger.debug('gtfsrt polling finished')
+        response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
+        response.raise_for_status()
 
-@celery.task
-def gtfs_purge_trip_update(config):
+        nav = navitia_wrapper.Navitia(url=config['navitia_url'], token=config['token'])\
+                             .instance(config['coverage'])
+        nav.timeout = 5
+
+        proto = gtfs_realtime_pb2.FeedMessage()
+        proto.ParseFromString(response.content)
+        model_maker.handle(proto, nav, contributor)
+        logger.info('%s for %s is finished', func_name, contributor)
+
+
+@celery.task(bind=True)
+@retry(stop_max_delay=TASK_STOP_MAX_DELAY,
+       wait_fixed=TASK_WAIT_FIXED,
+       retry_on_exception=should_retry_exception)
+def gtfs_purge_trip_update(self, config):
+    func_name = 'gtfs_purge_trip_update'
     contributor = config['contributor']
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
-    logger.info('purge gtfs-rt trip update for %s', contributor)
+    logger.debug('purge gtfs-rt trip update for %s', contributor)
 
-    until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
-    logger.info('purge gtfs-rt trip update until %s', until)
+    lock_name = make_kirin_lock_name(func_name, contributor)
+    with get_lock(logger, lock_name) as locked:
+        if not locked:
+            logger.warning('%s for %s is already in progress', func_name, contributor)
+            return
+        until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+        logger.info('purge gtfs-rt trip update until %s', until)
 
-    TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
-    logger.info('purge gtfs-rt trip update finished')
+        TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
+        logger.info('%s for %s is finished', func_name, contributor)
 
-@celery.task
-def gtfs_purge_rt_update(config):
-    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': 'gtfs-rt'})
-    logger.info('purge gtfs-rt realtime update for %s', 'gtfs-rt')
 
-    until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
-    logger.info('purge gtfs-rt realtime update until %s', until)
+@celery.task(bind=True)
+@retry(stop_max_delay=TASK_STOP_MAX_DELAY,
+       wait_fixed=TASK_WAIT_FIXED,
+       retry_on_exception=should_retry_exception)
+def gtfs_purge_rt_update(self, config):
+    func_name = 'gtfs_purge_rt_update'
+    connector = config['connector']
 
-    RealTimeUpdate.remove_by_connectors_until(connectors=['gtfs-rt'], until=until)
-    logger.info('purge gtfs-rt realtime update finished')
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': connector})
+    logger.debug('purge gtfs-rt realtime update for %s', connector)
+
+    lock_name = make_kirin_lock_name(func_name, connector)
+    with get_lock(logger, lock_name) as locked:
+        if not locked:
+            logger.warning('%s for %s is already in progress', func_name, connector)
+            return
+
+        until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+        logger.info('purge gtfs-rt realtime update until %s', until)
+
+        RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
+        logger.info('%s for %s is finished', func_name, connector)

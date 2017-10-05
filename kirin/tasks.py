@@ -82,5 +82,6 @@ def purge_gtfs_rt_update(self):
     """
     This task will remove realtime update
     """
-    config = {'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_RT_UPDATE')}
+    config = {'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_RT_UPDATE'),
+              'connector': 'gtfs-rt'}
     gtfs_purge_rt_update.delay(config)
