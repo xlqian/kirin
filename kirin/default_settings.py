@@ -143,12 +143,12 @@ CELERYBEAT_SCHEDULE = {
     },
     'purge_gtfs_trip_update': {
         'task': 'kirin.tasks.purge_gtfs_trip_update',
-        'schedule': timedelta(days=1),
-        'options': {'expires': 2400}
+        'schedule': schedules.crontab(hour='3'),
+        'options': {'expires': 3600}
     },
     'purge_gtfs_rt_update': {
         'task': 'kirin.tasks.purge_gtfs_rt_update',
-        'schedule': timedelta(days=1),
-        'options': {'expires': 1200}
+        'schedule': schedules.crontab(hour='3', minute='30'),
+        'options': {'expires': 3600}
     }
 }
