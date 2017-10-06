@@ -88,6 +88,9 @@ class KirinModelBuilder(object):
         """
         self.log.debug("proto = {}".format(data))
         data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
+        msg = 'proto timestamp: {t}, trip_update count: {e}'.format(t=data_time, e=len(data.entity))
+        record_call('gtfs-rt', msg)
+        self.log.info(msg)
 
         trip_updates = []
         for entity in data.entity:
@@ -95,7 +98,6 @@ class KirinModelBuilder(object):
                 continue
             tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
             trip_updates.extend(tu)
-
         return trip_updates
 
     def _make_trip_updates(self, input_trip_update, data_time):

@@ -91,11 +91,22 @@ def record_internal_failure(system_id, message):
 
 def record_call(system_id, status, **kwargs):
     """
-    status can be in: ok, failure
+    status can be in: ok, a message text or failure with reason.
     """
     params = {'kirin_system_id': system_id, 'status': status}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_status', params)
+
+
+def record_background(contributor_id, message, **kwargs):
+    """
+    message can be any text with many informations like below
+    'Full feed publication: size: {s}, routing_key: {r}, Contributor_id: {c}'
+    """
+    params = {'kirin_contributor_id': contributor_id, 'message': message}
+    params.update(kwargs)
+    new_relic.record_custom_event('kirin_background_status', params)
+
 
 def get_timezone(stop_time):
     # TODO: we must use the coverage timezone, not the stop_area timezone, as they can be different.

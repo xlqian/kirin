@@ -38,7 +38,7 @@ import socket
 from kirin.core.model import TripUpdate, db
 from kirin.core.populate_pb import convert_to_gtfsrt
 import gtfs_realtime_pb2
-from kirin.utils import str_to_date
+from kirin.utils import str_to_date, record_background
 from socket import error
 import time
 
@@ -109,8 +109,14 @@ class RabbitMQHandler(object):
                 with self._get_producer() as producer:
                     feed_str = feed.SerializeToString()
                     log.info('Starting of full feed publication'.format(len(feed_str), task), extra={'size': len(feed_str), 'task': task})
+
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
                     log.info('End of full feed publication'.format(task), extra={'task': task})
+                    record_background(task.load_realtime.queue_name,
+                                      'Full feed publication: size: {s}, routing_key: {r}, Contributor_id: {c}'.format(
+                                          s=len(feed_str), r=route, c=task.load_realtime.queue_name))
+
+
             finally:
                 db.session.remove()
 
