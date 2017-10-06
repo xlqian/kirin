@@ -137,8 +137,8 @@ REDIS_LOCK_TIMEOUT_PURGE = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_PURGE', timedelta
 
 TASK_LOCK_PREFIX = 'kirin.lock'
 
-TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10))
-TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2))
+TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10).total_seconds())
+TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2).total_seconds())
 
 CELERYBEAT_SCHEDULE = {
     'poller': {
