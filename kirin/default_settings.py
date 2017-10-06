@@ -132,6 +132,8 @@ REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 0))
 REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD')
 
+TASK_LOCK_PREFIX = 'kirin.lock'
+
 TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10))
 TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2))
 

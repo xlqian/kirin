@@ -49,7 +49,7 @@ def should_retry_exception(exception):
 
 
 def make_kirin_lock_name(*args):
-    return '|'.join(['kirin.lock'] + [str(a) for a in args])
+    return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
 
 
 @contextmanager

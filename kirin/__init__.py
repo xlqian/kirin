@@ -59,8 +59,15 @@ if app.config['USE_GEVENT']:
 
 manager = Manager(app)
 
+from redis import Redis
+redis = Redis(host=app.config['REDIS_HOST'],
+              port=app.config['REDIS_PORT'],
+              db=app.config['REDIS_DB'],
+              password=app.config['REDIS_PASSWORD'])
+
 # activate a command
 import kirin.command.load_realtime
+import kirin.command.reset_task_locks
 
 from kirin.core import model
 db = model.db
@@ -84,9 +91,3 @@ rabbitmq_handler = RabbitMQHandler(app.config['RABBITMQ_CONNECTION_STRING'],
                                    app.config['EXCHANGE'])
 
 import kirin.api
-
-from redis import Redis
-redis = Redis(host=app.config['REDIS_HOST'],
-              port=app.config['REDIS_PORT'],
-              db=app.config['REDIS_DB'],
-              password=app.config['REDIS_PASSWORD'])
