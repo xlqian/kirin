@@ -48,6 +48,8 @@ Setup
  - Install dependencies with ``` pip install -r requirements.txt``` (virtualenv is strongly advised)
  - Create a configuration file by copying and editing ```kirin/default_settings.py```
  - You have to create a database as defined in the configuration file
+ - You also need a redis-server, install it with ```sudo apt-get install redis-server```
+
 ```
 sudo -i -u postgres
 # Create a user

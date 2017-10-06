@@ -59,6 +59,12 @@ if app.config['USE_GEVENT']:
 
 manager = Manager(app)
 
+from redis import Redis
+redis = Redis(host=app.config['REDIS_HOST'],
+              port=app.config['REDIS_PORT'],
+              db=app.config['REDIS_DB'],
+              password=app.config['REDIS_PASSWORD'])
+
 # activate a command
 import kirin.command.load_realtime
 

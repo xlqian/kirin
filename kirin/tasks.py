@@ -34,13 +34,6 @@ from celery.signals import task_postrun, setup_logging
 from kirin.helper import make_celery
 
 from kirin import app
-import requests
-from kirin import gtfs_realtime_pb2
-from kirin import core
-import navitia_wrapper
-from kirin.utils import make_rt_update
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.gtfs_rt.model_maker import KirinModelBuilder
 
 
 #we don't want celery to mess with our logging configuration
@@ -60,7 +53,7 @@ def close_session(*args, **kwargs):
 
 
 
-from kirin.gtfs_rt.tasks import gtfs_poller
+from kirin.gtfs_rt.tasks import gtfs_poller, gtfs_purge_trip_update, gtfs_purge_rt_update
 @celery.task(bind=True)
 def poller(self):
     config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
@@ -71,3 +64,24 @@ def poller(self):
               }
     gtfs_poller.delay(config)
 
+
+@celery.task(bind=True)
+def purge_gtfs_trip_update(self):
+    """
+    This task will remove ONLY TripUpdate, StoptimeUpdate and VehicleJourney that are created by gtfs-rt but the
+    RealTimeUpdate are kept so that we can replay it for debug purpose. RealTimeUpdate will be remove by another task
+    """
+    config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
+              'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_TRIP_UPDATE'),
+              }
+    gtfs_purge_trip_update.delay(config)
+
+
+@celery.task(bind=True)
+def purge_gtfs_rt_update(self):
+    """
+    This task will remove realtime update
+    """
+    config = {'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_RT_UPDATE'),
+              'connector': 'gtfs-rt'}
+    gtfs_purge_rt_update.delay(config)

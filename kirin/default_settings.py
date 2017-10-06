@@ -29,6 +29,8 @@ NAVITIA_GTFS_RT_INSTANCE = os.getenv('KIRIN_NAVITIA_GTFS_RT_INSTANCE', 'sherbroo
 NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
 GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
 GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
+NB_DAYS_TO_KEEP_TRIP_UPDATE = os.getenv('NB_DAYS_TO_KEEP_TRIP_UPDATE', 2)
+NB_DAYS_TO_KEEP_RT_UPDATE = os.getenv('NB_DAYS_TO_KEEP_RT_UPDATE', 10)
 
 USE_GEVENT = boolean(os.getenv('KIRIN_USE_GEVENT', False))
 
@@ -124,10 +126,34 @@ LOGGER = {
 CELERYD_HIJACK_ROOT_LOGGER = False
 CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'
 
+REDIS_HOST = os.getenv('KIRIN_REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
+#index of the database use in redis, between 0 and 15 by default
+REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 1))
+REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
+
+REDIS_LOCK_TIMEOUT_POLLER = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=10).total_seconds())
+REDIS_LOCK_TIMEOUT_PURGE = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_PURGE', timedelta(hours=12).total_seconds())
+
+TASK_LOCK_PREFIX = 'kirin.lock'
+
+TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10))
+TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2))
+
 CELERYBEAT_SCHEDULE = {
     'poller': {
         'task': 'kirin.tasks.poller',
         'schedule': timedelta(seconds=60),
         'options': {'expires': 30}
     },
+    'purge_gtfs_trip_update': {
+        'task': 'kirin.tasks.purge_gtfs_trip_update',
+        'schedule': schedules.crontab(hour='3'),
+        'options': {'expires': 3600}
+    },
+    'purge_gtfs_rt_update': {
+        'task': 'kirin.tasks.purge_gtfs_rt_update',
+        'schedule': schedules.crontab(hour='3', minute='30'),
+        'options': {'expires': 3600}
+    }
 }
