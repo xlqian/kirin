@@ -53,10 +53,10 @@ def make_kirin_lock_name(*args):
 
 
 @contextmanager
-def get_lock(logger, lock_name):
+def get_lock(logger, lock_name, lock_timeout):
     logger.debug('getting lock %s', lock_name)
     try:
-        lock = redis.lock(lock_name)
+        lock = redis.lock(lock_name, timeout=lock_timeout)
         locked = lock.acquire(blocking=False)
     except ConnectionError:
         logging.exception('Exception with redis while locking')
@@ -84,7 +84,7 @@ def gtfs_poller(self, config):
 
     contributor = config['contributor']
     lock_name = make_kirin_lock_name(func_name, contributor)
-    with get_lock(logger, lock_name) as locked:
+    with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_POLLER']) as locked:
         if not locked:
             logger.warning('%s for %s is already in progress', func_name, contributor)
             return
@@ -113,7 +113,7 @@ def gtfs_purge_trip_update(self, config):
     logger.debug('purge gtfs-rt trip update for %s', contributor)
 
     lock_name = make_kirin_lock_name(func_name, contributor)
-    with get_lock(logger, lock_name) as locked:
+    with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
         if not locked:
             logger.warning('%s for %s is already in progress', func_name, contributor)
             return
@@ -136,7 +136,7 @@ def gtfs_purge_rt_update(self, config):
     logger.debug('purge gtfs-rt realtime update for %s', connector)
 
     lock_name = make_kirin_lock_name(func_name, connector)
-    with get_lock(logger, lock_name) as locked:
+    with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
         if not locked:
             logger.warning('%s for %s is already in progress', func_name, connector)
             return
