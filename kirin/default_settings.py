@@ -130,7 +130,7 @@ REDIS_HOST = os.getenv('KIRIN_REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
 #index of the database use in redis, between 0 and 15 by default
 REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 0))
-REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD')
+REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
 
 TASK_LOCK_PREFIX = 'kirin.lock'
 
