@@ -129,11 +129,11 @@ CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'
 REDIS_HOST = os.getenv('KIRIN_REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
 #index of the database use in redis, between 0 and 15 by default
-REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 0))
+REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 1))
 REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
 
-REDIS_LOCK_TIMEOUT_POLLER = timedelta(minutes=10).total_seconds()
-REDIS_LOCK_TIMEOUT_PURGE = timedelta(hours=12).total_seconds()
+REDIS_LOCK_TIMEOUT_POLLER = os.getenv('REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=10).total_seconds())
+REDIS_LOCK_TIMEOUT_PURGE = os.getenv('REDIS_LOCK_TIMEOUT_PURGE', timedelta(hours=12).total_seconds())
 
 TASK_LOCK_PREFIX = 'kirin.lock'
 
