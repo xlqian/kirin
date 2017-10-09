@@ -112,10 +112,8 @@ class RabbitMQHandler(object):
 
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
                     log.info('End of full feed publication'.format(task), extra={'task': task})
-                    record_background(task.load_realtime.queue_name,
-                                      'Full feed publication: size: {s}, routing_key: {r}, Contributor_id: {c}'.format(
-                                          s=len(feed_str), r=route, c=task.load_realtime.queue_name))
-
+                    record_background('gtfs-rt', 'Full feed publication', size=len(feed_str),
+                                      routing_key=route, Contributor_id=task.load_realtime.queue_name)
 
             finally:
                 db.session.remove()

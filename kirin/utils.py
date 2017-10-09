@@ -98,12 +98,12 @@ def record_call(system_id, status, **kwargs):
     new_relic.record_custom_event('kirin_status', params)
 
 
-def record_background(contributor_id, message, **kwargs):
+def record_background(system_id, message, **kwargs):
     """
-    message can be any text with many informations like below
-    'Full feed publication: size: {s}, routing_key: {r}, Contributor_id: {c}'
+    message can be any text with many informations in **kwargs.
+    size=len(feed_str), routing_key=route, Contributor_id=task.load_realtime.queue_name)
     """
-    params = {'kirin_contributor_id': contributor_id, 'message': message}
+    params = {'kirin_system_id': system_id, 'message': message}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_background_status', params)
 

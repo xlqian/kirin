@@ -88,9 +88,9 @@ class KirinModelBuilder(object):
         """
         self.log.debug("proto = {}".format(data))
         data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
-        msg = 'proto timestamp: {t}, trip_update count: {e}'.format(t=data_time, e=len(data.entity))
-        record_call('gtfs-rt', msg)
-        self.log.info(msg)
+        record_call('gtfs-rt', 'proto received', timestamp=data_time, trip_update_count=len(data.entity))
+        self.log.info('Real time GTFS trip updates received'.format(data_time, len(data.entity)),
+                      extra={'timestamp': data_time, 'trip_update count': len(data.entity)})
 
         trip_updates = []
         for entity in data.entity:
