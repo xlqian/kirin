@@ -108,7 +108,8 @@ class RabbitMQHandler(object):
 
                 with self._get_producer() as producer:
                     feed_str = feed.SerializeToString()
-                    log.info('Starting of full feed publication'.format(len(feed_str), task), extra={'size': len(feed_str), 'task': task})
+                    log.info('Starting of full feed publication'.format(len(feed_str), len(feed.entity), task),
+                             extra={'size': len(feed_str), 'trip_update_count': len(feed.entity), 'task': task})
 
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
                     log.info('End of full feed publication'.format(task), extra={'task': task})
