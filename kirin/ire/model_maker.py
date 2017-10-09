@@ -187,7 +187,7 @@ class KirinModelBuilder(object):
                                                  .format(t=train_number,
                                                          s=since,
                                                          u=until))
-                record_internal_failure('IRE', 'missing train')
+                record_internal_failure('missing train', contributor=self.contributor)
 
             for nav_vj in navitia_vjs:
                 vj = model.VehicleJourney(nav_vj, vj_start.date())
@@ -212,7 +212,7 @@ class KirinModelBuilder(object):
                 # we need only to consider the station
                 if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
                     continue
-                nav_st = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
+                nav_st = self._get_navitia_stop_time(downstream_point, vj.navitia_vj, self.contributor)
 
                 if nav_st is None:
                     continue
@@ -243,7 +243,7 @@ class KirinModelBuilder(object):
                     # we need only to consider the stations
                     if not as_bool(get_value(deleted_point, 'IndicateurPRGare')):
                         continue
-                    nav_st = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
+                    nav_st = self._get_navitia_stop_time(deleted_point, vj.navitia_vj, self.contributor)
 
                     if nav_st is None:
                         continue
@@ -269,7 +269,7 @@ class KirinModelBuilder(object):
         return trip_update
 
     @staticmethod
-    def _get_navitia_stop_time(downstream_point, nav_vj):
+    def _get_navitia_stop_time(downstream_point, nav_vj, contributor):
         """
         get a navitia stop from an xml node
         the xml node MUST contains a CR, CI, CH tags
@@ -293,14 +293,14 @@ class KirinModelBuilder(object):
         if not nav_stop_times:
             logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
                                              .format(nav_external_code))
-            record_internal_failure('IRE', 'missing stop point')
+            record_internal_failure('missing stop point', contributor=contributor)
             return None
 
         if len(nav_stop_times) > 1:
             logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, '
                                              'we take the first one'
                                              .format(nav_external_code))
-            record_internal_failure('IRE', 'duplicate stops')
+            record_internal_failure('duplicate stops', contributor=contributor)
 
         return nav_stop_times[0]
 

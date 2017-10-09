@@ -45,20 +45,20 @@ def handle(proto, navitia_wrapper, contributor):
     rt_update = make_rt_update(data, 'gtfs-rt')
     try:
         trip_updates = KirinModelBuilder(navitia_wrapper, contributor).build(rt_update, data=proto)
-        record_call('gtfs-rt', 'OK')
+        record_call('OK', contributor=contributor)
     except KirinException as e:
         rt_update.status = 'KO'
         rt_update.error = e.data['error']
         model.db.session.add(rt_update)
         model.db.session.commit()
-        record_call('gtfs-rt', 'failure', reason=str(e))
+        record_call('failure', reason=str(e), contributor=contributor)
         raise
     except Exception as e:
         rt_update.status = 'KO'
         rt_update.error = e.message
         model.db.session.add(rt_update)
         model.db.session.commit()
-        record_call('gtfs-rt', 'failure', reason=str(e))
+        record_call('failure', reason=str(e), contributor=contributor)
         raise
 
     core.handle(rt_update, trip_updates, contributor)
@@ -88,9 +88,6 @@ class KirinModelBuilder(object):
         """
         self.log.debug("proto = {}".format(data))
         data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
-        record_call('gtfs-rt', 'proto received', timestamp=data_time, trip_update_count=len(data.entity))
-        self.log.info('Real time GTFS trip updates received'.format(data_time, len(data.entity)),
-                      extra={'timestamp': data_time, 'trip_update count': len(data.entity)})
 
         trip_updates = []
         for entity in data.entity:
@@ -136,7 +133,7 @@ class KirinModelBuilder(object):
                           .format(t=vj_source_code,
                                   s=since,
                                   u=until))
-            record_internal_failure('gtfs-rt', 'missing vj')
+            record_internal_failure('missing vj', contributor=self.contributor)
             return []
 
         if len(navitia_vjs) > 1:
@@ -147,7 +144,7 @@ class KirinModelBuilder(object):
                                   u=until,
                                   ids=vj_ids
                                   ))
-            record_internal_failure('gtfs-rt', 'duplicate vjs')
+            record_internal_failure('duplicate vjs', contributor=self.contributor)
             return []
        
         nav_vj = navitia_vjs[0]
@@ -177,7 +174,7 @@ class KirinModelBuilder(object):
                 circulate_date = local_until.date()
             else:
                 self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
-                record_internal_failure('gtfs-rt', 'impossible to calculate the circulate date of vj')
+                record_internal_failure('impossible to calculate the circulate date of vj', contributor=self.contributor)
 
         if not circulate_date:
             return []
@@ -191,7 +188,7 @@ class KirinModelBuilder(object):
         if nav_st is None:
             self.log.info('impossible to find stop point {} in the vj {}, skipping it'.format(
                 input_st_update.stop_id, navitia_vj.get('id')))
-            record_internal_failure('gtfs-rt', 'missing stop point')
+            record_internal_failure('missing stop point', contributor=self.contributor)
             return None
 
         nav_stop = nav_st.get('stop_point', {})

@@ -37,7 +37,7 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
-from kirin.utils import get_timezone
+from kirin.utils import get_timezone, record_call
 
 
 def persist(real_time_update):
@@ -273,7 +273,16 @@ def publish(feed, contributor):
     send RT feed to navitia
     """
     try:
-        kirin.rabbitmq_handler.publish(feed.SerializeToString(), contributor)
+        feed_str = feed.SerializeToString()
+        data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
+        kirin.rabbitmq_handler.publish(feed_str, contributor)
+        record_call('proto to publish', contributor=contributor, timestamp=data_time,
+                    trip_update_count=len(feed.entity), size=len(feed_str))
+        logging.getLogger(__name__).info('Proto to publish'.
+                                         format(contributor, data_time, len(feed.entity), len(feed_str)),
+                                         extra={'contributor': contributor, 'timestamp': data_time,
+                                                'trip_update_count': len(feed.entity), 'size': len(feed_str)})
+
     except socket.error:
         logging.getLogger(__name__).exception('impossible to publish in rabbitmq')
         raise MessageNotPublished()

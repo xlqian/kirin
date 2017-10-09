@@ -64,20 +64,20 @@ class Ire(Resource):
 
             # raw_xml is interpreted
             trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
-            record_call('ire', 'OK')
+            record_call('OK', contributor=self.contributor)
         except KirinException as e:
             rt_update.status = 'KO'
             rt_update.error = e.data['error']
             model.db.session.add(rt_update)
             model.db.session.commit()
-            record_call('ire', 'failure', reason=str(e))
+            record_call('failure', reason=str(e), contributor=self.contributor)
             raise
         except Exception as e:
             rt_update.status = 'KO'
             rt_update.error = e.message
             model.db.session.add(rt_update)
             model.db.session.commit()
-            record_call('ire', 'failure', reason=str(e))
+            record_call('failure', reason=str(e), contributor=self.contributor)
             raise
 
         core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
