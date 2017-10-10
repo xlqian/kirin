@@ -117,6 +117,8 @@ def handle(real_time_update, trip_updates, contributor, start_date_time=None):
     """
     if not real_time_update:
         raise TypeError()
+    if not start_date_time:
+        start_date_time = datetime.datetime.utcnow()
 
     for trip_update in trip_updates:
         # find if there already a row in db
