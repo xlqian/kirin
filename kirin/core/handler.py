@@ -110,7 +110,7 @@ def manage_consistency(trip_update):
     return True
 
 
-def handle(real_time_update, trip_updates, contributor, start_date_time):
+def handle(real_time_update, trip_updates, contributor, start_date_time=None):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr

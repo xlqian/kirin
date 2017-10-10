@@ -124,7 +124,7 @@ def test_handle_new_vj():
         st = StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -175,7 +175,7 @@ def test_past_midnight():
         st = StopTimeUpdate({'id': 'sa:2'}, departure_delay=timedelta(minutes=31), dep_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -248,7 +248,7 @@ def test_manage_consistency(navitia_vj):
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -290,7 +290,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         real_time_update.id = '30866ce8-0638-4fa1-8556-1ddfa22d09d3'
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -361,7 +361,7 @@ def test_simple_delay(navitia_vj):
                             arrival_delay=timedelta(minutes=5), arr_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
         assert trip_update.status == 'update'
@@ -453,7 +453,7 @@ def test_multiple_delays(setup_database, navitia_vj):
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=10), dep_status='update'),
             StopTimeUpdate({'id': 'sa:2'}, arrival_delay=timedelta(minutes=2), arr_status='update'),
         ]
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_multiples_delay(res)
 
@@ -476,7 +476,7 @@ def test_multiple_delays_in_2_updates(navitia_vj):
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
         ]
-        handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        handle(real_time_update, [trip_update], 'kisio-digital')
 
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
@@ -484,7 +484,7 @@ def test_multiple_delays_in_2_updates(navitia_vj):
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=10), dep_status='update'),
             StopTimeUpdate({'id': 'sa:2'}, arrival_delay=timedelta(minutes=2), arr_status='update'),
         ]
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_multiples_delay(res)
         # we also check that there is what we want in the db
@@ -508,7 +508,7 @@ def test_delays_then_cancellation(setup_database, navitia_vj):
     with app.app_context():
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -527,11 +527,11 @@ def test_delays_then_cancellation_in_2_updates(navitia_vj):
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
         ]
-        handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        handle(real_time_update, [trip_update], 'kisio-digital')
 
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]
@@ -602,7 +602,7 @@ def test_cancellation_then_delay(navitia_vj):
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update'),
         ]
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_cancellation_then_delay(res)
 
@@ -615,13 +615,13 @@ def test_cancellation_then_delay_in_2_updates(navitia_vj):
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
         trip_update.stop_time_updates = []
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
-        handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        handle(real_time_update, [trip_update], 'kisio-digital')
 
         trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update'),
         ]
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         _check_cancellation_then_delay(res)
