@@ -110,7 +110,7 @@ def manage_consistency(trip_update):
     return True
 
 
-def handle(real_time_update, trip_updates, contributor):
+def handle(real_time_update, trip_updates, contributor, start_date_time):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
@@ -134,7 +134,7 @@ def handle(real_time_update, trip_updates, contributor):
 
     feed = convert_to_gtfsrt(real_time_update.trip_updates)
 
-    publish(feed, contributor)
+    publish(feed, contributor, start_date_time)
 
     return real_time_update
 
@@ -268,19 +268,19 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     return res
 
 
-def publish(feed, contributor):
+def publish(feed, contributor, start_datetime):
     """
     send RT feed to navitia
     """
     try:
         feed_str = feed.SerializeToString()
         data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
+        duration = (datetime.datetime.utcnow() - start_datetime).total_seconds() * 1000
         kirin.rabbitmq_handler.publish(feed_str, contributor)
-        record_call('proto to publish', contributor=contributor, timestamp=data_time,
-                    trip_update_count=len(feed.entity), size=len(feed_str))
-        logging.getLogger(__name__).info('Proto to publish'.
-                                         format(contributor, data_time, len(feed.entity), len(feed_str)),
-                                         extra={'contributor': contributor, 'timestamp': data_time,
+        record_call('Simple feed publication', contributor=contributor, timestamp=data_time,
+                    trip_update_count=len(feed.entity), size=len(feed_str), duration=duration)
+        logging.getLogger(__name__).info('Simple feed publication',
+                                         extra={'contributor': contributor, 'timestamp': data_time, 'duration': duration,
                                                 'trip_update_count': len(feed.entity), 'size': len(feed_str)})
 
     except socket.error:

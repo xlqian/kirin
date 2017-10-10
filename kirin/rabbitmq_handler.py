@@ -41,6 +41,7 @@ import gtfs_realtime_pb2
 from kirin.utils import str_to_date, record_call
 from socket import error
 import time
+from datetime import datetime
 
 
 class RabbitMQHandler(object):
@@ -90,6 +91,7 @@ class RabbitMQHandler(object):
                     return
 
                 log.info('Getting a full feed publication request', extra={'task': task})
+                start_datetime = datetime.utcnow()
                 if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
                     return
                 begin_date = None
@@ -108,12 +110,13 @@ class RabbitMQHandler(object):
 
                 with self._get_producer() as producer:
                     feed_str = feed.SerializeToString()
-                    log.info('Starting of full feed publication'.format(len(feed_str), len(feed.entity), task),
+                    log.info('Starting of full feed publication',
                              extra={'size': len(feed_str), 'trip_update_count': len(feed.entity), 'task': task})
 
+                    duration = (datetime.utcnow() - start_datetime).total_seconds() * 1000
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
-                    log.info('End of full feed publication'.format(task), extra={'task': task})
-                    record_call('Full feed publication', size=len(feed_str), routing_key=route,
+                    log.info('End of full feed publication', extra={'duration': duration, 'task': task})
+                    record_call('Full feed publication', size=len(feed_str), routing_key=route, duration=duration,
                                 trip_update_count=len(feed.entity), Contributor=task.load_realtime.queue_name)
 
             finally:

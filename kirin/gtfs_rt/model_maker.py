@@ -43,6 +43,7 @@ from kirin.utils import get_timezone
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
     rt_update = make_rt_update(data, 'gtfs-rt')
+    start_datetime = datetime.datetime.utcnow()
     try:
         trip_updates = KirinModelBuilder(navitia_wrapper, contributor).build(rt_update, data=proto)
         record_call('OK', contributor=contributor)
@@ -61,7 +62,7 @@ def handle(proto, navitia_wrapper, contributor):
         record_call('failure', reason=str(e), contributor=contributor)
         raise
 
-    core.handle(rt_update, trip_updates, contributor)
+    core.handle(rt_update, trip_updates, contributor, start_datetime)
 
 
 def to_str(date):

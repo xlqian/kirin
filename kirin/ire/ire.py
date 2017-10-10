@@ -35,6 +35,7 @@ from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update, record_call
 from model_maker import KirinModelBuilder
+from datetime import datetime
 
 
 def get_ire(req):
@@ -58,6 +59,7 @@ class Ire(Resource):
 
         # create a raw ire obj, save the raw_xml into the db
         rt_update = make_rt_update(raw_xml, 'ire')
+        start_datetime = datetime.utcnow()
         try:
             # assuming UTF-8 encoding for all ire input
             rt_update.raw_data = rt_update.raw_data.encode('utf-8')
@@ -80,6 +82,6 @@ class Ire(Resource):
             record_call('failure', reason=str(e), contributor=self.contributor)
             raise
 
-        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
+        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'], start_datetime)
 
         return 'OK', 200
