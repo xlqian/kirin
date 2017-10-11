@@ -36,6 +36,7 @@ from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update, record_call
 from model_maker import KirinModelBuilder
 from datetime import datetime
+import logging
 
 
 def get_ire(req):
@@ -82,6 +83,10 @@ class Ire(Resource):
             record_call('failure', reason=str(e), contributor=self.contributor)
             raise
 
-        core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'], start_datetime)
+        _, log_dict = core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
+        duration = (datetime.utcnow() - start_datetime).total_seconds()
+        log_dict.update({'duration': duration})
+        record_call('Simple feed publication', **log_dict)
+        logging.getLogger(__name__).info('Simple feed publication', extra=log_dict)
 
         return 'OK', 200

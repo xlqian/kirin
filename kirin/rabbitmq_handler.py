@@ -116,8 +116,9 @@ class RabbitMQHandler(object):
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
                     duration = (datetime.utcnow() - start_datetime).total_seconds()
                     log.info('End of full feed publication', extra={'duration': duration, 'task': task})
-                    record_call('Full feed publication', size=len(feed_str), routing_key=route, duration=duration,
-                                trip_update_count=len(feed.entity), Contributor=task.load_realtime.queue_name)
+                    record_call('Full feed publication', size=len(feed_str), routing_key=task.load_realtime.queue_name,
+                                duration=duration, trip_update_count=len(feed.entity),
+                                contributor=task.load_realtime.contributors)
 
             finally:
                 db.session.remove()

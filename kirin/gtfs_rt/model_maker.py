@@ -62,7 +62,11 @@ def handle(proto, navitia_wrapper, contributor):
         record_call('failure', reason=str(e), contributor=contributor)
         raise
 
-    core.handle(rt_update, trip_updates, contributor, start_datetime)
+    _, log_dict = core.handle(rt_update, trip_updates, contributor)
+    duration = (datetime.datetime.utcnow() - start_datetime).total_seconds()
+    log_dict.update({'duration': duration, 'input_timestamp': datetime.datetime.utcfromtimestamp(proto.header.timestamp)})
+    record_call('Simple feed publication', **log_dict)
+    logging.getLogger(__name__).info('Simple feed publication', extra=log_dict)
 
 
 def to_str(date):

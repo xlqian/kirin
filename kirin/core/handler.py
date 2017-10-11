@@ -110,7 +110,7 @@ def manage_consistency(trip_update):
     return True
 
 
-def handle(real_time_update, trip_updates, contributor, start_date_time=None):
+def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
@@ -133,10 +133,11 @@ def handle(real_time_update, trip_updates, contributor, start_date_time=None):
     persist(real_time_update)
 
     feed = convert_to_gtfsrt(real_time_update.trip_updates)
-
-    publish(feed, contributor, start_date_time)
-
-    return real_time_update
+    feed_len = publish(feed, contributor)
+    data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
+    log_dict = {'contributor': contributor, 'timestamp': data_time, 'trip_update_count': len(feed.entity),
+                'size': feed_len}
+    return real_time_update, log_dict
 
 
 def _get_datetime(circulation_date, time, timezone):
@@ -268,22 +269,14 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     return res
 
 
-def publish(feed, contributor, start_datetime):
+def publish(feed, contributor):
     """
     send RT feed to navitia
     """
     try:
         feed_str = feed.SerializeToString()
-        data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
         kirin.rabbitmq_handler.publish(feed_str, contributor)
-        extra = {'contributor': contributor, 'timestamp': data_time,
-                 'trip_update_count': len(feed.entity), 'size': len(feed_str)}
-        if start_datetime:
-            duration = (datetime.datetime.utcnow() - start_datetime).total_seconds()
-            extra.update({'duration': duration})
-
-        record_call('Simple feed publication', **extra)
-        logging.getLogger(__name__).info('Simple feed publication', extra=extra)
+        return len(feed_str)
 
     except socket.error:
         logging.getLogger(__name__).exception('impossible to publish in rabbitmq')
