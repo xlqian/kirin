@@ -114,6 +114,7 @@ def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
+    Returns real_time_update and the log_dict
     """
     if not real_time_update:
         raise TypeError()
@@ -133,10 +134,12 @@ def handle(real_time_update, trip_updates, contributor):
     persist(real_time_update)
 
     feed = convert_to_gtfsrt(real_time_update.trip_updates)
-    feed_len = publish(feed, contributor)
+    feed_str = feed.SerializeToString()
+    publish(feed_str, contributor)
+
     data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
     log_dict = {'contributor': contributor, 'timestamp': data_time, 'trip_update_count': len(feed.entity),
-                'size': feed_len}
+                'size': len(feed_str)}
     return real_time_update, log_dict
 
 
@@ -274,9 +277,7 @@ def publish(feed, contributor):
     send RT feed to navitia
     """
     try:
-        feed_str = feed.SerializeToString()
-        kirin.rabbitmq_handler.publish(feed_str, contributor)
-        return len(feed_str)
+        kirin.rabbitmq_handler.publish(feed, contributor)
 
     except socket.error:
         logging.getLogger(__name__).exception('impossible to publish in rabbitmq')
