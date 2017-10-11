@@ -210,3 +210,181 @@ def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
         assert fourth_stop.departure_status == 'none'
         assert fourth_stop.departure == datetime.datetime(2012, 6, 15, 15, 33)
         assert fourth_stop.message is None
+
+
+@pytest.fixture()
+def pass_midnight_gtfs_rt_data():
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=16, hour=5))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-pass-midnight"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.departure.delay = 60
+    stu.stop_sequence = 1
+    stu.stop_id = "Code-StopR1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 120
+    stu.departure.delay = 120
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 150
+    stu.departure.delay = 150
+    stu.stop_sequence = 3
+    stu.stop_id = "Code-StopR2-bis"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 180
+    stu.departure.delay = 180
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR3"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 240
+    stu.departure.delay = 240
+    stu.stop_sequence = 5
+    stu.stop_id = "Code-StopR4"
+
+    return feed
+
+
+def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
+    """
+    test the model builder with a pass-midnight gtfs-rt
+    """
+    with app.app_context():
+        data = ''
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, pass_midnight_gtfs_rt_data)
+
+        # we associate the trip_update manually for sqlalchemy to make the links
+        rt_update.trip_updates = trip_updates
+        db.session.add(rt_update)
+        db.session.commit()
+
+        assert len(trip_updates) == 1
+        assert len(trip_updates[0].stop_time_updates) == 5
+
+        first_stop = trip_updates[0].stop_time_updates[0]
+        assert first_stop.stop_id == 'StopR1'
+        assert first_stop.arrival_status == 'update'
+        assert first_stop.arrival_delay == timedelta(minutes=1)
+        assert first_stop.departure_status == 'update'
+        assert first_stop.departure_delay == timedelta(minutes=1)
+        assert first_stop.message is None
+
+        second_stop = trip_updates[0].stop_time_updates[1]
+        assert second_stop.stop_id == 'StopR2'
+        assert second_stop.arrival_status == 'update'
+        assert second_stop.arrival_delay == timedelta(minutes=2)
+        assert second_stop.departure_status == 'update'
+        assert second_stop.departure_delay == timedelta(minutes=2)
+        assert second_stop.message is None
+
+        second_stop = trip_updates[0].stop_time_updates[2]
+        assert second_stop.stop_id == 'StopR2-bis'
+        assert second_stop.arrival_status == 'update'
+        assert second_stop.arrival_delay == timedelta(minutes=2, seconds=30)
+        assert second_stop.departure_status == 'update'
+        assert second_stop.departure_delay == timedelta(minutes=2, seconds=30)
+        assert second_stop.message is None
+
+        third_stop = trip_updates[0].stop_time_updates[3]
+        assert third_stop.stop_id == 'StopR3'
+        assert third_stop.arrival_status == 'update'
+        assert third_stop.arrival_delay == timedelta(minutes=3)
+        assert third_stop.departure_status == 'update'
+        assert third_stop.departure_delay == timedelta(minutes=3)
+        assert third_stop.message is None
+
+        fourth_stop = trip_updates[0].stop_time_updates[4]
+        assert fourth_stop.stop_id == 'StopR4'
+        assert fourth_stop.arrival_status == 'update'
+        assert fourth_stop.arrival_delay == timedelta(minutes=4)
+        assert fourth_stop.departure_status == 'update'
+        assert fourth_stop.departure_delay == timedelta(minutes=4)
+        assert fourth_stop.message is None
+
+
+def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
+    """
+    test the gtfs-rt post with a pass-midnight gtfs-rt
+
+    we have realtime data on only the 4 stops
+
+    after the merge, we should have 4 stops properly delayed
+    """
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=pass_midnight_gtfs_rt_data.SerializeToString())
+    assert resp.status_code == 200
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 5
+
+        trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.date(2012, 6, 15))
+
+        assert trip_update
+
+        # navitia's time are in local, but we return UTC time, and the stop is in sherbrooke, so UTC-4h
+        first_stop = trip_update.stop_time_updates[0]
+        assert first_stop.stop_id == 'StopR1'
+        assert first_stop.arrival_status == 'update'
+        assert first_stop.arrival_delay == timedelta(minutes=1)
+        # 23:30 in local + 4h to get it in UTC + 1minute of delay
+        assert first_stop.arrival == datetime.datetime(2012, 6, 16, 03, 31)
+        assert first_stop.departure_delay == timedelta(minutes=1)
+        assert first_stop.departure_status == 'update'
+        assert first_stop.departure == datetime.datetime(2012, 6, 16, 03, 31)
+        assert first_stop.message is None
+
+        second_stop = trip_update.stop_time_updates[1]
+        assert second_stop.stop_id == 'StopR2'
+        assert second_stop.arrival_status == 'update'
+        assert second_stop.arrival == datetime.datetime(2012, 6, 16, 04, 01)
+        assert second_stop.arrival_delay == timedelta(minutes=2)
+        assert second_stop.departure == datetime.datetime(2012, 6, 16, 04, 02)
+        assert second_stop.departure_delay == timedelta(minutes=2)
+        assert second_stop.departure_status == 'update'
+        assert second_stop.message is None
+
+        second_stop = trip_update.stop_time_updates[2]
+        assert second_stop.stop_id == 'StopR2-bis'
+        assert second_stop.arrival_status == 'update'
+        assert second_stop.arrival == datetime.datetime(2012, 6, 16, 04, 02, 30)
+        assert second_stop.arrival_delay == timedelta(minutes=2, seconds=30)
+        assert second_stop.departure == datetime.datetime(2012, 6, 16, 04, 02, 30)
+        assert second_stop.departure_delay == timedelta(minutes=2, seconds=30)
+        assert second_stop.departure_status == 'update'
+        assert second_stop.message is None
+
+        third_stop = trip_update.stop_time_updates[3]
+        assert third_stop.stop_id == 'StopR3'
+        assert third_stop.arrival_status == 'update'
+        assert third_stop.arrival_delay == timedelta(minutes=3)
+        assert third_stop.arrival == datetime.datetime(2012, 6, 16, 04, 03)
+        assert third_stop.departure_delay == timedelta(minutes=3)
+        assert third_stop.departure_status == 'update'
+        assert third_stop.departure == datetime.datetime(2012, 6, 16, 04, 04)
+        assert third_stop.message is None
+
+        fourth_stop = trip_update.stop_time_updates[4]
+        assert fourth_stop.stop_id == 'StopR4'
+        assert fourth_stop.arrival_status == 'update'
+        assert fourth_stop.arrival_delay == timedelta(minutes=4)
+        assert fourth_stop.arrival == datetime.datetime(2012, 6, 16, 04, 34)
+        assert fourth_stop.departure_delay == timedelta(minutes=4)
+        assert fourth_stop.departure_status == 'update'
+        assert fourth_stop.departure == datetime.datetime(2012, 6, 16, 04, 34)
+        assert fourth_stop.message is None
