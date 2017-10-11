@@ -64,7 +64,8 @@ def handle(proto, navitia_wrapper, contributor):
 
     _, log_dict = core.handle(rt_update, trip_updates, contributor)
     duration = (datetime.datetime.utcnow() - start_datetime).total_seconds()
-    log_dict.update({'duration': duration, 'input_timestamp': datetime.datetime.utcfromtimestamp(proto.header.timestamp)})
+    log_dict.update({'duration': duration,
+                     'input_timestamp': datetime.datetime.utcfromtimestamp(proto.header.timestamp)})
     record_call('Simple feed publication', **log_dict)
     logging.getLogger(__name__).info('Simple feed publication', extra=log_dict)
 
