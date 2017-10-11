@@ -211,7 +211,7 @@ def test_handle_new_trip_out_of_order(navitia_vj):
                             arrival_delay=timedelta(minutes=44), arr_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
         trip_update.stop_time_updates.append(st)
-        res = handle(real_time_update, [trip_update], 'kisio-digital', datetime.datetime.utcnow())
+        res = handle(real_time_update, [trip_update], 'kisio-digital')
 
         assert len(res.trip_updates) == 1
         trip_update = res.trip_updates[0]

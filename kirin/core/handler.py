@@ -277,13 +277,15 @@ def publish(feed, contributor, start_datetime):
     try:
         feed_str = feed.SerializeToString()
         data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
-        duration = (datetime.datetime.utcnow() - start_datetime).total_seconds() * 1000
         kirin.rabbitmq_handler.publish(feed_str, contributor)
-        record_call('Simple feed publication', contributor=contributor, timestamp=data_time,
-                    trip_update_count=len(feed.entity), size=len(feed_str), duration=duration)
-        logging.getLogger(__name__).info('Simple feed publication',
-                                         extra={'contributor': contributor, 'timestamp': data_time, 'duration': duration,
-                                                'trip_update_count': len(feed.entity), 'size': len(feed_str)})
+        extra = {'contributor': contributor, 'timestamp': data_time,
+                 'trip_update_count': len(feed.entity), 'size': len(feed_str)}
+        if start_datetime:
+            duration = (datetime.datetime.utcnow() - start_datetime).total_seconds()
+            extra.update({'duration': duration})
+
+        record_call('Simple feed publication', **extra)
+        logging.getLogger(__name__).info('Simple feed publication', extra=extra)
 
     except socket.error:
         logging.getLogger(__name__).exception('impossible to publish in rabbitmq')

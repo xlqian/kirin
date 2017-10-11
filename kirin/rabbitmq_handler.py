@@ -113,7 +113,7 @@ class RabbitMQHandler(object):
                     log.info('Starting of full feed publication',
                              extra={'size': len(feed_str), 'trip_update_count': len(feed.entity), 'task': task})
 
-                    duration = (datetime.utcnow() - start_datetime).total_seconds() * 1000
+                    duration = (datetime.utcnow() - start_datetime).total_seconds()
                     producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
                     log.info('End of full feed publication', extra={'duration': duration, 'task': task})
                     record_call('Full feed publication', size=len(feed_str), routing_key=route, duration=duration,
