@@ -50,11 +50,11 @@ class RTReloader(ConsumerProducerMixin):
     """
     ConsumerProducerMixin: a RPC model
     """
-    def __init__(self, connection, rpc_queue, exchange, retry_timeout):
+    def __init__(self, connection, rpc_queue, exchange, max_retries):
         self.connection = connection
         self.rpc_queue = rpc_queue
         self.exchange = exchange
-        self.retry_timeout = retry_timeout
+        self.max_retries = max_retries
 
     def get_consumers(self, Consumer, channel):
         return [Consumer(
@@ -113,7 +113,7 @@ class RTReloader(ConsumerProducerMixin):
                                       'interval_start': 0,  # First retry immediately,
                                       'interval_step': 2,   # then increase by 2s for every retry.
                                       'interval_max': 10,   # but don't exceed 10s between retries.
-                                      'max_retries':  int(self.retry_timeout/10.0),     # give up after 5 tries.
+                                      'max_retries':  self.max_retries,     # give up after 10 (by default) tries.
                                       })
             duration = (datetime.utcnow() - start_datetime).total_seconds()
             log.info('End of full feed publication', extra={'duration': duration, 'task': task})
@@ -140,7 +140,7 @@ class RabbitMQHandler(object):
     def info(self):
         return self._connection.info()
 
-    def listen_load_realtime(self, queue_name, retry_timeout=10):
+    def listen_load_realtime(self, queue_name, max_retries=10):
         log = logging.getLogger(__name__)
 
         route = 'task.load_realtime.*'
