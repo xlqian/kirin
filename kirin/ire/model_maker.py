@@ -189,6 +189,7 @@ class KirinModelBuilder(object):
                                                          u=until))
                 record_internal_failure('missing train', contributor=self.contributor)
 
+
             for nav_vj in navitia_vjs:
                 vj = model.VehicleJourney(nav_vj, vj_start.date())
                 vjs[nav_vj['id']] = vj
@@ -215,6 +216,8 @@ class KirinModelBuilder(object):
                 nav_st, log_dict = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
                 if log_dict:
                     record_internal_failure(log_dict['message'], contributor=self.contributor)
+                    log_dict.update({'contributor': self.contributor})
+                    logging.getLogger(__name__).info(extra=log_dict)
 
                 if nav_st is None:
                     continue
@@ -248,6 +251,8 @@ class KirinModelBuilder(object):
                     nav_st, log_dict = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
                     if log_dict:
                         record_internal_failure(log_dict['message'], contributor=self.contributor)
+                        log_dict.update({'contributor': self.contributor})
+                        logging.getLogger(__name__).info(extra=log_dict)
 
                     if nav_st is None:
                         continue
@@ -297,16 +302,11 @@ class KirinModelBuilder(object):
                     break
 
         if not nav_stop_times:
-            logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
-                                             .format(nav_external_code))
-            log_dict = {'message': 'missing stop point'}
+            log_dict = {'message': 'missing stop point', 'nav_external_code': nav_external_code}
             return None, log_dict
 
         if len(nav_stop_times) > 1:
-            logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, '
-                                             'we take the first one'
-                                             .format(nav_external_code))
-            log_dict = {'message': 'duplicate stops'}
+            log_dict = {'message': 'duplicate stops', 'nav_external_code': nav_external_code}
 
         return nav_stop_times[0], log_dict
 
