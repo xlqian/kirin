@@ -302,11 +302,11 @@ class KirinModelBuilder(object):
                     break
 
         if not nav_stop_times:
-            log_dict = {'message': 'missing stop point', 'nav_external_code': nav_external_code}
+            log_dict = {'message': 'missing stop point', 'stop_point_code': nav_external_code}
             return None, log_dict
 
         if len(nav_stop_times) > 1:
-            log_dict = {'message': 'duplicate stops', 'nav_external_code': nav_external_code}
+            log_dict = {'message': 'duplicate stops', 'stop_point_code': nav_external_code}
 
         return nav_stop_times[0], log_dict
 
