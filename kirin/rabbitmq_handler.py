@@ -64,12 +64,7 @@ class RTReloader(ConsumerProducerMixin):
         )]
 
     def on_request(self, message):
-
-        retrying.Retrying(stop_max_attempt_number=5,
-                          wait_fixed=self.retry_timeout,
-                          retry_on_exception=lambda e: isinstance(e, socket.error))\
-            .call(self._on_request, message)
-
+        self._on_request(message)
         message.ack()
 
     def _on_request(self, message):
@@ -118,7 +113,7 @@ class RTReloader(ConsumerProducerMixin):
                                       'interval_start': 0,  # First retry immediately,
                                       'interval_step': 2,   # then increase by 2s for every retry.
                                       'interval_max': 10,   # but don't exceed 10s between retries.
-                                      'max_retries': 5,     # give up after 5 tries.
+                                      'max_retries':  int(self.retry_timeout/10.0),     # give up after 5 tries.
                                       })
             duration = (datetime.utcnow() - start_datetime).total_seconds()
             log.info('End of full feed publication', extra={'duration': duration, 'task': task})
@@ -147,7 +142,6 @@ class RabbitMQHandler(object):
 
     def listen_load_realtime(self, queue_name, retry_timeout=10):
         log = logging.getLogger(__name__)
-
 
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
