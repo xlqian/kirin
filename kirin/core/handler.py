@@ -37,7 +37,7 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
-from kirin.utils import get_timezone
+from kirin.utils import get_timezone, record_call
 
 
 def persist(real_time_update):
@@ -114,6 +114,7 @@ def handle(real_time_update, trip_updates, contributor):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
+    Returns real_time_update and the log_dict
     """
     if not real_time_update:
         raise TypeError()
@@ -133,10 +134,13 @@ def handle(real_time_update, trip_updates, contributor):
     persist(real_time_update)
 
     feed = convert_to_gtfsrt(real_time_update.trip_updates)
+    feed_str = feed.SerializeToString()
+    publish(feed_str, contributor)
 
-    publish(feed, contributor)
-
-    return real_time_update
+    data_time = datetime.datetime.utcfromtimestamp(feed.header.timestamp)
+    log_dict = {'contributor': contributor, 'timestamp': data_time, 'trip_update_count': len(feed.entity),
+                'size': len(feed_str)}
+    return real_time_update, log_dict
 
 
 def _get_datetime(circulation_date, time, timezone):
@@ -273,7 +277,8 @@ def publish(feed, contributor):
     send RT feed to navitia
     """
     try:
-        kirin.rabbitmq_handler.publish(feed.SerializeToString(), contributor)
+        kirin.rabbitmq_handler.publish(feed, contributor)
+
     except socket.error:
         logging.getLogger(__name__).exception('impossible to publish in rabbitmq')
         raise MessageNotPublished()

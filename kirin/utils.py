@@ -84,18 +84,21 @@ def make_rt_update(data, connector):
     return rt_update
 
 
-def record_internal_failure(system_id, message):
-    params = {'kirin_system_id': system_id, 'message': message}
+def record_internal_failure(message, **kwargs):
+    params = {'message': message}
+    params.update(kwargs)
     new_relic.record_custom_event('kirin_internal_failure', params)
 
 
-def record_call(system_id, status, **kwargs):
+def record_call(status, **kwargs):
     """
-    status can be in: ok, failure
+    status can be in: ok, a message text or failure with reason.
+    parameters: contributor, timestamp, trip_update_count, size...
     """
-    params = {'kirin_system_id': system_id, 'status': status}
+    params = {'status': status}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_status', params)
+
 
 def get_timezone(stop_time):
     # TODO: we must use the coverage timezone, not the stop_area timezone, as they can be different.

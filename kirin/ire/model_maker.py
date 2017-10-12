@@ -187,7 +187,8 @@ class KirinModelBuilder(object):
                                                  .format(t=train_number,
                                                          s=since,
                                                          u=until))
-                record_internal_failure('IRE', 'missing train')
+                record_internal_failure('missing train', contributor=self.contributor)
+
 
             for nav_vj in navitia_vjs:
                 vj = model.VehicleJourney(nav_vj, vj_start.date())
@@ -212,7 +213,11 @@ class KirinModelBuilder(object):
                 # we need only to consider the station
                 if not as_bool(get_value(downstream_point, 'IndicateurPRGare')):
                     continue
-                nav_st = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
+                nav_st, log_dict = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
+                if log_dict:
+                    record_internal_failure(log_dict['message'], contributor=self.contributor)
+                    log_dict.update({'contributor': self.contributor})
+                    logging.getLogger(__name__).info(extra=log_dict)
 
                 if nav_st is None:
                     continue
@@ -243,7 +248,11 @@ class KirinModelBuilder(object):
                     # we need only to consider the stations
                     if not as_bool(get_value(deleted_point, 'IndicateurPRGare')):
                         continue
-                    nav_st = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
+                    nav_st, log_dict = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
+                    if log_dict:
+                        record_internal_failure(log_dict['message'], contributor=self.contributor)
+                        log_dict.update({'contributor': self.contributor})
+                        logging.getLogger(__name__).info(extra=log_dict)
 
                     if nav_st is None:
                         continue
@@ -276,6 +285,7 @@ class KirinModelBuilder(object):
 
         it searchs in the vj's stops for a stop_area with the external code
         CR-CI-CH
+        we also return error messages as 'missing stop point', 'duplicate stops'
         """
         cr = get_value(downstream_point, 'CRPR')
         ci = get_value(downstream_point, 'CIPR')
@@ -284,6 +294,7 @@ class KirinModelBuilder(object):
         nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
 
         nav_stop_times = []
+        log_dict = None
         for s in nav_vj.get('stop_times', []):
             for c in s.get('stop_point', {}).get('stop_area', {}).get('codes', []):
                 if c['value'] == nav_external_code and c['type'] == 'CR-CI-CH':
@@ -291,18 +302,13 @@ class KirinModelBuilder(object):
                     break
 
         if not nav_stop_times:
-            logging.getLogger(__name__).info('impossible to find stop "{}" in the vj, skipping it'
-                                             .format(nav_external_code))
-            record_internal_failure('IRE', 'missing stop point')
-            return None
+            log_dict = {'message': 'missing stop point', 'stop_point_code': nav_external_code}
+            return None, log_dict
 
         if len(nav_stop_times) > 1:
-            logging.getLogger(__name__).info('too many stops found for code "{}" in the vj, '
-                                             'we take the first one'
-                                             .format(nav_external_code))
-            record_internal_failure('IRE', 'duplicate stops')
+            log_dict = {'message': 'duplicate stops', 'stop_point_code': nav_external_code}
 
-        return nav_stop_times[0]
+        return nav_stop_times[0], log_dict
 
     @staticmethod
     def _get_delay(xml):
