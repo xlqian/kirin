@@ -53,7 +53,7 @@ def close_session(*args, **kwargs):
 
 
 
-from kirin.gtfs_rt.tasks import gtfs_poller, gtfs_purge_trip_update, gtfs_purge_rt_update
+from kirin.gtfs_rt.tasks import gtfs_poller, purge_trip_update, purge_rt_update
 @celery.task(bind=True)
 def poller(self):
     config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
@@ -74,7 +74,7 @@ def purge_gtfs_trip_update(self):
     config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
               'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_TRIP_UPDATE'),
               }
-    gtfs_purge_trip_update.delay(config)
+    purge_trip_update.delay(config)
 
 
 @celery.task(bind=True)
@@ -84,4 +84,26 @@ def purge_gtfs_rt_update(self):
     """
     config = {'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_RT_UPDATE'),
               'connector': 'gtfs-rt'}
-    gtfs_purge_rt_update.delay(config)
+    purge_rt_update.delay(config)
+
+
+@celery.task(bind=True)
+def purge_ire_trip_update(self):
+    """
+    This task will remove ONLY TripUpdate, StoptimeUpdate and VehicleJourney that are created by IRE but the
+    RealTimeUpdate are kept so that we can replay it for debug purpose. RealTimeUpdate will be remove by another task
+    """
+    config = {'contributor': app.config.get('CONTRIBUTOR'),
+              'nb_days_to_keep': 10,
+              }
+    purge_trip_update.delay(config)
+
+
+@celery.task(bind=True)
+def purge_ire_rt_update(self):
+    """
+    This task will remove realtime update
+    """
+    config = {'nb_days_to_keep': 100,
+              'connector': 'ire'}
+    purge_rt_update.delay(config)

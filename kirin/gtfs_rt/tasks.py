@@ -61,6 +61,7 @@ def get_lock(logger, lock_name, lock_timeout):
     except ConnectionError:
         logging.exception('Exception with redis while locking')
         raise
+
     try:
         yield locked
     finally:
@@ -106,11 +107,11 @@ def gtfs_poller(self, config):
 @retry(stop_max_delay=TASK_STOP_MAX_DELAY,
        wait_fixed=TASK_WAIT_FIXED,
        retry_on_exception=should_retry_exception)
-def gtfs_purge_trip_update(self, config):
+def purge_trip_update(self, config):
     func_name = 'gtfs_purge_trip_update'
     contributor = config['contributor']
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
-    logger.debug('purge gtfs-rt trip update for %s', contributor)
+    logger.debug('purge trip update for %s', contributor)
 
     lock_name = make_kirin_lock_name(func_name, contributor)
     with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
@@ -118,7 +119,7 @@ def gtfs_purge_trip_update(self, config):
             logger.warning('%s for %s is already in progress', func_name, contributor)
             return
         until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
-        logger.info('purge gtfs-rt trip update until %s', until)
+        logger.info('purge trip update for {} until {}'.format(contributor, until))
 
         TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
         logger.info('%s for %s is finished', func_name, contributor)
@@ -128,12 +129,12 @@ def gtfs_purge_trip_update(self, config):
 @retry(stop_max_delay=TASK_STOP_MAX_DELAY,
        wait_fixed=TASK_WAIT_FIXED,
        retry_on_exception=should_retry_exception)
-def gtfs_purge_rt_update(self, config):
+def purge_rt_update(self, config):
     func_name = 'gtfs_purge_rt_update'
     connector = config['connector']
 
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': connector})
-    logger.debug('purge gtfs-rt realtime update for %s', connector)
+    logger.debug('purge realtime update for %s', connector)
 
     lock_name = make_kirin_lock_name(func_name, connector)
     with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
@@ -142,7 +143,7 @@ def gtfs_purge_rt_update(self, config):
             return
 
         until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
-        logger.info('purge gtfs-rt realtime update until %s', until)
+        logger.info('purge realtime update for {} until {}'.format(connector, until))
 
         RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
         logger.info('%s for %s is finished', func_name, connector)
