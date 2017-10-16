@@ -65,8 +65,10 @@ def manage_consistency(trip_update):
     for current_order, stu in enumerate(trip_update.stop_time_updates):
         # rejections
         if stu.order != current_order:
-            logger.warning("TripUpdate {vj_id} on {date} rejected: order problem".format(
-                vj_id=trip_update.vj_id, date=trip_update.vj.circulation_date))
+            logger.warning("TripUpdate {vj_id} (navitia id: {nav_id}) on {date} rejected: "
+                           "order problem [STU index ({stu_index}) != kirin index ({kirin_index})]".format(
+                vj_id=trip_update.vj_id, nav_id=trip_update.vj.navitia_trip_id,
+                date=trip_update.vj.circulation_date, stu_index=stu.order, kirin_index=current_order))
             return False
 
         # modifications
@@ -74,6 +76,12 @@ def manage_consistency(trip_update):
             stu.arrival = stu.departure
             if stu.arrival is None and previous_stu is not None:
                 stu.arrival = previous_stu.departure
+            if stu.arrival is None:
+                logger.warning("TripUpdate {vj_id} (navitia id: {nav_id}) on {date} rejected: "
+                               "StopTimeUpdate missing arrival time".format(
+                    vj_id=trip_update.vj_id, nav_id=trip_update.vj.navitia_trip_id,
+                    date=trip_update.vj.circulation_date))
+                return False
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay and stu.departure_delay:
                 stu.arrival_delay = stu.departure_delay
