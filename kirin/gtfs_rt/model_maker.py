@@ -114,7 +114,7 @@ class KirinModelBuilder(object):
 
             for input_st_update in input_trip_update.stop_time_update:
                 st_update = self._make_stoptime_update(input_st_update, vj.navitia_vj)
-                if not st_update:
+                if st_update is None:
                     continue
                 trip_update.stop_time_updates.append(st_update)
 
@@ -182,7 +182,7 @@ class KirinModelBuilder(object):
                 self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
                 record_internal_failure('impossible to calculate the circulate date of vj', contributor=self.contributor)
 
-        if not circulate_date:
+        if circulate_date is None:
             return []
 
         return [model.VehicleJourney(nav_vj, circulate_date)]

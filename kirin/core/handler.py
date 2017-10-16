@@ -70,29 +70,31 @@ def manage_consistency(trip_update):
             return False
 
         # modifications
-        if not stu.arrival:
+        if stu.arrival is None:
             stu.arrival = stu.departure
+            if stu.arrival is None and previous_stu is not None:
+                stu.arrival = previous_stu.departure
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay and stu.departure_delay:
                 stu.arrival_delay = stu.departure_delay
                 log_stu_modif(trip_update, stu, "arrival_delay = {v}".format(v=stu.arrival_delay))
 
-        if not stu.departure:
+        if stu.departure is None:
             stu.departure = stu.arrival
             log_stu_modif(trip_update, stu, "departure = {v}".format(v=stu.departure))
             if not stu.departure_delay and stu.arrival_delay:
                 stu.departure_delay = stu.arrival_delay
                 log_stu_modif(trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
-        if not stu.arrival_delay:
+        if stu.arrival_delay is None:
             stu.arrival_delay = datetime.timedelta(0)
             log_stu_modif(trip_update, stu, "arrival_delay = {v}".format(v=stu.arrival_delay))
 
-        if not stu.departure_delay:
+        if stu.departure_delay is None:
             stu.departure_delay = datetime.timedelta(0)
             log_stu_modif(trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
-        if previous_stu and previous_stu.departure > stu.arrival:
+        if previous_stu is not None and previous_stu.departure > stu.arrival:
             delay_diff = previous_stu.departure_delay - stu.arrival_delay
             stu.arrival += delay_diff
             stu.arrival_delay += delay_diff
@@ -120,7 +122,7 @@ def handle(real_time_update, trip_updates, contributor):
         raise TypeError()
 
     for trip_update in trip_updates:
-        # find if there already a row in db
+        # find if there is already a row in db
         old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.circulation_date)
         # merge the theoric, the current realtime, and the new realtime
         current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
@@ -155,7 +157,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     """
     We need to merge the info from 3 sources:
         * the navitia base schedule
-        * the trip update already in the bd (potentially not existent)
+        * the trip update already in the db (potentially nonexistent)
         * the incoming trip update
 
     The result is either the db_trip_update if it exists, or the new_trip_update (it is updated as a side
@@ -207,24 +209,24 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         timezone = get_timezone(navitia_stop)
 
         arrival = departure = None
-        if nav_arrival_time:
-            if last_nav_dep and last_nav_dep > nav_arrival_time:
+        if nav_arrival_time is not None:
+            if last_nav_dep is not None and last_nav_dep > nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
             arrival = _get_datetime(circulation_date, nav_arrival_time, timezone)
-        if nav_departure_time:
-            if nav_arrival_time and nav_arrival_time > nav_departure_time:
+        if nav_departure_time is not None:
+            if nav_arrival_time is not None and nav_arrival_time > nav_departure_time:
                 # departure is before arrival, it's a past-midnight
                 circulation_date += timedelta(days=1)
             departure = _get_datetime(circulation_date, nav_departure_time, timezone)
 
-        if new_st:
+        if new_st is not None:
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])
             # we have an update on the stop time, we consider it
             if new_st.departure_status == 'update':
                 dep = departure + new_st.departure_delay if departure else None
                 res_st.update_departure(time=dep, status='update', delay=new_st.departure_delay)
-            elif db_st:
+            elif db_st is not None:
                 # we have no update on the departure for this st, we take it from the db (if it exists)
                 res_st.update_departure(time=db_st.departure,
                                         status=db_st.departure_status,
@@ -241,7 +243,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             if new_st.arrival_status == 'update':
                 arr = arrival + new_st.arrival_delay if arrival else None
                 res_st.update_arrival(time=arr, status='update', delay=new_st.arrival_delay)
-            elif db_st:
+            elif db_st is not None:
                 res_st.update_arrival(time=db_st.arrival,
                                       status=db_st.arrival_status,
                                       delay=db_st.arrival_delay)
@@ -256,7 +258,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             # we might need to update the st's order
             res_st.order = len(res_stoptime_updates)
             res_stoptime_updates.append(res_st)
-        elif db_st:
+        elif db_st is not None:
             db_st.order = len(res_stoptime_updates)
             res_stoptime_updates.append(db_st)
         else:
