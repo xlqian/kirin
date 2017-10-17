@@ -61,12 +61,12 @@ def get_lock(logger, lock_name, lock_timeout):
     except ConnectionError:
         logging.exception('Exception with redis while locking')
         raise
-
-    yield locked
-
-    if locked:
-        logger.debug("releasing lock %s", lock_name)
-        lock.release()
+    try:
+        yield locked
+    finally:
+        if locked:
+            logger.debug("releasing lock %s", lock_name)
+            lock.release()
 
 
 class InvalidFeed(Exception):
