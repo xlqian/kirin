@@ -30,10 +30,44 @@
 import logging
 from kirin.core import model
 
+from redis.exceptions import ConnectionError
 from celery.signals import task_postrun, setup_logging
 from kirin.helper import make_celery
+from contextlib import contextmanager
+from retrying import retry
+from kirin import app, redis
+import datetime
+from kirin.core.model import TripUpdate, RealTimeUpdate
 
-from kirin import app
+
+TASK_STOP_MAX_DELAY = app.config['TASK_STOP_MAX_DELAY']
+TASK_WAIT_FIXED = app.config['TASK_WAIT_FIXED']
+
+
+def should_retry_exception(exception):
+    return isinstance(exception, ConnectionError)
+
+
+def make_kirin_lock_name(*args):
+    return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
+
+
+@contextmanager
+def get_lock(logger, lock_name, lock_timeout):
+    logger.debug('getting lock %s', lock_name)
+    try:
+        lock = redis.lock(lock_name, timeout=lock_timeout)
+        locked = lock.acquire(blocking=False)
+    except ConnectionError:
+        logging.exception('Exception with redis while locking')
+        raise
+
+    try:
+        yield locked
+    finally:
+        if locked:
+            logger.debug("releasing lock %s", lock_name)
+            lock.release()
 
 
 #we don't want celery to mess with our logging configuration
@@ -52,8 +86,54 @@ def close_session(*args, **kwargs):
     model.db.session.remove()
 
 
+@celery.task(bind=True)
+@retry(stop_max_delay=TASK_STOP_MAX_DELAY,
+       wait_fixed=TASK_WAIT_FIXED,
+       retry_on_exception=should_retry_exception)
+def purge_trip_update(self, config):
+    func_name = 'gtfs_purge_trip_update'
+    contributor = config['contributor']
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
+    logger.debug('purge trip update for %s', contributor)
 
-from kirin.gtfs_rt.tasks import gtfs_poller, purge_trip_update, purge_rt_update
+    lock_name = make_kirin_lock_name(func_name, contributor)
+    with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
+        if not locked:
+            logger.warning('%s for %s is already in progress', func_name, contributor)
+            return
+        until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+        logger.info('purge trip update for {} until {}'.format(contributor, until))
+
+        TripUpdate.remove_by_contributors_and_period(contributors=[contributor], start_date=None, end_date=until)
+        logger.info('%s for %s is finished', func_name, contributor)
+
+
+@celery.task(bind=True)
+@retry(stop_max_delay=TASK_STOP_MAX_DELAY,
+       wait_fixed=TASK_WAIT_FIXED,
+       retry_on_exception=should_retry_exception)
+def purge_rt_update(self, config):
+    func_name = 'gtfs_purge_rt_update'
+    connector = config['connector']
+
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': connector})
+    logger.debug('purge realtime update for %s', connector)
+
+    lock_name = make_kirin_lock_name(func_name, connector)
+    with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_PURGE']) as locked:
+        if not locked:
+            logger.warning('%s for %s is already in progress', func_name, connector)
+            return
+
+        until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
+        logger.info('purge realtime update for {} until {}'.format(connector, until))
+
+        RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
+        logger.info('%s for %s is finished', func_name, connector)
+
+
+
+from kirin.gtfs_rt.tasks import gtfs_poller
 @celery.task(bind=True)
 def poller(self):
     config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
