@@ -215,7 +215,7 @@ class KirinModelBuilder(object):
                     continue
                 nav_st, log_dict = self._get_navitia_stop_time(downstream_point, vj.navitia_vj)
                 if log_dict:
-                    record_internal_failure(log_dict['message'], contributor=self.contributor)
+                    record_internal_failure(log_dict['log'], contributor=self.contributor)
                     log_dict.update({'contributor': self.contributor})
                     logging.getLogger(__name__).info('metrology', extra=log_dict)
 
@@ -250,7 +250,7 @@ class KirinModelBuilder(object):
                         continue
                     nav_st, log_dict = self._get_navitia_stop_time(deleted_point, vj.navitia_vj)
                     if log_dict:
-                        record_internal_failure(log_dict['message'], contributor=self.contributor)
+                        record_internal_failure(log_dict['log'], contributor=self.contributor)
                         log_dict.update({'contributor': self.contributor})
                         logging.getLogger(__name__).info('metrology', extra=log_dict)
 
@@ -302,11 +302,11 @@ class KirinModelBuilder(object):
                     break
 
         if not nav_stop_times:
-            log_dict = {'message': 'missing stop point', 'stop_point_code': nav_external_code}
+            log_dict = {'log': 'missing stop point', 'stop_point_code': nav_external_code}
             return None, log_dict
 
         if len(nav_stop_times) > 1:
-            log_dict = {'message': 'duplicate stops', 'stop_point_code': nav_external_code}
+            log_dict = {'log': 'duplicate stops', 'stop_point_code': nav_external_code}
 
         return nav_stop_times[0], log_dict
 

@@ -84,8 +84,8 @@ def make_rt_update(data, connector):
     return rt_update
 
 
-def record_internal_failure(message, **kwargs):
-    params = {'message': message}
+def record_internal_failure(log, **kwargs):
+    params = {'log': log}
     params.update(kwargs)
     new_relic.record_custom_event('kirin_internal_failure', params)
 
