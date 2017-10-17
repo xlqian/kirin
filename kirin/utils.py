@@ -34,7 +34,8 @@ from pythonjsonlogger import jsonlogger
 from flask.globals import current_app
 import navitia_wrapper
 from kirin import new_relic
-
+from redis.exceptions import ConnectionError
+from contextlib import contextmanager
 from kirin.core import model
 
 
@@ -112,3 +113,29 @@ def get_timezone(stop_time):
         raise Exception("impossible to find timezone: '{}'".format(str_tz))
     return tz
 
+def should_retry_exception(exception):
+    return isinstance(exception, ConnectionError)
+
+
+def make_kirin_lock_name(*args):
+    from kirin import app
+    return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
+
+
+@contextmanager
+def get_lock(logger, lock_name, lock_timeout):
+    from kirin import redis
+    logger.debug('getting lock %s', lock_name)
+    try:
+        lock = redis.lock(lock_name, timeout=lock_timeout)
+        locked = lock.acquire(blocking=False)
+    except ConnectionError:
+        logging.exception('Exception with redis while locking')
+        raise
+
+    try:
+        yield locked
+    finally:
+        if locked:
+            logger.debug("releasing lock %s", lock_name)
+            lock.release()

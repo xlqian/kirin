@@ -31,7 +31,8 @@ import logging
 import requests
 from kirin import gtfs_realtime_pb2
 import navitia_wrapper
-from kirin.tasks import celery, should_retry_exception, make_kirin_lock_name, get_lock
+from kirin.tasks import celery
+from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app

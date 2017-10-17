@@ -30,44 +30,21 @@
 import logging
 from kirin.core import model
 
-from redis.exceptions import ConnectionError
+
 from celery.signals import task_postrun, setup_logging
 from kirin.helper import make_celery
-from contextlib import contextmanager
+
 from retrying import retry
-from kirin import app, redis
+from kirin import app
 import datetime
 from kirin.core.model import TripUpdate, RealTimeUpdate
-
+from utils import should_retry_exception, make_kirin_lock_name, get_lock
 
 TASK_STOP_MAX_DELAY = app.config['TASK_STOP_MAX_DELAY']
 TASK_WAIT_FIXED = app.config['TASK_WAIT_FIXED']
 
 
-def should_retry_exception(exception):
-    return isinstance(exception, ConnectionError)
 
-
-def make_kirin_lock_name(*args):
-    return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
-
-
-@contextmanager
-def get_lock(logger, lock_name, lock_timeout):
-    logger.debug('getting lock %s', lock_name)
-    try:
-        lock = redis.lock(lock_name, timeout=lock_timeout)
-        locked = lock.acquire(blocking=False)
-    except ConnectionError:
-        logging.exception('Exception with redis while locking')
-        raise
-
-    try:
-        yield locked
-    finally:
-        if locked:
-            logger.debug("releasing lock %s", lock_name)
-            lock.release()
 
 
 #we don't want celery to mess with our logging configuration
