@@ -217,7 +217,7 @@ class KirinModelBuilder(object):
                 if log_dict:
                     record_internal_failure(log_dict['message'], contributor=self.contributor)
                     log_dict.update({'contributor': self.contributor})
-                    logging.getLogger(__name__).info(extra=log_dict)
+                    logging.getLogger(__name__).info('metrology', extra=log_dict)
 
                 if nav_st is None:
                     continue
@@ -252,7 +252,7 @@ class KirinModelBuilder(object):
                     if log_dict:
                         record_internal_failure(log_dict['message'], contributor=self.contributor)
                         log_dict.update({'contributor': self.contributor})
-                        logging.getLogger(__name__).info(extra=log_dict)
+                        logging.getLogger(__name__).info('metrology', extra=log_dict)
 
                     if nav_st is None:
                         continue
