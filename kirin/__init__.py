@@ -67,6 +67,7 @@ redis = Redis(host=app.config['REDIS_HOST'],
 
 # activate a command
 import kirin.command.load_realtime
+import kirin.command.purge_rt
 
 from kirin.core import model
 db = model.db
