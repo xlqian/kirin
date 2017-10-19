@@ -258,7 +258,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         sub_query = db.session.query(associate_realtimeupdate_tripupdate.c.real_time_update_id)
         query = cls.query.\
             filter(cls.connector.in_(connectors)).\
-            filter(cls.received_at <= until).\
+            filter(cls.created_at <= until).\
             filter(cls.id.notin_(sub_query))
         query.delete(synchronize_session=False)
         db.session.commit()

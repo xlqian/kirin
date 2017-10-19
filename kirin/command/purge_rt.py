@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#  Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -28,15 +27,19 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import app, db
-import sys
-from flask_script import Manager
-from flask_migrate import Migrate, MigrateCommand
 from kirin import manager
-import kirin.command.purge_rt
+from kirin.core.model import db, RealTimeUpdate
+import datetime
+import logging
 
-migrate = Migrate(app, db)
-manager.add_command('db', MigrateCommand)
-
-if __name__ == '__main__':
-    manager.run()
+@manager.command
+def purge_rt(nb_day_to_keep, connector):
+    """
+    purge table real_time_update and associate_realtimeupdate_tripupdate
+    for connector 'ire' or 'gtfs-rt' with nb_day_to_keep of history
+    """
+    logger = logging.getLogger(__name__)
+    until = datetime.date.today() - datetime.timedelta(days=int(nb_day_to_keep))
+    logger.info('purge table real_time_update for %s until %s', connector, until)
+    RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
+    db.session.commit()
