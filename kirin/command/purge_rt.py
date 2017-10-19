@@ -43,6 +43,3 @@ def purge_rt(nb_day_to_keep, connector):
     logger.info('purge table real_time_update for %s until %s', connector, until)
     RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
     db.session.commit()
-
-
-
