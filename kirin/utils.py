@@ -73,11 +73,11 @@ def make_navitia_wrapper():
     return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
 
 
-def make_rt_update(data, connector):
+def make_rt_update(data, connector, contributor):
     """
     Create an RealTimeUpdate object for the query and persist it
     """
-    rt_update = model.RealTimeUpdate(data, connector=connector)
+    rt_update = model.RealTimeUpdate(data, connector=connector, contributor=contributor)
 
     model.db.session.add(rt_update)
     model.db.session.commit()

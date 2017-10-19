@@ -59,7 +59,7 @@ class Ire(Resource):
         raw_xml = get_ire(flask.globals.request)
 
         # create a raw ire obj, save the raw_xml into the db
-        rt_update = make_rt_update(raw_xml, 'ire')
+        rt_update = make_rt_update(raw_xml, 'ire', contributor=self.contributor)
         start_datetime = datetime.utcnow()
         try:
             # assuming UTF-8 encoding for all ire input

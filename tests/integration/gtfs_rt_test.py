@@ -115,7 +115,7 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
     """
     with app.app_context():
         data = ''
-        rt_update = RealTimeUpdate(data, connector='gtfs-rt')
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
         trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data)
 
         # we associate the trip_update manually for sqlalchemy to make the links
@@ -264,7 +264,7 @@ def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
     """
     with app.app_context():
         data = ''
-        rt_update = RealTimeUpdate(data, connector='gtfs-rt')
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
         trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, pass_midnight_gtfs_rt_data)
 
         # we associate the trip_update manually for sqlalchemy to make the links
