@@ -30,6 +30,7 @@
 from __future__ import absolute_import, print_function, unicode_literals, division
 import logging
 import flask
+import os
 
 try:
     from newrelic import agent
@@ -37,6 +38,14 @@ except ImportError:
     logger = logging.getLogger(__name__)
     logger.exception('failure while importing newrelic')
     agent = None
+
+def init(config_file):
+    if agent and os.path.exists(config_file):
+        agent.initialize(config_file)
+    else:
+        logger = logging.getLogger(__name__)
+        logger.warn('newrelic hasn\t been initialized')
+
 
 
 def record_exception():

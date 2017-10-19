@@ -18,6 +18,7 @@ RUN apk --update --no-cache add \
     sed -i -e '/protobuf/d' requirements.txt && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir gunicorn && \
+    pip install --no-cache-dir newrelic && \
     python setup.py build_version && \
     python setup.py build_pbf && \
     apk del \
