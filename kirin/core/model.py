@@ -28,7 +28,7 @@
 # www.navitia.io
 from datetime import timedelta
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import backref, deferred
 from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
@@ -231,7 +231,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     connector = db.Column(db.Enum('ire', 'gtfs-rt', name='connector_type'), nullable=False)
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
-    raw_data = db.Column(db.Text, nullable=True)
+    raw_data = deferred(db.Column(db.Text, nullable=True))
     contributor = db.Column(db.Text, nullable=True)
 
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, cascade='all',
