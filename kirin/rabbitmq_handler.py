@@ -135,7 +135,7 @@ class RabbitMQHandler(object):
                             try:
                                 conn.drain_events(timeout=1)
                             except socket.timeout:
-                                pass
+                                conn.heartbeat_check()
             except socket.error:
                 log.exception('disconnected, retrying in %s sec', retry_timeout)
                 time.sleep(retry_timeout)
@@ -161,18 +161,23 @@ def monitor_heartbeats(connections, rate=2):
     def heartbeat_check():
         to_remove = []
         for conn in connections:
-            if conn.connected:
-                logging.getLogger(__name__).debug('heartbeat_check for %s', conn)
-                try:
-                    conn.heartbeat_check(rate=rate)
-                except socket.error:
-                    logging.getLogger(__name__).info('connection %s dead: closing it!', conn)
-                    #actualy we don't do a close(), else we won't be able to reopen it after...
-                    to_remove.append(conn)
-            else:
+            logging.getLogger(__name__).debug('heartbeat_check for %s', conn)
+            try:
+                conn.heartbeat_check(rate=rate)
+            except (socket.error, ConnectionForced):
+                logging.getLogger(__name__).info('connection %s dead: removing it!', conn)
+                #actualy we don't do a close(), else we won't be able to reopen it after...
                 to_remove.append(conn)
+
         for conn in to_remove:
             connections.remove(conn)
-        gevent.spawn_later(interval, heartbeat_check)
 
-    gevent.spawn_later(interval, heartbeat_check)
+    def loop():
+        while True:
+            try:
+                gevent.sleep(interval)
+                heartbeat_check()
+            except Exception as e:
+                logging.getLogger(__name__).exception('unknown exception when heartbeating%s', e)
+
+    gevent.Greenlet.spawn(loop)
