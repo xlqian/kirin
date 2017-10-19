@@ -33,7 +33,7 @@ import sys
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from kirin import manager
-from kirin.command import purge
+import kirin.command.purge_rt
 
 migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)

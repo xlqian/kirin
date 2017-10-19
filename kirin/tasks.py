@@ -105,6 +105,7 @@ def purge_rt_update(self, config):
         until = datetime.date.today() - datetime.timedelta(days=int(config['nb_days_to_keep']))
         logger.info('purge realtime update for {} until {}'.format(connector, until))
 
+        # TODO:  we want to purge on "contributor" later, not "connector".
         RealTimeUpdate.remove_by_connectors_until(connectors=[connector], until=until)
         logger.info('%s for %s is finished', func_name, connector)
 
