@@ -43,7 +43,7 @@ def test_train_delayed(mock_navitia_fixture):
     input_train_delayed = get_ire_data('train_96231_delayed.xml')
 
     with app.app_context():
-        rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire')
+        rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire', contributor='realtime.ire')
         trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
 
         # we associate the trip_update manually for sqlalchemy to make the links
@@ -107,7 +107,7 @@ def test_train_trip_removal(mock_navitia_fixture):
     input_train_trip_removed = get_ire_data('train_6113_trip_removal.xml')
 
     with app.app_context():
-        rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='ire')
+        rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='ire', contributor='realtime.ire')
         trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
         rt_update.trip_updates = trip_updates
         db.session.add(rt_update)

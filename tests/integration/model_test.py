@@ -45,7 +45,7 @@ def create_trip_update(vj_id, trip_id, circulation_date):
 
 
 def create_real_time_update(id, contributor, connector, vj_id, trip_id, circulation_date):
-    rtu = RealTimeUpdate('', connector)
+    rtu = RealTimeUpdate('', connector, contributor=contributor)
     rtu.id = id
     trip_update = create_trip_update(vj_id, trip_id, circulation_date)
     trip_update.contributor = contributor

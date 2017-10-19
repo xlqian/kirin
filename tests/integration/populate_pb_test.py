@@ -52,7 +52,7 @@ def test_populate_pb_with_one_stop_time():
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
         st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), arrival=None)
-        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         real_time_update.trip_updates.append(trip_update)
         trip_update.stop_time_updates.append(st)
 
@@ -93,7 +93,7 @@ def test_populate_pb_with_two_stop_time():
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
-        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         real_time_update.trip_updates.append(trip_update)
         st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), departure_delay=timedelta(minutes=5),
                             arrival=None)
@@ -168,7 +168,7 @@ def test_populate_pb_with_deleted_stop_time():
         trip_update = TripUpdate()
         vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
         trip_update.vj = vj
-        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         real_time_update.trip_updates.append(trip_update)
         st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), departure_delay=timedelta(minutes=5),
                             arrival=None)
@@ -270,7 +270,7 @@ def test_populate_pb_with_cancelation():
         trip_update.vj = vj
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'
-        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.contributor = 'kisio-digital'
         real_time_update.trip_updates.append(trip_update)
 
@@ -306,7 +306,7 @@ def test_populate_pb_with_full_dataset():
         trip_update.vj = vj
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'
-        real_time_update = RealTimeUpdate(raw_data=None, connector='ire')
+        real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.contributor = 'kisio-digital'
         real_time_update.trip_updates.append(trip_update)
 

@@ -232,23 +232,25 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=True)
     error = db.Column(db.Text, nullable=True)
     raw_data = db.Column(db.Text, nullable=True)
+    contributor = db.Column(db.Text, nullable=True)
 
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, cascade='all',
                                    lazy='select', backref=backref('real_time_updates', cascade='all'))
 
     __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),)
 
-    def __init__(self, raw_data, connector, status=None, error=None, received_at=None):
+    def __init__(self, raw_data, connector, contributor, status=None, error=None, received_at=None):
         self.id = gen_uuid()
         self.raw_data = raw_data
         self.connector = connector
         self.status = status
         self.error = error
+        self.contributor = contributor
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
 
     @classmethod
     def get_last_update_by_contributor(cls):
-        query = db.session.query(TripUpdate.contributor, db.func.max(cls.created_at)).join(associate_realtimeupdate_tripupdate).join(cls).group_by(TripUpdate.contributor).all()
+        query = db.session.query(cls.contributor, db.func.max(cls.created_at)).group_by(cls.contributor).all()
         return {row[0]: row[1].strftime('%Y-%m-%dT%H:%M:%SZ') for row in query}
 
     @classmethod
