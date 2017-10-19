@@ -160,10 +160,5 @@ CELERYBEAT_SCHEDULE = {
         'task': 'kirin.tasks.purge_ire_trip_update',
         'schedule': schedules.crontab(hour='3', minute='30'),
         'options': {'expires': 3600}
-    },
-    'purge_ire_rt_update': {
-        'task': 'kirin.tasks.purge_ire_rt_update',
-        'schedule': schedules.crontab(hour='3', minute='45'),
-        'options': {'expires': 3600}
     }
 }

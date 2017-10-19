@@ -68,7 +68,7 @@ def close_session(*args, **kwargs):
        wait_fixed=TASK_WAIT_FIXED,
        retry_on_exception=should_retry_exception)
 def purge_trip_update(self, config):
-    func_name = 'gtfs_purge_trip_update'
+    func_name = 'purge_trip_update'
     contributor = config['contributor']
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': contributor})
     logger.debug('purge trip update for %s', contributor)
@@ -90,7 +90,7 @@ def purge_trip_update(self, config):
        wait_fixed=TASK_WAIT_FIXED,
        retry_on_exception=should_retry_exception)
 def purge_rt_update(self, config):
-    func_name = 'gtfs_purge_rt_update'
+    func_name = 'purge_rt_update'
     connector = config['connector']
 
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'connector': connector})
