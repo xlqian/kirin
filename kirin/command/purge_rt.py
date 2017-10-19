@@ -27,8 +27,8 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from kirin import manager, db
-from kirin.core.model import RealTimeUpdate
+from kirin import manager
+from kirin.core.model import db, RealTimeUpdate
 import datetime
 import logging
 
