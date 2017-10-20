@@ -107,6 +107,17 @@ class KirinModelBuilder(object):
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
 
         trip_updates = []
+
+        # we may be not able to find the vj in navitia, but if all delay of the trip_update is 0, it's just ok,
+        # otherwise we need to analyze this case
+        if not vjs:
+            if all((stu.arrival.delay == 0 for stu in input_trip_update.stop_time_update)):
+                self.log.debug('can not find vj %s, but all its stop_time_update delays are zero',
+                               input_trip_update.trip)
+            else:
+                self.log.error('can not find vj %s, and one or more stop_time_update delays are not zero',
+                                 input_trip_update.trip)
+
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
