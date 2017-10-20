@@ -27,6 +27,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 from datetime import timedelta
+from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -73,21 +74,23 @@ class VehicleJourney(db.Model):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
+    start_timestamp = db.Column(db.DateTime, nullable=True) # timestamp of VJ's start
     circulation_date = db.Column(db.Date, nullable=False)  # in local timezone
 
-    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'circulation_date', name='vehicle_journey_navitia_trip_id_circulation_date_idx'),)
+    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'circulation_date',
+                                          name='vehicle_journey_navitia_trip_id_circulation_date_idx'),)
 
-    def __init__(self, navitia_vj, circulation_date):
+    def __init__(self, navitia_vj, local_circulation_date):
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
-        self.circulation_date = circulation_date
+        self.circulation_date = local_circulation_date
+
+        # dummy start_timestamp
+        self.start_timestamp = utc.localize(datetime.datetime.combine(local_circulation_date,
+                                                                      datetime.time(0, 0)))
         self.navitia_vj = navitia_vj  # Not persisted
 
-    @classmethod
-    def purge(cls, until):
-        for vj in cls.query.filter(cls.circulation_date < until):
-            db.session.delete(vj)
 
 
 class StopTimeUpdate(db.Model, TimestampMixin):
