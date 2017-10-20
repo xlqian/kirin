@@ -37,7 +37,13 @@ from tests.check_utils import _dt
 
 
 def create_trip_update(id, trip_id, circulation_date, stops, status='update'):
-    trip_update = TripUpdate(VehicleJourney({'trip': {'id': trip_id}}, circulation_date), status)
+    trip_update = TripUpdate(VehicleJourney({
+            'trip': {'id': trip_id},
+            'stop_times': [
+                {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+            ]},
+            circulation_date),
+        status)
     trip_update.id = id
     for stop in stops:
         st = StopTimeUpdate({'id': stop['id']}, stop['departure'], stop['arrival'])
@@ -313,7 +319,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
         assert stu_map['sa:3'].departure == _dt("10:05")
 
         # testing that RealTimeUpdate is persisted in db
-        db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('circulation_date').all()
+        db_trip_updates = TripUpdate.query.join(VehicleJourney).order_by('start_timestamp').all()
         assert len(db_trip_updates) == 2
         assert real_time_update.query.from_self(TripUpdate).all()[0].status == 'update'
         st_updates = real_time_update.query.from_self(StopTimeUpdate).order_by('stop_id').all()

@@ -152,12 +152,12 @@ class KirinModelBuilder(object):
                                   ))
             record_internal_failure('duplicate vjs', contributor=self.contributor)
             return []
-       
+
         nav_vj = navitia_vjs[0]
 
         # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
         # We do this to prevent cases like pass midnight when [since, until] is too large
-        # the final circulate_date in database is in local timezone
+        # we need local timezone circulate_date (and it's sometimes different from UTC date)
         first_stop_time = nav_vj.get('stop_times', [{}])[0]
         tzinfo = get_timezone(first_stop_time)
 
@@ -178,11 +178,10 @@ class KirinModelBuilder(object):
             elif local_since < tzinfo.localize(datetime.datetime.combine(local_until.date(),
                                                                          arrival_time)) < local_until:
                 circulate_date = local_until.date()
-            else:
-                self.log.error('impossible to calculate the circulate date of vj: {}'.format(nav_vj.get('id')))
-                record_internal_failure('impossible to calculate the circulate date of vj', contributor=self.contributor)
 
         if circulate_date is None:
+            self.log.error('impossible to calculate the circulate date (local) of vj: {}'.format(nav_vj.get('id')))
+            record_internal_failure('gtfs-rt', 'impossible to calculate the circulate date of vj')
             return []
 
         return [model.VehicleJourney(nav_vj, circulate_date)]

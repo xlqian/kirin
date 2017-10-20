@@ -26,7 +26,6 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from datetime import timedelta
 from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
@@ -34,6 +33,7 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
+
 db = SQLAlchemy()
 
 # default name convention for db constraints (when not specified), for future alembic updates
@@ -68,29 +68,64 @@ class TimestampMixin(object):
 ModificationType = db.Enum('add', 'delete', 'update', 'none', name='modification_type')
 
 
+def get_utc_localized_timestamp_safe(timestamp):
+    '''
+    Return a UTC-localized timestamp (easier to manipulate)
+    Result is a changed datetime if it was in another timezone,
+        or just explicitly timezoned in UTC otherwise.
+    :param timestamp: datetime considered UTC if not timezoned
+    :return: datetime brought to UTC
+    '''
+    if timestamp.tzinfo is None or timestamp.tzinfo.utcoffset(timestamp) is None:
+        return utc.localize(timestamp)
+    else:
+        return timestamp.astimezone(utc)
+
+
 class VehicleJourney(db.Model):
     """
     Vehicle Journey
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
-    start_timestamp = db.Column(db.DateTime, nullable=True) # timestamp of VJ's start
-    circulation_date = db.Column(db.Date, nullable=False)  # in local timezone
+    start_timestamp = db.Column(db.DateTime, nullable=False) # timestamp of VJ's start
+    circulation_date = db.Column(db.Date, nullable=True) #only for retrocompatibility
 
-    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'circulation_date',
-                                          name='vehicle_journey_navitia_trip_id_circulation_date_idx'),)
+    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'start_timestamp',
+                                          name='vehicle_journey_navitia_trip_id_start_timestamp_idx'),)
 
     def __init__(self, navitia_vj, local_circulation_date):
+        from kirin.utils import get_timezone
+
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
-        self.circulation_date = local_circulation_date
+        self.circulation_date = local_circulation_date #only for retrocompatibility
 
-        # dummy start_timestamp
-        self.start_timestamp = utc.localize(datetime.datetime.combine(local_circulation_date,
-                                                                      datetime.time(0, 0)))
+        first_stop_time = navitia_vj.get('stop_times', [{}])[0]
+        start_time = first_stop_time['arrival_time']
+        if start_time is None:
+            start_time = first_stop_time['departure_time']
+        tzinfo = get_timezone(first_stop_time)
+        self.start_timestamp = tzinfo.localize(datetime.datetime.combine(local_circulation_date,
+                                                                         start_time))
         self.navitia_vj = navitia_vj  # Not persisted
 
+    def get_start_timestamp(self):
+        return get_utc_localized_timestamp_safe(self.start_timestamp)
+
+    def get_local_circulation_date(self):
+        from kirin.utils import get_timezone
+
+        if self.navitia_vj is None:
+            return None
+
+        first_stop_time = self.navitia_vj.get('stop_times', [{}])[0]
+        tzinfo = get_timezone(first_stop_time)
+        return self.get_start_timestamp().astimezone(tzinfo).date()
+
+    def get_utc_circulation_date(self):
+        return self.get_start_timestamp().date()
 
 
 class StopTimeUpdate(db.Model, TimestampMixin):
@@ -184,19 +219,21 @@ class TripUpdate(db.Model, TimestampMixin):
         return '<TripUpdate %r>' % self.vj_id
 
     @classmethod
-    def find_by_dated_vj(cls, navitia_trip_id, vj_circulation_date):
+    def find_by_dated_vj(cls, navitia_trip_id, start_timestamp):
         return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_trip_id == navitia_trip_id,
-                                              VehicleJourney.circulation_date == vj_circulation_date).first()
+                                              VehicleJourney.start_timestamp == start_timestamp).first()
 
     @classmethod
     def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
         query = cls.query.filter(cls.contributor.in_(contributors))
         if start_date:
-            query = query.filter(sqlalchemy.text("vehicle_journey_1.circulation_date >= '{start_date}'".
-                                 format(start_date=start_date)))
+            start_dt = datetime.datetime.combine(start_date, datetime.time(0, 0))
+            query = query.filter(sqlalchemy.text("vehicle_journey_1.start_timestamp >= '{start_dt}'".
+                                 format(start_dt=start_dt)))
         if end_date:
-            query = query.filter(sqlalchemy.text("vehicle_journey_1.circulation_date <= '{end_date}'".
-                                 format(end_date=end_date)))
+            end_dt = datetime.datetime.combine(end_date, datetime.time(0, 0)) + datetime.timedelta(days=1)
+            query = query.filter(sqlalchemy.text("vehicle_journey_1.start_timestamp <= '{end_dt}'".
+                                 format(end_dt=end_dt)))
         return query.all()
 
     @classmethod

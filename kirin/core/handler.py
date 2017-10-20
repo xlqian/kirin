@@ -51,7 +51,7 @@ def persist(real_time_update):
 def log_stu_modif(trip_update, stu, string_additional_info):
     logger = logging.getLogger(__name__)
     logger.debug("TripUpdate {vj_id} on {date}, StopTimeUpdate {order} modified: {add_info}".format(
-                    vj_id=trip_update.vj_id, date=trip_update.vj.circulation_date, order=stu.order,
+                    vj_id=trip_update.vj_id, date=trip_update.vj.get_utc_circulation_date(), order=stu.order,
                     add_info=string_additional_info))
 
 
@@ -68,7 +68,7 @@ def manage_consistency(trip_update):
             logger.warning("TripUpdate {vj_id} (navitia id: {nav_id}) on {date} rejected: "
                            "order problem [STU index ({stu_index}) != kirin index ({kirin_index})]".format(
                 vj_id=trip_update.vj_id, nav_id=trip_update.vj.navitia_trip_id,
-                date=trip_update.vj.circulation_date, stu_index=stu.order, kirin_index=current_order))
+                date=trip_update.vj.get_utc_circulation_date(), stu_index=stu.order, kirin_index=current_order))
             return False
 
         # modifications
@@ -80,7 +80,7 @@ def manage_consistency(trip_update):
                 logger.warning("TripUpdate {vj_id} (navitia id: {nav_id}) on {date} rejected: "
                                "StopTimeUpdate missing arrival time".format(
                     vj_id=trip_update.vj_id, nav_id=trip_update.vj.navitia_trip_id,
-                    date=trip_update.vj.circulation_date))
+                    date=trip_update.vj.get_utc_circulation_date()))
                 return False
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay and stu.departure_delay:
@@ -131,7 +131,7 @@ def handle(real_time_update, trip_updates, contributor):
 
     for trip_update in trip_updates:
         # find if there is already a row in db
-        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.circulation_date)
+        old = TripUpdate.find_by_dated_vj(trip_update.vj.navitia_trip_id, trip_update.vj.get_start_timestamp())
         # merge the theoric, the current realtime, and the new realtime
         current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
 
@@ -153,8 +153,8 @@ def handle(real_time_update, trip_updates, contributor):
     return real_time_update, log_dict
 
 
-def _get_datetime(circulation_date, time, timezone):
-    dt = datetime.datetime.combine(circulation_date, time)
+def _get_datetime(local_circulation_date, time, timezone):
+    dt = datetime.datetime.combine(local_circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)
     # in the db dt with timezone cannot coexist with dt without tz
     # since at the beginning there was dt without tz, we need to erase the tz info
@@ -205,7 +205,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         return res
 
     last_nav_dep = None
-    circulation_date = new_trip_update.vj.circulation_date
+    local_circulation_date = new_trip_update.vj.get_local_circulation_date()
     for navitia_stop in navitia_vj.get('stop_times', []):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id)
@@ -220,13 +220,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         if nav_arrival_time is not None:
             if last_nav_dep is not None and last_nav_dep > nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
-                circulation_date += timedelta(days=1)
-            arrival = _get_datetime(circulation_date, nav_arrival_time, timezone)
+                local_circulation_date += timedelta(days=1)
+            arrival = _get_datetime(local_circulation_date, nav_arrival_time, timezone)
         if nav_departure_time is not None:
             if nav_arrival_time is not None and nav_arrival_time > nav_departure_time:
                 # departure is before arrival, it's a past-midnight
-                circulation_date += timedelta(days=1)
-            departure = _get_datetime(circulation_date, nav_departure_time, timezone)
+                local_circulation_date += timedelta(days=1)
+            departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
 
         if new_st is not None:
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])

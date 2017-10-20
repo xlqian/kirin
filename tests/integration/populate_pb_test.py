@@ -43,8 +43,10 @@ def test_populate_pb_with_one_stop_time():
     Verify protobuf
     """
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
+        {'arrival_time': datetime.time(9, 10), 'departure_time': None,
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}}
         ]}
 
     with app.app_context():
@@ -85,8 +87,10 @@ def test_populate_pb_with_two_stop_time():
 
     #we add another impacted stop time to the Model
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2'}}
+        {'arrival_time': None, 'departure_time': datetime.time(8, 10),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
+        {'arrival_time': datetime.time(9, 10), 'departure_time': None,
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}}
         ]}
 
     with app.app_context():
@@ -158,10 +162,14 @@ def test_populate_pb_with_deleted_stop_time():
     #we add another impacted stop time to the Model
     from datetime import time
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': time(8, 11), 'stop_point': {'id': 'sa:1'}},
-        {'arrival_time': time(9, 10), 'departure_time': time(9, 11), 'stop_point': {'id': 'sa:2'}},
-        {'arrival_time': time(10, 10), 'departure_time': time(10, 11), 'stop_point': {'id': 'sa:3'}},
-        {'arrival_time': time(11, 10), 'departure_time': None, 'stop_point': {'id': 'sa:4'}}
+        {'arrival_time': None, 'departure_time': time(8, 11),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
+        {'arrival_time': time(9, 10), 'departure_time': time(9, 11),
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}},
+        {'arrival_time': time(10, 10), 'departure_time': time(10, 11),
+         'stop_point': {'id': 'sa:3', 'stop_area': {'timezone': 'Europe/Paris'}}},
+        {'arrival_time': time(11, 10), 'departure_time': None,
+         'stop_point': {'id': 'sa:4', 'stop_area': {'timezone': 'Europe/Paris'}}}
         ]}
 
     with app.app_context():
@@ -262,7 +270,10 @@ def test_populate_pb_with_cancelation():
     """
     VJ cancelation
     """
-    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}}
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'},
+                  'stop_times': [
+                      {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                  ]}
 
     with app.app_context():
         trip_update = TripUpdate()
@@ -298,7 +309,10 @@ def test_populate_pb_with_full_dataset():
     """
     VJ cancelation
     """
-    navitia_vj = {'trip': {'id': 'vehicle_journey:1'}}
+    navitia_vj = {'trip': {'id': 'vehicle_journey:1'},
+                  'stop_times': [
+                      {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                  ]}
 
     with app.app_context():
         trip_update = TripUpdate()
