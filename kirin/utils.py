@@ -37,7 +37,11 @@ from kirin import new_relic
 from redis.exceptions import ConnectionError
 from contextlib import contextmanager
 from kirin.core import model
+from datetime import timedelta
 
+
+def round_datetime(datetime, offset):
+    return datetime.replace(minute=0, second=0, microsecond=0) + timedelta(hours=offset)
 
 def str_to_date(value):
     if not value:

@@ -34,7 +34,7 @@ import pytz
 from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
-from kirin.utils import make_navitia_wrapper, make_rt_update
+from kirin.utils import make_navitia_wrapper, make_rt_update, round_datetime
 from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
@@ -123,8 +123,8 @@ class KirinModelBuilder(object):
     def _get_navitia_vjs(self, trip, data_time):
         vj_source_code = trip.trip_id
 
-        since = data_time - self.period_filter_tolerance
-        until = data_time + self.period_filter_tolerance
+        since = round_datetime(data_time - self.period_filter_tolerance, -1)
+        until = round_datetime(data_time + self.period_filter_tolerance, +1)
         self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
 
         navitia_vjs = self.navitia.vehicle_journeys(q={
