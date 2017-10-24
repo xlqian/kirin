@@ -184,7 +184,13 @@ class KirinModelBuilder(object):
             record_internal_failure('gtfs-rt', 'impossible to calculate the circulate date of vj')
             return []
 
-        return [model.VehicleJourney(nav_vj, circulate_date)]
+        try:
+            vj = model.VehicleJourney(nav_vj, circulate_date)
+            return [vj]
+        except Exception:
+            self.log.exception('Error while creating kirin VJ of {}'.format(nav_vj.get('id')))
+            record_internal_failure('gtfs-rt', 'Error while creating kirin VJ')
+            return []
 
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):

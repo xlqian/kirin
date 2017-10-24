@@ -88,7 +88,11 @@ class VehicleJourney(db.Model):
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
-    start_timestamp = db.Column(db.DateTime, nullable=False) # timestamp of VJ's start
+
+    # ! DO NOT USE attribute directly !
+    # timestamp of VJ's start
+    start_timestamp = db.Column(db.DateTime, nullable=False) # ! USE get_start_timestamp() !
+
     circulation_date = db.Column(db.Date, nullable=True) #only for retrocompatibility
 
     __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'start_timestamp',
@@ -108,7 +112,8 @@ class VehicleJourney(db.Model):
             start_time = first_stop_time['departure_time']
         tzinfo = get_timezone(first_stop_time)
         self.start_timestamp = tzinfo.localize(datetime.datetime.combine(local_circulation_date,
-                                                                         start_time))
+                                                                         start_time)
+                                               ).astimezone(utc)
         self.navitia_vj = navitia_vj  # Not persisted
 
     def get_start_timestamp(self):
