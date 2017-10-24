@@ -45,6 +45,34 @@ class InvalidFeed(Exception):
     pass
 
 
+def _is_newer(config):
+    logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
+    try:
+        head = requests.head(config['feed_url'], timeout=config.get('timeout', 1))
+
+        new_etag = head.headers.get("ETag")
+        if not new_etag:
+            return True  # unable to get a ETag, we continue the polling
+
+        contributor = config['contributor']
+        etag_key = '|'.join([contributor, 'polling_HEAD'])
+        old_etag = redis.get(etag_key)
+
+        if new_etag == old_etag:
+            logger.info('get the same ETag of %s, skipping the polling for %s',
+                        etag_key,
+                        contributor)
+            return False
+
+        redis.set(etag_key, new_etag)
+
+    except Exception as e:
+        logger.debug('exception occurred when checking the newer version of gtfs for %s: %s',
+                     contributor,
+                     str(e))
+    return True  # whatever the exception is, we don't want to break the polling
+
+
 @celery.task(bind=True)
 @retry(stop_max_delay=TASK_STOP_MAX_DELAY,
        wait_fixed=TASK_WAIT_FIXED,
@@ -59,6 +87,12 @@ def gtfs_poller(self, config):
     with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_POLLER']) as locked:
         if not locked:
             logger.warning('%s for %s is already in progress', func_name, contributor)
+            return
+
+        # We do a HEAD request at the very beginning of polling and we compare it with the previous one to check if
+        # the gtfs-rt is changed.
+        # If the HEAD request or Redis get/set fail, we just ignore this part and do the polling anyway
+        if not _is_newer(config):
             return
 
         response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
