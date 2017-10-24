@@ -301,7 +301,8 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         for c in contributor:
             row = db.session.query(db.func.max(cls.created_at)) \
                               .filter(cls.contributor == c).one()
-            result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+            if row[0]:
+                result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
         return result
 
     @classmethod
