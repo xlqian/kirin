@@ -35,7 +35,11 @@ import pytest
 
 def create_trip_update(vj_id, trip_id, circulation_date):
     trip_update = TripUpdate()
-    vj = VehicleJourney({'trip': {'id': trip_id}}, circulation_date)
+    vj = VehicleJourney({'trip': {'id': trip_id},
+            'stop_times': [
+                {'arrival_time': datetime.time(8, 0), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+            ]},
+            circulation_date)
     vj.id = vj_id
     trip_update.vj = vj
 
@@ -63,12 +67,12 @@ def setup_database():
 
 def test_find_by_vj(setup_database):
     with app.app_context():
-        assert TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.date(2015, 9, 9)) is None
-        row = TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.date(2015, 9, 8))
+        assert TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.datetime(2015, 9, 9, 8, 0)) is None
+        row = TripUpdate.find_by_dated_vj('vehicle_journey:1', datetime.datetime(2015, 9, 8, 8, 0))
         assert row is not None
         assert row.vj_id == '70866ce8-0638-4fa1-8556-1ddfa22d09d3'
 
-        row = TripUpdate.find_by_dated_vj('vehicle_journey:2', datetime.date(2015, 9, 8))
+        row = TripUpdate.find_by_dated_vj('vehicle_journey:2', datetime.datetime(2015, 9, 8, 8, 0))
         assert row is not None
         assert row.vj_id == '70866ce8-0638-4fa1-8556-1ddfa22d09d4'
 

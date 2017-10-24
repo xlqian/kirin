@@ -29,7 +29,7 @@
 from tests.check_utils import api_get
 from kirin.core import model
 from kirin import app
-from datetime import date, datetime
+from datetime import date, datetime, time
 import pytest
 
 
@@ -61,9 +61,24 @@ def setup_database():
     and return a vj for navitia
     """
     with app.app_context():
-        vj1 = model.VehicleJourney({'trip': {'id': 'vj:1'}}, date(2015, 11, 4))
-        vj2 = model.VehicleJourney({'trip': {'id': 'vj:2'}}, date(2015, 11, 4))
-        vj3 = model.VehicleJourney({'trip': {'id': 'vj:3'}}, date(2015, 11, 4))
+        vj1 = model.VehicleJourney({
+            'trip': {'id': 'vj:1'},
+            'stop_times': [
+                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+            ]},
+            date(2015, 11, 4))
+        vj2 = model.VehicleJourney({
+            'trip': {'id': 'vj:2'},
+            'stop_times': [
+                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+            ]},
+            date(2015, 11, 4))
+        vj3 = model.VehicleJourney({
+            'trip': {'id': 'vj:3'},
+            'stop_times': [
+                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+            ]},
+            date(2015, 11, 4))
         tu1 = model.TripUpdate(vj1, contributor='realtime.ire')
         tu2 = model.TripUpdate(vj2, contributor='realtime.ire')
         tu3 = model.TripUpdate(vj3, contributor='realtime.sherbrooke')

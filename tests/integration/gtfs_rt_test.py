@@ -28,8 +28,9 @@
 from datetime import timedelta
 import datetime
 import pytest
+from pytz import utc
 from kirin.core.model import RealTimeUpdate, db, TripUpdate, StopTimeUpdate
-from kirin.core.populate_pb import to_posix_time
+from kirin.core.populate_pb import to_posix_time, convert_to_gtfsrt
 from kirin.gtfs_rt import gtfs_rt
 from tests import mock_navitia
 from tests.check_utils import dumb_nav_wrapper, api_post
@@ -142,6 +143,9 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
         assert fourth_stop.departure_status == 'none'
         assert fourth_stop.message is None
 
+        feed = convert_to_gtfsrt(trip_updates)
+        assert feed.entity[0].trip_update.trip.start_date == u'20120615' #must be UTC start date
+
 
 def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
     """
@@ -161,7 +165,7 @@ def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 4
 
-        trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.date(2012, 6, 15))
+        trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.datetime(2012, 6, 15, 14, 0))
 
         assert trip_update
 
@@ -315,6 +319,9 @@ def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
         assert fourth_stop.departure_delay == timedelta(minutes=4)
         assert fourth_stop.message is None
 
+        feed = convert_to_gtfsrt(trip_updates)
+        assert feed.entity[0].trip_update.trip.start_date == u'20120616' #must be UTC start date
+
 
 def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
     """
@@ -333,9 +340,11 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 5
 
-        trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.date(2012, 6, 15))
+        trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.datetime(2012, 6, 16, 3, 30))
 
         assert trip_update
+
+        assert trip_update.vj.get_start_timestamp() == datetime.datetime(2012, 6, 16, 3, 30, tzinfo=utc)
 
         # navitia's time are in local, but we return UTC time, and the stop is in sherbrooke, so UTC-4h
         first_stop = trip_update.stop_time_updates[0]
