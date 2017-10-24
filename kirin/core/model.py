@@ -250,8 +250,14 @@ class RealTimeUpdate(db.Model, TimestampMixin):
 
     @classmethod
     def get_last_update_by_contributor(cls):
-        query = db.session.query(cls.contributor, db.func.max(cls.created_at)).group_by(cls.contributor).all()
-        return {row[0]: row[1].strftime('%Y-%m-%dT%H:%M:%SZ') for row in query}
+        from kirin import app
+        result = {}
+        contributor = [app.config['CONTRIBUTOR'], app.config['GTFS_RT_CONTRIBUTOR']]
+        for c in contributor:
+            row = db.session.query(db.func.max(cls.created_at)) \
+                              .filter(cls.contributor == c).one()
+            result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+        return result
 
     @classmethod
     def remove_by_connectors_until(cls, connectors, until):
