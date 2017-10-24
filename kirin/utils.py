@@ -37,7 +37,11 @@ from kirin import new_relic
 from redis.exceptions import ConnectionError
 from contextlib import contextmanager
 from kirin.core import model
+from datetime import timedelta
 
+
+def floor_datetime(datetime):
+    return datetime.replace(minute=0, second=0, microsecond=0)
 
 def str_to_date(value):
     if not value:

@@ -51,6 +51,15 @@ EXCHANGE = os.getenv('KIRIN_RABBITMQ_EXCHANGE', 'navitia')
 
 ENABLE_RABBITMQ = boolean(os.getenv('KIRIN_ENABLE_RABBITMQ', True))
 
+
+
+NAVITIA_QUERY_CACHE_TIMEOUT = int(os.getenv('KIRIN_NAVITIA_QUERY_CACHE_TIMEOUT',
+                                            timedelta(days=1).total_seconds()))  # in seconds
+NAVITIA_PUBDATE_CACHE_TIMEOUT = int(os.getenv('KIRIN_NAVITIA_PUBDATE_CACHE_TIMEOUT',
+                                              timedelta(minutes=5).total_seconds()))  # in seconds
+
+
+
 log_level = os.getenv('KIRIN_LOG_LEVEL', 'DEBUG')
 log_format = os.getenv('KIRIN_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
 
