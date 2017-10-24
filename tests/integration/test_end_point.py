@@ -48,10 +48,10 @@ def test_status(setup_database):
     assert 'navitia_url' in resp
     assert 'last_update' in resp
     assert 'realtime.ire' in resp['last_update']
-    assert 'realtime.timeo' in resp['last_update']
+    assert 'realtime.sherbrooke' in resp['last_update']
 
     assert '2015-11-04T07:32:00Z' in resp['last_update']['realtime.ire']
-    assert '2015-11-04T07:42:00Z' in resp['last_update']['realtime.timeo']
+    assert '2015-11-04T07:42:00Z' in resp['last_update']['realtime.sherbrooke']
 
 
 @pytest.fixture()
@@ -66,7 +66,7 @@ def setup_database():
         vj3 = model.VehicleJourney({'trip': {'id': 'vj:3'}}, date(2015, 11, 4))
         tu1 = model.TripUpdate(vj1, contributor='realtime.ire')
         tu2 = model.TripUpdate(vj2, contributor='realtime.ire')
-        tu3 = model.TripUpdate(vj3, contributor='realtime.timeo')
+        tu3 = model.TripUpdate(vj3, contributor='realtime.sherbrooke')
         rtu1 = model.RealTimeUpdate(None, 'ire', 'realtime.ire')
         rtu1.created_at = datetime(2015, 11, 4, 6, 32)
         rtu1.trip_updates.append(tu1)
@@ -76,7 +76,7 @@ def setup_database():
         rtu2.trip_updates.append(tu2)
         model.db.session.add(rtu2)
 
-        rtu3 = model.RealTimeUpdate(None, 'ire', contributor='realtime.timeo')
+        rtu3 = model.RealTimeUpdate(None, 'gtfs-rt', contributor='realtime.sherbrooke')
         rtu3.created_at = datetime(2015, 11, 4, 7, 42)
         rtu3.trip_updates.append(tu3)
         model.db.session.add(rtu3)
