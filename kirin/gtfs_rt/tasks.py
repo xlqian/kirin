@@ -32,7 +32,7 @@ import requests
 from kirin import gtfs_realtime_pb2
 import navitia_wrapper
 from kirin.tasks import celery
-from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock
+from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, set_navitia_wrapper_cache
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app, redis
@@ -98,13 +98,9 @@ def gtfs_poller(self, config):
         response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
         response.raise_for_status()
 
-        nav = navitia_wrapper.Navitia(url=config['navitia_url'], token=config['token'])\
-                             .instance(config['coverage'])
+        nav = set_navitia_wrapper_cache(navitia_wrapper.Navitia(url=config['navitia_url'],
+                                                                token=config['token']).instance(config['coverage']))
         nav.timeout = 5
-        pubdate_cache_timeout = app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600)
-        query_cache_timeout = app.config.get('NAVITIA_QUERY_CACHE_TIMEOUT', 600)
-        nav.set_cache(redis, query_cache_timeout, pubdate_cache_timeout)
-
         proto = gtfs_realtime_pb2.FeedMessage()
         proto.ParseFromString(response.content)
         model_maker.handle(proto, nav, contributor)

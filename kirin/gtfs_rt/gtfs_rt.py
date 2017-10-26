@@ -32,11 +32,8 @@ import flask
 from flask.globals import current_app
 from flask_restful import Resource
 from google.protobuf.message import DecodeError
-from kirin import core
-from kirin.core import model
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.utils import make_navitia_wrapper, make_rt_update
-from kirin.gtfs_rt.model_maker import KirinModelBuilder
+from kirin.exceptions import InvalidArguments
+from kirin.utils import set_navitia_wrapper_cache
 import navitia_wrapper
 from kirin.gtfs_rt import model_maker
 
@@ -53,7 +50,8 @@ class GtfsRT(Resource):
         url = current_app.config['NAVITIA_URL']
         token = current_app.config.get('NAVITIA_GTFS_RT_TOKEN')
         instance = current_app.config['NAVITIA_GTFS_RT_INSTANCE']
-        self.navitia_wrapper = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
+        self.navitia_wrapper = set_navitia_wrapper_cache(navitia_wrapper.Navitia(url=url,
+                                                                                 token=token).instance(instance))
         self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
         self.contributor = current_app.config['GTFS_RT_CONTRIBUTOR']
 
