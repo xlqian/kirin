@@ -149,7 +149,7 @@ class RabbitMQHandler(object):
         RTReloader(connection=self._connection,
                    rpc_queue=rt_queue,
                    exchange=self._exchange,
-                   retry_timeout=retry_timeout).run()
+                   max_retries=max_retries).run()
 
 
 def monitor_heartbeats(connections, rate=2):
