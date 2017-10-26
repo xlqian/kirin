@@ -32,7 +32,7 @@ response = navitia_response.NavitiaResponse()
 
 response.query = 'vehicle_journeys/?filter=vehicle_journey.has_code(source, Code-pass-midnight)' \
                  '&depth=2&since=20120616T020000Z&until=20120616T090000Z'
-#resquest time is UTC -> 22:00 to 04:00 local
+#resquest time is UTC -> 22:00 to 05:00 local
 
 response.response_code = 200
 

@@ -47,6 +47,7 @@ class InvalidFeed(Exception):
 
 def _is_newer(config):
     logger = logging.LoggerAdapter(logging.getLogger(__name__), extra={'contributor': config['contributor']})
+    contributor = config['contributor']
     try:
         head = requests.head(config['feed_url'], timeout=config.get('timeout', 1))
 
@@ -54,7 +55,6 @@ def _is_newer(config):
         if not new_etag:
             return True  # unable to get a ETag, we continue the polling
 
-        contributor = config['contributor']
         etag_key = '|'.join([contributor, 'polling_HEAD'])
         old_etag = redis.get(etag_key)
 
