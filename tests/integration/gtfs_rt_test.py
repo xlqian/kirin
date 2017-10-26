@@ -31,7 +31,7 @@ import pytest
 from pytz import utc
 from kirin.core.model import RealTimeUpdate, db, TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import to_posix_time, convert_to_gtfsrt
-from kirin.gtfs_rt import gtfs_rt
+from kirin import gtfs_rt
 from tests import mock_navitia
 from tests.check_utils import dumb_nav_wrapper, api_post
 from kirin import gtfs_realtime_pb2, app
