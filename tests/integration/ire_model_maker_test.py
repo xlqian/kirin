@@ -31,7 +31,7 @@ import pytest
 
 from kirin import db, app
 from kirin.core import model
-from kirin.gtfs_rt import KirinModelBuilder
+from kirin.ire import KirinModelBuilder
 from tests.check_utils import get_ire_data, _dt, dumb_nav_wrapper
 
 
