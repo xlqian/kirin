@@ -27,6 +27,19 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import celery
+from flask import Request, request
+import uuid
+import logging
+
+class IdFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            record.request_id = request.id
+        except RuntimeError:
+            #if we are outside of a application context
+            pass
+        return True
+
 
 
 #http://flask.pocoo.org/docs/0.12/patterns/celery/
@@ -44,4 +57,12 @@ def make_celery(app):
 
     celery_app.Task = ContextTask
     return celery_app
+
+class KirinRequest(Request):
+    """
+    override the request of flask to add an id on all request
+    """
+    def __init__(self, *args, **kwargs):
+        super(Request, self).__init__(*args, **kwargs)
+        self.id = str(uuid.uuid4())
 

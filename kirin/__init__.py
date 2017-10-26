@@ -47,11 +47,23 @@ import logging.config
 import sys
 from flask_script import Manager
 import utils
+from kirin.helper import KirinRequest
 
 app = Flask(__name__)
 app.config.from_object('kirin.default_settings')
 if 'KIRIN_CONFIG_FILE' in os.environ:
     app.config.from_envvar('KIRIN_CONFIG_FILE')
+app.request_class = KirinRequest
+
+if 'LOGGER' in app.config:
+    logging.config.dictConfig(app.config['LOGGER'])
+else:  # Default is std out
+    handler = logging.StreamHandler(stream=sys.stdout)
+    app.logger.addHandler(handler)
+    app.logger.setLevel('INFO')
+
+from kirin import new_relic
+new_relic.init(app.config['NEW_RELIC_CONFIG_FILE'])
 
 if app.config['USE_GEVENT']:
     from gevent import monkey
@@ -72,12 +84,6 @@ from kirin.core import model
 db = model.db
 db.init_app(app)
 
-if 'LOGGER' in app.config:
-    logging.config.dictConfig(app.config['LOGGER'])
-else:  # Default is std out
-    handler = logging.StreamHandler(stream=sys.stdout)
-    app.logger.addHandler(handler)
-    app.logger.setLevel('INFO')
 
 # We need to log all kinds of patch, all patch must be done as soon as possible
 logger = logging.getLogger(__name__)
