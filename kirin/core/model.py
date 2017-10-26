@@ -93,8 +93,6 @@ class VehicleJourney(db.Model):
     # timestamp of VJ's start
     start_timestamp = db.Column(db.DateTime, nullable=False) # ! USE get_start_timestamp() !
 
-    circulation_date = db.Column(db.Date, nullable=True) #only for retrocompatibility
-
     __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'start_timestamp',
                                           name='vehicle_journey_navitia_trip_id_start_timestamp_idx'),)
 
@@ -104,7 +102,6 @@ class VehicleJourney(db.Model):
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
-        self.circulation_date = local_circulation_date #only for retrocompatibility
 
         first_stop_time = navitia_vj.get('stop_times', [{}])[0]
         start_time = first_stop_time['arrival_time']
