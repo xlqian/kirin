@@ -308,11 +308,10 @@ class RealTimeUpdate(db.Model, TimestampMixin):
 
     @classmethod
     def remove_by_connectors_until(cls, connectors, until):
-        sub_query = db.session.query(associate_realtimeupdate_tripupdate.c.real_time_update_id)
-        query = cls.query.\
+        sub_query = db.session.query(cls.id). \
+            outerjoin(associate_realtimeupdate_tripupdate).\
             filter(cls.connector.in_(connectors)).\
             filter(cls.created_at <= until).\
-            filter(cls.id.notin_(sub_query))
-        query.delete(synchronize_session=False)
+            filter(associate_realtimeupdate_tripupdate.c.real_time_update_id == None)
+        cls.query.filter(cls.id.in_(sub_query)).delete(synchronize_session=False)
         db.session.commit()
-
