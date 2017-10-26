@@ -40,13 +40,11 @@ except ImportError:
     agent = None
 
 def init(config_file):
-    if agent and os.path.exists(config_file):
+    if agent and config_file and os.path.exists(config_file):
         agent.initialize(config_file)
     else:
         logger = logging.getLogger(__name__)
-        logger.warn('newrelic hasn\t been initialized')
-
-
+        logger.warn('newrelic hasn\'t been initialized')
 
 def record_exception():
     """

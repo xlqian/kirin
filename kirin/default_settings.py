@@ -5,6 +5,7 @@ from flask_restful.inputs import boolean
 import json
 from datetime import timedelta
 from celery import schedules
+from kirin.helper import IdFilter
 
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
@@ -87,11 +88,17 @@ LOGGER = {
             '()': 'kirin.utils.CustomJsonFormatter',
         },
     },
+    'filters': {
+        'IdFilter': {
+            '()': IdFilter,
+        }
+    },
     'handlers': {
         'default': {
             'level': log_level,
             'class': 'logging.StreamHandler',
             'formatter': log_formatter,
+            'filters': ['IdFilter'],
         },
     },
     'loggers': {
