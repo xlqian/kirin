@@ -143,11 +143,3 @@ def get_lock(logger, lock_name, lock_timeout):
         if locked:
             logger.debug("releasing lock %s", lock_name)
             lock.release()
-
-
-def set_navitia_wrapper_cache(nav_wrapper):
-    from kirin import app, redis
-    pubdate_cache_timeout = app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600)
-    query_cache_timeout = app.config.get('NAVITIA_QUERY_CACHE_TIMEOUT', 600)
-    nav_wrapper.set_cache(redis, query_cache_timeout, pubdate_cache_timeout)
-    return nav_wrapper
