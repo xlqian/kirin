@@ -103,7 +103,8 @@ def gtfs_poller(self, config):
                                       timeout=5,
                                       cache=redis,
                                       query_timeout=app.config.get('NAVITIA_QUERY_CACHE_TIMEOUT', 600),
-                                      pubdate_timeout=app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600)).instance(config['coverage'])
+                                      pubdate_timeout=app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600))\
+            .instance(config['coverage'])
         proto = gtfs_realtime_pb2.FeedMessage()
         proto.ParseFromString(response.content)
         model_maker.handle(proto, nav, contributor)
