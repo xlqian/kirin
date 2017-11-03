@@ -92,8 +92,9 @@ class KirinModelBuilder(object):
 
         The TripUpdates are not yet associated with the RealTimeUpdate
         """
-        self.log.debug("proto = {}".format(data))
         data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
+        self.log.debug("Start processing GTFS-rt: timestamp = {} ({})"
+                       .format(data.header.timestamp, data_time))
 
         trip_updates = []
         for entity in data.entity:
