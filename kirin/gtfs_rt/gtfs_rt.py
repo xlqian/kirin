@@ -32,14 +32,10 @@ import flask
 from flask.globals import current_app
 from flask_restful import Resource
 from google.protobuf.message import DecodeError
-from kirin import core
-from kirin.core import model
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.utils import make_navitia_wrapper, make_rt_update
-from kirin.gtfs_rt.model_maker import KirinModelBuilder
+from kirin.exceptions import InvalidArguments
 import navitia_wrapper
 from kirin.gtfs_rt import model_maker
-
+from kirin import redis
 
 def _get_gtfs_rt(req):
     if not req.data:
@@ -52,9 +48,16 @@ class GtfsRT(Resource):
     def __init__(self):
         url = current_app.config['NAVITIA_URL']
         token = current_app.config.get('NAVITIA_GTFS_RT_TOKEN')
+        timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
         instance = current_app.config['NAVITIA_GTFS_RT_INSTANCE']
-        self.navitia_wrapper = navitia_wrapper.Navitia(url=url, token=token).instance(instance)
-        self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
+        query_timeout = current_app.config.get('NAVITIA_QUERY_CACHE_TIMEOUT', 600)
+        pubdate_timeout = current_app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600)
+        self.navitia_wrapper = navitia_wrapper.Navitia(url=url,
+                                                       token=token,
+                                                       timeout=timeout,
+                                                       cache=redis,
+                                                       query_timeout=query_timeout,
+                                                       pubdate_timeout=pubdate_timeout).instance(instance)
         self.contributor = current_app.config['GTFS_RT_CONTRIBUTOR']
 
     def post(self):
