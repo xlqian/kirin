@@ -231,8 +231,11 @@ class TripUpdate(db.Model, TimestampMixin):
     @classmethod
     def find_by_dated_vjs(cls, id_timestamp_tuples):
         from sqlalchemy import tuple_
-        return cls.query.join(VehicleJourney).filter(tuple_(VehicleJourney.navitia_trip_id, VehicleJourney.start_timestamp)
-                                                     .in_(id_timestamp_tuples)).order_by(VehicleJourney.navitia_trip_id).all()
+        return cls.query.join(VehicleJourney).filter(tuple_(VehicleJourney.navitia_trip_id,
+                                                            VehicleJourney.start_timestamp)
+                                                     .in_(id_timestamp_tuples))\
+                                             .order_by(VehicleJourney.navitia_trip_id)\
+                                             .all()
 
     @classmethod
     def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
