@@ -69,6 +69,11 @@ if app.config['USE_GEVENT']:
     from gevent import monkey
     monkey.patch_all()
 
+app.config['CACHE_TYPE'] = 'simple'
+from flask.ext.cache import Cache
+# register the cache instance and binds it on to your app
+app.cache = Cache(app)
+
 manager = Manager(app)
 
 from redis import Redis
