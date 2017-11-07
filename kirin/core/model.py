@@ -229,6 +229,15 @@ class TripUpdate(db.Model, TimestampMixin):
                                               VehicleJourney.start_timestamp == start_timestamp).first()
 
     @classmethod
+    def find_by_dated_vjs(cls, id_timestamp_tuples):
+        from sqlalchemy import tuple_
+        return cls.query.join(VehicleJourney).filter(tuple_(VehicleJourney.navitia_trip_id,
+                                                            VehicleJourney.start_timestamp)
+                                                     .in_(id_timestamp_tuples))\
+                                             .order_by(VehicleJourney.navitia_trip_id)\
+                                             .all()
+
+    @classmethod
     def find_by_contributor_period(cls, contributors, start_date=None, end_date=None):
         query = cls.query.filter(cls.contributor.in_(contributors))
         if start_date:
@@ -255,10 +264,7 @@ class TripUpdate(db.Model, TimestampMixin):
 
     def find_stop(self, stop_id):
         #TODO: we will need to handle vj who deserve the same stop multiple times
-        for st in self.stop_time_updates:
-            if st.stop_id == stop_id:
-                return st
-        return None
+        return next((st for st in self.stop_time_updates if st.stop_id == stop_id), None)
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):
