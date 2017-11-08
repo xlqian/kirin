@@ -262,7 +262,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     local_circulation_date = new_trip_update.vj.get_local_circulation_date()
 
     has_no_changes = True
-    for navitia_stop in navitia_vj.get('stop_times', []):
+    for current_order, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
@@ -284,7 +284,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             base_departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
 
         stop_id = navitia_stop.get('stop_point', {}).get('id')
-        new_st = new_trip_update.find_stop(stop_id, len(res_stoptime_updates))
+        new_st = new_trip_update.find_stop(stop_id, current_order)
 
         if db_trip_update and new_st:
             """
@@ -335,9 +335,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
                                              departure=base_departure,
                                              arrival=base_arrival)
-            new_order = len(res_stoptime_updates)
-            has_no_changes &= False if not db_st else (db_st.order == new_order)
-            #res_st.order = new_order
+            has_no_changes &= False if not db_st else (db_st.order == current_order)
             last_departure = res_st.departure
 
         else:
@@ -347,10 +345,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             """
             has_no_changes = False
             res_st = StopTimeUpdate(navitia_stop['stop_point'], departure=base_departure, arrival=base_arrival)
-            #res_st.order = len(res_stoptime_updates)
             last_departure = base_departure
 
-        res_st.order = len(res_stoptime_updates)
+        res_st.order = current_order
         res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
 

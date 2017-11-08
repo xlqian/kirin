@@ -264,7 +264,7 @@ class TripUpdate(db.Model, TimestampMixin):
         db.session.commit()
 
     def find_stop(self, stop_id, order=None):
-        #TODO: we will need to handle vj who deserve the same stop multiple times
+        # 'order' allows to deal with the lollipop case (a stop_point passed multiple times)
         return next((st for st in self.stop_time_updates if st.stop_id == stop_id and st.order == order), None)
 
 
