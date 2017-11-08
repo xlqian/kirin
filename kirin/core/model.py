@@ -161,7 +161,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                  departure=None, arrival=None,
                  departure_delay=None, arrival_delay=None,
                  dep_status='none', arr_status='none',
-                 message=None):
+                 message=None, order=None):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
         self.stop_id = navitia_stop['id']
@@ -172,6 +172,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.departure = departure
         self.arrival = arrival
         self.message = message
+        self.order = order
 
     def update_departure(self, time=None, delay=None, status=None):
         if time:
@@ -262,9 +263,9 @@ class TripUpdate(db.Model, TimestampMixin):
 
         db.session.commit()
 
-    def find_stop(self, stop_id):
+    def find_stop(self, stop_id, order=None):
         #TODO: we will need to handle vj who deserve the same stop multiple times
-        return next((st for st in self.stop_time_updates if st.stop_id == stop_id), None)
+        return next((st for st in self.stop_time_updates if st.stop_id == stop_id and st.order == order), None)
 
 
 class RealTimeUpdate(db.Model, TimestampMixin):

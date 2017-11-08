@@ -284,14 +284,14 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             base_departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
 
         stop_id = navitia_stop.get('stop_point', {}).get('id')
-        new_st = new_trip_update.find_stop(stop_id)
+        new_st = new_trip_update.find_stop(stop_id, len(res_stoptime_updates))
 
         if db_trip_update and new_st:
             """
             First case: we already have recorded the delay and we find update info in the new trip update
             Then      : we should probably update it
             """
-            db_st = db_trip_update.find_stop(stop_id)
+            db_st = db_trip_update.find_stop(stop_id, len(res_stoptime_updates))
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])
             dep, dep_status, dep_delay, arr, arr_status, arr_delay = _get_updated_info(base_arrival,
                                                                                        base_departure,
@@ -331,13 +331,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             Then      : we do nothing but only update stop time's order(?)
             """
             # nothing in db and in new trip update, we take the base schedule
-            db_st = db_trip_update.find_stop(stop_id)
+            db_st = db_trip_update.find_stop(stop_id, len(res_stoptime_updates))
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
                                              departure=base_departure,
                                              arrival=base_arrival)
             new_order = len(res_stoptime_updates)
             has_no_changes &= False if not db_st else (db_st.order == new_order)
-            res_st.order = new_order
+            #res_st.order = new_order
             last_departure = res_st.departure
 
         else:
@@ -347,9 +347,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             """
             has_no_changes = False
             res_st = StopTimeUpdate(navitia_stop['stop_point'], departure=base_departure, arrival=base_arrival)
-            res_st.order = len(res_stoptime_updates)
+            #res_st.order = len(res_stoptime_updates)
             last_departure = base_departure
 
+        res_st.order = len(res_stoptime_updates)
         res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
 

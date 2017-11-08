@@ -222,17 +222,18 @@ class KirinModelBuilder(object):
         arr_delay = read_delay(input_st_update.arrival)
         dep_status = 'none' if dep_delay is None else 'update'
         arr_status = 'none' if arr_delay is None else 'update'
-
+        order = input_st_update.stop_sequence - 1
 
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status)
+                                         dep_status=dep_status, arr_status=arr_status, order=order)
 
         return st_update
 
     def _get_navitia_stop_time(self, input_st_update, navitia_vj):
         # TODO use input_st_update.stop_sequence to get the right stop_time even for loops
-        for s in navitia_vj.get('stop_times', []):
+        for order, s in enumerate(navitia_vj.get('stop_times', [])):
             if any(c['type'] == self.stop_code_key and c['value'] == input_st_update.stop_id
+                   and (order == input_st_update.stop_sequence - 1)
                    for c in s.get('stop_point', {}).get('codes', [])):
                 return s
         return None
