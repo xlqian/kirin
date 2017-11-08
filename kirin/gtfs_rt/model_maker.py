@@ -38,7 +38,7 @@ from kirin.utils import make_navitia_wrapper, make_rt_update, floor_datetime
 from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
-
+from kirin import app
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -121,13 +121,13 @@ class KirinModelBuilder(object):
 
         return trip_updates
 
-    def _get_navitia_vjs(self, trip, data_time):
-        vj_source_code = trip.trip_id
+    def __repr__(self):
+	""" Allow this class to be cacheable
+        """
+        return 'KirinModelBuilder.{}.{}'.format(self.navitia.url, self.contributor)
 
-        since = floor_datetime(data_time - self.period_filter_tolerance)
-        until = floor_datetime(data_time + self.period_filter_tolerance + datetime.timedelta(hours=1))
-        self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
-
+    @app.cache.memoize(timeout=300)
+    def _get_db_vj(self, vj_source_code, since, until):
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'filter': 'vehicle_journey.has_code({}, {})'.format(self.stop_code_key, vj_source_code),
             'since': to_str(since),
@@ -193,6 +193,14 @@ class KirinModelBuilder(object):
             record_internal_failure('Error while creating kirin VJ', contributor=self.contributor)
             return []
 
+    def _get_navitia_vjs(self, trip, data_time):
+        vj_source_code = trip.trip_id
+
+        since = floor_datetime(data_time - self.period_filter_tolerance)
+        until = floor_datetime(data_time + self.period_filter_tolerance + datetime.timedelta(hours=1))
+        self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
+
+        return self._get_db_vj(vj_source_code, since, until)
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
