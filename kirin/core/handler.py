@@ -203,13 +203,13 @@ def _get_updated_info(base_arrival, base_departure, last_departure, new_st):
 
     # in case where arrival/departure time are None
     if last_departure and last_departure > arr:
-        arr = last_departure
         arr_delay += (last_departure - arr)
+        arr = last_departure
 
     # in the real world, the departure time must be greater or equal to the arrival time
     if arr > dep:
-        dep = arr
         dep_delay += (arr - dep)
+        dep = arr
 
     return dep, dep_status, dep_delay, arr, arr_status, arr_delay
 
@@ -302,12 +302,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                        db_st.departure_status == (dep_status or 'none') and
                                                        db_st.arrival == arr and
                                                        db_st.arrival_delay == (arr_delay or timedelta(0)) and
-                                                       db_st.arrival_status == (arr_status or 'none'))
+                                                       db_st.arrival_status == (arr_status or 'none') and
+                                                       db_st.message == new_st.message)
             if not has_no_changes:
+                res_st.message = new_st.message
                 res_st.update_departure(time=dep, status=dep_status, delay=dep_delay)
                 res_st.update_arrival(time=arr, status=arr_status, delay=arr_delay)
             last_departure = dep
-            res_stoptime_updates.append(res_st)
 
         elif db_trip_update is None and new_st is not None:
             """
@@ -322,8 +323,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                                                        new_st)
             res_st.update_departure(time=dep, status=dep_status, delay=dep_delay)
             res_st.update_arrival(time=arr, status=arr_status, delay=arr_delay)
+            res_st.message = new_st.message
             last_departure = dep
-            res_stoptime_updates.append(res_st)
         elif db_trip_update is not None and new_st is None:
             """
             Third case: we have already recorded a delay but nothing is mentioned in the new trip update
@@ -331,14 +332,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             """
             # nothing in db and in new trip update, we take the base schedule
             db_st = db_trip_update.find_stop(stop_id)
-            new_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
+            res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
                                              departure=base_departure,
                                              arrival=base_arrival)
             new_order = len(res_stoptime_updates)
             has_no_changes &= False if not db_st else (db_st.order == new_order)
-            new_st.order = new_order
-            res_stoptime_updates.append(new_st)
-            last_departure = new_st.departure
+            res_st.order = new_order
+            last_departure = res_st.departure
 
         else:
             """
@@ -346,11 +346,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             Then     : take the base schedule's arrival/departure time and let's create a whole new world!
             """
             has_no_changes = False
-            new_st = StopTimeUpdate(navitia_stop['stop_point'], departure=base_departure, arrival=base_arrival)
-            new_st.order = len(res_stoptime_updates)
-            res_stoptime_updates.append(new_st)
+            res_st = StopTimeUpdate(navitia_stop['stop_point'], departure=base_departure, arrival=base_arrival)
+            res_st.order = len(res_stoptime_updates)
             last_departure = base_departure
 
+        res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
 
     if has_no_changes:
