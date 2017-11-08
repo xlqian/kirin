@@ -288,14 +288,14 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             base_departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
 
         stop_id = navitia_stop.get('stop_point', {}).get('id')
-        new_st = new_trip_update.find_stop(stop_id)
+        new_st = new_trip_update.find_stop(stop_id, len(res_stoptime_updates))
 
         if db_trip_update is not None and new_st is not None:
             """
             First case: we already have recorded the delay and we find update info in the new trip update
             Then      : we should probably update it or not if the input info is exactly the same as the one in db
             """
-            db_st = db_trip_update.find_stop(stop_id)
+            db_st = db_trip_update.find_stop(stop_id, len(res_stoptime_updates))
             new_st_update = _make_stop_time_update(base_arrival,
                                                    base_departure,
                                                    last_departure,
@@ -328,7 +328,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                         
                         *** Here, we MUST NOT do anything, only update stop time's order ***
             """
-            db_st = db_trip_update.find_stop(stop_id)
+            db_st = db_trip_update.find_stop(stop_id, len(res_stoptime_updates))
             res_st = db_st if db_st is not None else StopTimeUpdate(navitia_stop['stop_point'],
                                                                     departure=base_departure,
                                                                     arrival=base_arrival,
@@ -336,7 +336,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             new_order = len(res_stoptime_updates)
             # We need to deal with this case more carefully, this won't work if the trip is a lollipop 
             has_changes |= (db_st is None) or db_st.order != new_order
-            res_st.order = new_order
+            #res_st.order = new_order
 
         else:
             """
@@ -349,6 +349,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                     arrival=base_arrival,
                                     order=len(res_stoptime_updates))
 
+        #res_st.order = len(res_stoptime_updates)
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
