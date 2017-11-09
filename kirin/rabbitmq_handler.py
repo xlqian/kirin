@@ -26,12 +26,13 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from kombu import BrokerConnection, Exchange, Queue, Consumer
+from kombu import BrokerConnection, Exchange, Queue, Consumer, Producer
 from kombu.pools import producers, connections
 import logging
 from amqp.exceptions import ConnectionForced
 import gevent
 from retrying import retry
+import retrying
 from kirin import task_pb2
 from google.protobuf.message import DecodeError
 import socket
@@ -42,103 +43,113 @@ from kirin.utils import str_to_date, record_call
 from socket import error
 import time
 from datetime import datetime
+from kombu.mixins import ConsumerProducerMixin
+
+
+class RTReloader(ConsumerProducerMixin):
+    """
+    ConsumerProducerMixin: a RPC model
+    """
+    def __init__(self, connection, rpc_queue, exchange, max_retries):
+        self.connection = connection
+        self.rpc_queue = rpc_queue
+        self.exchange = exchange
+        self.max_retries = max_retries
+
+    def get_consumers(self, Consumer, channel):
+        return [Consumer(
+            queues=[self.rpc_queue],
+            on_message=self.on_request,
+            prefetch_count=1,
+        )]
+
+    def on_request(self, message):
+        self._on_request(message)
+        message.ack()
+
+    def _on_request(self, message):
+        log = logging.getLogger(__name__)
+        try:
+            task = task_pb2.Task()
+            try:
+                # `body` is of unicode type, but we need str type for
+                # `ParseFromString()` to work.  It seems to work.
+                # Maybe kombu estimate that, without any information,
+                # the body should be something as json, and thus a
+                # unicode string.  On the c++ side, I didn't manage to
+                # find a way to give a content-type or something like
+                # that.
+                body = str(message.payload)
+                task.ParseFromString(body)
+            except DecodeError as e:
+                log.warn('invalid protobuf: {}'.format(str(e)))
+                return
+
+            log.info('Getting a full feed publication request', extra={'task': task})
+            if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
+                return
+            start_datetime = datetime.utcnow()
+            begin_date = None
+            end_date = None
+            if hasattr(task.load_realtime, "begin_date"):
+                if task.load_realtime.begin_date:
+                    begin_date = str_to_date(task.load_realtime.begin_date)
+
+            if hasattr(task.load_realtime, "end_date"):
+                if task.load_realtime.end_date:
+                    end_date = str_to_date(task.load_realtime.end_date)
+            feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
+                                                                           begin_date,
+                                                                           end_date),
+                                     gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
+
+            feed_str = feed.SerializeToString()
+            log.info('Starting of full feed publication {}, {}'.format(len(feed_str), task), extra={'size': len(feed_str), 'task': task})
+            # http://docs.celeryproject.org/projects/kombu/en/latest/userguide/producers.html#bypassing-routing-by-using-the-anon-exchange
+            self.producer.publish(feed_str,
+                                  routing_key=task.load_realtime.queue_name,
+                                  retry=True,
+                                  retry_policy={
+                                      'interval_start': 0,  # First retry immediately,
+                                      'interval_step': 2,   # then increase by 2s for every retry.
+                                      'interval_max': 10,   # but don't exceed 10s between retries.
+                                      'max_retries':  self.max_retries,     # give up after 10 (by default) tries.
+                                      })
+            duration = (datetime.utcnow() - start_datetime).total_seconds()
+            log.info('End of full feed publication', extra={'duration': duration, 'task': task})
+            record_call('Full feed publication', size=len(feed_str), routing_key=task.load_realtime.queue_name,
+                        duration=duration, trip_update_count=len(feed.entity),
+                        contributor=task.load_realtime.contributors)
+        finally:
+            db.session.remove()
 
 
 class RabbitMQHandler(object):
     def __init__(self, connection_string, exchange):
         self._connection = BrokerConnection(connection_string)
-        self._connections = set([self._connection])  # set of connection for the heartbeat
+        self._connections = {self._connection}  # set of connection for the heartbeat
         self._exchange = Exchange(exchange, durable=True, delivry_mode=2, type='topic')
         monitor_heartbeats(self._connections)
 
-    def _get_producer(self):
-        producer = producers[self._connection].acquire(block=True, timeout=2)
-        self._connections.add(producer.connection)
-        return producer
-
     @retry(wait_fixed=200, stop_max_attempt_number=3)
     def publish(self, item, contributor):
-        with self._get_producer() as producer:
-            producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
+        with self._connection.channel() as channel:
+            with Producer(channel) as producer:
+                producer.publish(item, exchange=self._exchange, routing_key=contributor, declare=[self._exchange])
 
     def info(self):
-        with self._get_producer() as producer:
-            if not producer.connection.connected:
-                return {}
-            res = producer.connection.info()
-            if 'password' in res:
-                del res['password']
-            return res
+        return self._connection.info()
 
-    def listen_load_realtime(self, queue_name, retry_timeout=10):
+    def listen_load_realtime(self, queue_name, max_retries=10):
         log = logging.getLogger(__name__)
-
-        def callback(body, message):
-            try:
-                task = task_pb2.Task()
-                try:
-                    # `body` is of unicode type, but we need str type for
-                    # `ParseFromString()` to work.  It seems to work.
-                    # Maybe kombu estimate that, without any information,
-                    # the body should be something as json, and thus a
-                    # unicode string.  On the c++ side, I didn't manage to
-                    # find a way to give a content-type or something like
-                    # that.
-                    body = str(body)
-                    task.ParseFromString(body)
-                except DecodeError as e:
-                    log.warn('invalid protobuf: {}'.format(str(e)))
-                    return
-
-                log.info('Getting a full feed publication request', extra={'task': task})
-                start_datetime = datetime.utcnow()
-                if task.action != task_pb2.LOAD_REALTIME or not task.load_realtime:
-                    return
-                begin_date = None
-                end_date = None
-                if hasattr(task.load_realtime, "begin_date"):
-                    if task.load_realtime.begin_date:
-                        begin_date = str_to_date(task.load_realtime.begin_date)
-
-                if hasattr(task.load_realtime, "end_date"):
-                    if task.load_realtime.end_date:
-                        end_date = str_to_date(task.load_realtime.end_date)
-                feed = convert_to_gtfsrt(TripUpdate.find_by_contributor_period(task.load_realtime.contributors,
-                                                                               begin_date,
-                                                                               end_date),
-                                         gtfs_realtime_pb2.FeedHeader.FULL_DATASET)
-
-                with self._get_producer() as producer:
-                    feed_str = feed.SerializeToString()
-                    log.info('Starting of full feed publication',
-                             extra={'size': len(feed_str), 'trip_update_count': len(feed.entity), 'task': task})
-
-                    producer.publish(feed_str, routing_key=task.load_realtime.queue_name)
-                    duration = (datetime.utcnow() - start_datetime).total_seconds()
-                    log.info('End of full feed publication', extra={'duration': duration, 'task': task})
-                    record_call('Full feed publication', size=len(feed_str), routing_key=task.load_realtime.queue_name,
-                                duration=duration, trip_update_count=len(feed.entity),
-                                contributor=task.load_realtime.contributors)
-
-            finally:
-                db.session.remove()
 
         route = 'task.load_realtime.*'
         log.info('listening route {} on exchange {}...'.format(route, self._exchange))
         rt_queue = Queue(queue_name, routing_key=route, exchange=self._exchange, durable=False)
-        while True:
-            try:
-                with connections[self._connection].acquire(block=True) as conn:
-                    self._connections.add(conn)
-                    with Consumer(conn, no_ack=True, queues=[rt_queue], callbacks=[callback]):
-                        while True:
-                            try:
-                                conn.drain_events(timeout=1)
-                            except socket.timeout:
-                                conn.heartbeat_check()
-            except socket.error:
-                log.exception('disconnected, retrying in %s sec', retry_timeout)
-                time.sleep(retry_timeout)
+        RTReloader(connection=self._connection,
+                   rpc_queue=rt_queue,
+                   exchange=self._exchange,
+                   max_retries=max_retries).run()
 
 
 def monitor_heartbeats(connections, rate=2):

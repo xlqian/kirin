@@ -40,8 +40,8 @@ DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 #rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
 RABBITMQ_CONNECTION_STRING = os.getenv('KIRIN_RABBITMQ_CONNECTION_STRING', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
 
-#time before trying to reconnect to rabbitmq
-RETRY_TIMEOUT = 10
+#max nb of retries before giving up publishing
+MAX_RETRIES = 10
 
 #queue used for task of type load_realtime, all instances of kirin must use the same queue
 #to be able to load balance tasks between them
