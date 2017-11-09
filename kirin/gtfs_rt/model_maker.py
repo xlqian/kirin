@@ -231,7 +231,8 @@ class KirinModelBuilder(object):
         return st_update
 
     def _get_navitia_stop_time(self, input_st_update, navitia_vj):
-        # TODO use input_st_update.stop_sequence to get the right stop_time even for loops
+        # To handle a vj with the same stop served multiple times(lollypop) we match the stop_point and order of navitia
+        # with stop_id and stop_sequence of trip_update of gtfs-rt
         for order, s in enumerate(navitia_vj.get('stop_times', [])):
             if any(c['type'] == self.stop_code_key and c['value'] == input_st_update.stop_id
                    and (order == input_st_update.stop_sequence - 1)
