@@ -124,7 +124,7 @@ class KirinModelBuilder(object):
     def __repr__(self):
         """ Allow this class to be cacheable
         """
-        return '{}.{}.{}'.format(self.__class__, self.navitia.url, self.contributor)
+        return '{}.{}'.format(self.__class__, self.navitia.url)
 
     @app.cache.memoize(timeout=300)
     def _get_db_vj(self, vj_source_code, since, until):
