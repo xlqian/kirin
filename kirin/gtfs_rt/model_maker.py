@@ -223,6 +223,8 @@ class KirinModelBuilder(object):
         arr_delay = read_delay(input_st_update.arrival)
         dep_status = 'none' if dep_delay is None else 'update'
         arr_status = 'none' if arr_delay is None else 'update'
+        #order of stop_times in navitia starts from (index=0) where as trip_update.stop_time_update.stop_sequence
+        #starts from 1 for the first stop of the trip.
         order = input_st_update.stop_sequence - 1
 
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
