@@ -161,7 +161,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                  departure=None, arrival=None,
                  departure_delay=None, arrival_delay=None,
                  dep_status='none', arr_status='none',
-                 message=None):
+                 message=None, order=None):
         self.id = gen_uuid()
         self.navitia_stop = navitia_stop
         self.stop_id = navitia_stop['id']
@@ -172,6 +172,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         self.departure = departure
         self.arrival = arrival
         self.message = message
+        self.order = order
 
     def update_departure(self, time=None, delay=None, status=None):
         if time:
@@ -189,6 +190,20 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         if status:
             self.arrival_status = status
 
+    def is_ne(self, other):
+        """
+        we don't want to override the __ne__ function to avoid side effects
+        :param other:
+        :return:
+        """
+        return (self.stop_id != other.stop_id or
+                self.message != other.message or
+                self.departure != other.departure or
+                self.departure_delay != other.departure_delay or
+                self.departure_status != other.departure_status or
+                self.arrival != other.arrival or
+                self.arrival_delay != other.arrival_delay or
+                self.arrival_status != other.arrival_status)
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
