@@ -609,3 +609,116 @@ def test_gtfs_rt_partial_update_diff_feed_2(partial_update_gtfs_rt_data_2,
                 assert trip_update.stop_time_updates[3].arrival_delay.seconds == 0
                 assert len(trip_update.real_time_updates) == 1
 
+
+@pytest.fixture()
+def lollypop_gtfs_rt_data():
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=9))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-lollypop"
+
+    #arrival and departure in vehiclejourney 100000
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.departure.delay = 60
+    stu.stop_sequence = 1
+    stu.stop_id = "Code-StopR1"
+
+    #arrival and departure in vehiclejourney 101000
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 120
+    stu.departure.delay = 120
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    #arrival and departure in vehiclejourney 102000
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.departure.delay = 60
+    stu.stop_sequence = 3
+    stu.stop_id = "Code-StopR3"
+
+    #arrival and departure in vehiclejourney 103000
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 0
+    stu.departure.delay = 0
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR2"
+
+    #arrival and departure in vehiclejourney 104000
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 0
+    stu.departure.delay = 0
+    stu.stop_sequence = 5
+    stu.stop_id = "Code-StopR4"
+
+    return feed
+
+
+def test_gtfs_lollypop_model_builder(lollypop_gtfs_rt_data):
+    """
+    test the model builder with a lollypop gtfs-rt
+    """
+    with app.app_context():
+        data = ''
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, lollypop_gtfs_rt_data)
+
+        # we associate the trip_update manually for sqlalchemy to make the links
+        rt_update.trip_updates = trip_updates
+        db.session.add(rt_update)
+        db.session.commit()
+
+        assert len(trip_updates) == 1
+        assert len(trip_updates[0].stop_time_updates) == 5
+
+        first_stop = trip_updates[0].stop_time_updates[0]
+        assert first_stop.stop_id == 'StopR1'
+        assert first_stop.arrival_status == 'update'
+        assert first_stop.arrival_delay == timedelta(minutes=1)
+        assert first_stop.departure_status == 'update'
+        assert first_stop.departure_delay == timedelta(minutes=1)
+        assert first_stop.message is None
+
+        second_stop = trip_updates[0].stop_time_updates[1]
+        assert second_stop.stop_id == 'StopR2'
+        assert second_stop.arrival_status == 'update'
+        assert second_stop.arrival_delay == timedelta(minutes=2)
+        assert second_stop.departure_status == 'update'
+        assert second_stop.departure_delay == timedelta(minutes=2)
+        assert second_stop.message is None
+
+        third_stop = trip_updates[0].stop_time_updates[2]
+        assert third_stop.stop_id == 'StopR3'
+        assert third_stop.arrival_status == 'update'
+        assert third_stop.arrival_delay == timedelta(minutes=1)
+        assert third_stop.departure_status == 'update'
+        assert third_stop.departure_delay == timedelta(minutes=1)
+        assert third_stop.message is None
+
+        fourth_stop = trip_updates[0].stop_time_updates[3]
+        assert fourth_stop.stop_id == 'StopR2'
+        assert fourth_stop.arrival_status == 'none'
+        assert fourth_stop.arrival_delay is None
+        assert fourth_stop.departure_status == 'none'
+        assert fourth_stop.departure_delay is None
+        assert fourth_stop.message is None
+
+        fifth_stop = trip_updates[0].stop_time_updates[4]
+        assert fifth_stop.stop_id == 'StopR4'
+        assert fifth_stop.arrival_status == 'none'
+        assert fifth_stop.arrival_delay is None
+        assert fifth_stop.departure_status == 'none'
+        assert fifth_stop.departure_delay is None
+        assert fifth_stop.message is None
+
+        feed = convert_to_gtfsrt(trip_updates)
+        assert feed.entity[0].trip_update.trip.start_date == u'20120615' #must be UTC start date
+
+
