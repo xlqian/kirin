@@ -84,6 +84,7 @@ class KirinModelBuilder(object):
         # TODO better period handling
         self.period_filter_tolerance = datetime.timedelta(hours=3)
         self.stop_code_key = 'source'  # TODO conf
+        self.instance_data_pub_date = self.navitia.get_publication_date()
 
     def build(self, rt_update, data):
         """
@@ -124,9 +125,9 @@ class KirinModelBuilder(object):
     def __repr__(self):
         """ Allow this class to be cacheable
         """
-        return '{}.{}'.format(self.__class__, self.navitia.url)
+        return '{}.{}.{}'.format(self.__class__, self.navitia.url, self.instance_data_pub_date)
 
-    @app.cache.memoize(timeout=300)
+    @app.cache.memoize(timeout=1200)
     def _get_db_vj(self, vj_source_code, since, until):
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'filter': 'vehicle_journey.has_code({}, {})'.format(self.stop_code_key, vj_source_code),
