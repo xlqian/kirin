@@ -397,3 +397,214 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
         assert fourth_stop.departure_status == 'update'
         assert fourth_stop.departure == datetime.datetime(2012, 6, 16, 04, 34)
         assert fourth_stop.message is None
+
+
+@pytest.fixture()
+def partial_update_gtfs_rt_data_1():
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    return feed
+
+@pytest.fixture()
+def partial_update_gtfs_rt_data_2():
+    """
+    This fixture is almost the same as partial_update_gtfs_rt_data_1
+    Based on the previous one, we add one more stop_time_update
+    """
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 180
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR4"
+
+    return feed
+
+@pytest.fixture()
+def partial_update_gtfs_rt_data_3():
+    """
+    This fixture is almost the same as partial_update_gtfs_rt_data_2
+    We add a new trip_update
+    """
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 180
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR4"
+
+    # Another trip update
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj2"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.departure.delay = 60
+    stu.stop_sequence = 1
+    stu.stop_id = "Code-StopR1"
+
+    return feed
+
+def test_gtfs_rt_partial_update_same_feed(partial_update_gtfs_rt_data_1):
+    """
+    In this test, we will send the same gtfs-rt twice, the second sending should not create neither
+    new trip updates nor new stop time updates
+    """
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_1.SerializeToString())
+    assert resp.status_code == 200
+
+    def check(nb_rt_update):
+        with app.app_context():
+            assert len(RealTimeUpdate.query.all()) == nb_rt_update
+            assert len(TripUpdate.query.all()) == 1
+            assert len(StopTimeUpdate.query.all()) == 4
+
+            trip_update = TripUpdate.query.first()
+            assert trip_update.stop_time_updates[0].arrival_delay.seconds == 0
+            assert trip_update.stop_time_updates[1].arrival_delay.seconds == 60
+            assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+            assert trip_update.stop_time_updates[3].arrival_delay.seconds == 0
+            # since the second real_time_update is the same as the first one,
+            # the second one won't have an effect on existing trip update,
+            # so the length is 1
+            assert len(trip_update.real_time_updates) == 1
+
+    check(nb_rt_update=1)
+
+    # Now we apply exactly the same gtfs-rt, the new gtfs-rt will be save into the db,
+    # which increment the nb of RealTimeUpdate, but the rest remains the same
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_1.SerializeToString())
+    assert resp.status_code == 200
+    check(nb_rt_update=2)
+
+
+def test_gtfs_rt_partial_update_diff_feed_1(partial_update_gtfs_rt_data_1,
+                                          partial_update_gtfs_rt_data_2):
+    """
+    In this test, we will send the two different gtfs-rt
+    """
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_1.SerializeToString())
+    assert resp.status_code == 200
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 4
+
+        trip_update = TripUpdate.query.first()
+        assert trip_update.stop_time_updates[0].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[1].arrival_delay.seconds == 60
+        assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[3].arrival_delay.seconds == 0
+        assert len(trip_update.real_time_updates) == 1
+
+    # Now we apply exactly the same gtfs-rt, the new gtfs-rt will be save into the db,
+    # which increment the nb of RealTimeUpdate, but the rest remains the same
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_2.SerializeToString())
+    assert resp.status_code == 200
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 4
+
+        trip_update = TripUpdate.query.first()
+        assert trip_update.stop_time_updates[0].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[1].arrival_delay.seconds == 60
+        assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[3].arrival_delay.seconds == 180
+        assert len(trip_update.real_time_updates) == 2
+
+
+def test_gtfs_rt_partial_update_diff_feed_2(partial_update_gtfs_rt_data_2,
+                                            partial_update_gtfs_rt_data_3):
+    """
+    In this test, we send a gtfs-rt containing only one trip_update, the send a gtfs-rt
+    containing two trip_updates
+    """
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_2.SerializeToString())
+    assert resp.status_code == 200
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 4
+
+        trip_update = TripUpdate.query.first()
+        first_trip_update_db_id = trip_update.vj_id
+        assert trip_update.stop_time_updates[0].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[1].arrival_delay.seconds == 60
+        assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+        assert trip_update.stop_time_updates[3].arrival_delay.seconds == 180
+        assert len(trip_update.real_time_updates) == 1
+
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_3.SerializeToString())
+    assert resp.status_code == 200
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        trip_updates = TripUpdate.query.all()
+        assert len(trip_updates) == 2
+        assert len(StopTimeUpdate.query.all()) == 8
+
+        for trip_update in trip_updates:
+            if trip_update.vj_id == first_trip_update_db_id:
+                assert trip_update.stop_time_updates[0].arrival_delay.seconds == 0
+                assert trip_update.stop_time_updates[1].arrival_delay.seconds == 60
+                assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+                assert trip_update.stop_time_updates[3].arrival_delay.seconds == 180
+                assert len(trip_update.real_time_updates) == 1
+            else:
+                assert trip_update.stop_time_updates[0].arrival_delay.seconds == 60
+                assert trip_update.stop_time_updates[1].arrival_delay.seconds == 0
+                assert trip_update.stop_time_updates[2].arrival_delay.seconds == 0
+                assert trip_update.stop_time_updates[3].arrival_delay.seconds == 0
+                assert len(trip_update.real_time_updates) == 1
+
