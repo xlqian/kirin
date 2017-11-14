@@ -524,7 +524,7 @@ def test_gtfs_rt_partial_update_same_feed(partial_update_gtfs_rt_data_1):
 
 
 def test_gtfs_rt_partial_update_diff_feed_1(partial_update_gtfs_rt_data_1,
-                                          partial_update_gtfs_rt_data_2):
+                                            partial_update_gtfs_rt_data_2):
     """
     In this test, we will send the two different gtfs-rt
     """
@@ -544,8 +544,8 @@ def test_gtfs_rt_partial_update_diff_feed_1(partial_update_gtfs_rt_data_1,
         assert trip_update.stop_time_updates[3].arrival_delay.seconds == 0
         assert len(trip_update.real_time_updates) == 1
 
-    # Now we apply exactly the same gtfs-rt, the new gtfs-rt will be save into the db,
-    # which increment the nb of RealTimeUpdate, but the rest remains the same
+    # Now we apply another gtfs-rt, the new gtfs-rt will be save into the db and
+    # increments the nb of real_time_updates
     resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_2.SerializeToString())
     assert resp.status_code == 200
     with app.app_context():
