@@ -40,9 +40,10 @@ from kirin import gtfs_realtime_pb2, app
 @pytest.fixture(scope='function', autouse=True)
 def navitia(monkeypatch):
     """
-    Mock all calls to navitia for this fixture
+    Mock all calls to navitia for this fixture and get_publication_date
     """
     monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
+    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.get_publication_date', mock_navitia.mock_publication_date)
 
 
 @pytest.fixture(scope='function')
