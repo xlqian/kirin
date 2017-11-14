@@ -182,7 +182,7 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
     return new_time, status, delay
 
 
-def _make_stop_time_update(base_arrival, base_departure, last_departure, input_st, stop_point):
+def _make_stop_time_update(base_arrival, base_departure, last_departure, input_st, stop_point, order):
     dep, dep_status, dep_delay = _get_update_info_of_stop_time(base_departure,
                                                                input_st.departure_status,
                                                                input_st.departure_delay)
@@ -204,11 +204,15 @@ def _make_stop_time_update(base_arrival, base_departure, last_departure, input_s
         dep_delay += (arr - dep)
         dep = arr
 
-    st = StopTimeUpdate(stop_point)
-    st.message = input_st.message
-    st.update_departure(time=dep, status=dep_status, delay=dep_delay)
-    st.update_arrival(time=arr, status=arr_status, delay=arr_delay)
-    return st
+    return StopTimeUpdate(navitia_stop=stop_point,
+                          departure=dep,
+                          departure_delay=dep_delay,
+                          dep_status=dep_status,
+                          arrival=arr,
+                          arrival_delay=arr_delay,
+                          arr_status=arr_status,
+                          message=input_st.message,
+                          order=order)
 
 
 def merge(navitia_vj, db_trip_update, new_trip_update):
@@ -293,7 +297,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                    base_departure,
                                                    last_departure,
                                                    new_st,
-                                                   navitia_stop['stop_point'])
+                                                   navitia_stop['stop_point'],
+                                                   order=len(res_stoptime_updates))
             has_changes |= (not db_st) or db_st.is_ne(new_st_update)
             res_st = new_st_update if has_changes else db_st
 
@@ -307,7 +312,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                             base_departure,
                                             last_departure,
                                             new_st,
-                                            navitia_stop['stop_point'])
+                                            navitia_stop['stop_point'],
+                                            order=len(res_stoptime_updates))
             res_st.message = new_st.message
 
         elif db_trip_update is not None and new_st is None:
@@ -318,7 +324,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             db_st = db_trip_update.find_stop(stop_id)
             res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
                                              departure=base_departure,
-                                             arrival=base_arrival)
+                                             arrival=base_arrival,
+                                             order=len(res_stoptime_updates))
             new_order = len(res_stoptime_updates)
             # We need to deal with this case more carefully, this won't work if the trip is a lollipop 
             has_changes |= (not db_st) or db_st.order != new_order
@@ -333,7 +340,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             res_st = StopTimeUpdate(navitia_stop['stop_point'],
                                     departure=base_departure,
                                     arrival=base_arrival,
-                                    order = len(res_stoptime_updates))
+                                    order=len(res_stoptime_updates))
 
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
