@@ -128,7 +128,7 @@ class KirinModelBuilder(object):
         return '{}.{}.{}'.format(self.__class__, self.navitia.url, self.instance_data_pub_date)
 
     @app.cache.memoize(timeout=1200)
-    def _get_db_vj(self, vj_source_code, since, until):
+    def _make_db_vj(self, vj_source_code, since, until):
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'filter': 'vehicle_journey.has_code({}, {})'.format(self.stop_code_key, vj_source_code),
             'since': to_str(since),
@@ -189,8 +189,8 @@ class KirinModelBuilder(object):
         try:
             vj = model.VehicleJourney(nav_vj, circulate_date)
             return [vj]
-        except Exception:
-            self.log.exception('Error while creating kirin VJ of {}'.format(nav_vj.get('id')))
+        except Exception as e:
+            self.log.exception('Error while creating kirin VJ of {}: {}'.format(nav_vj.get('id'), e))
             record_internal_failure('Error while creating kirin VJ', contributor=self.contributor)
             return []
 
@@ -201,7 +201,7 @@ class KirinModelBuilder(object):
         until = floor_datetime(data_time + self.period_filter_tolerance + datetime.timedelta(hours=1))
         self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
 
-        return self._get_db_vj(vj_source_code, since, until)
+        return self._make_db_vj(vj_source_code, since, until)
 
     def _make_stoptime_update(self, input_st_update, navitia_vj):
         nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
