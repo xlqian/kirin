@@ -198,6 +198,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         """
         return (self.stop_id != other.stop_id or
                 self.message != other.message or
+                self.order != other.order or
                 self.departure != other.departure or
                 self.departure_delay != other.departure_delay or
                 self.departure_status != other.departure_status or
