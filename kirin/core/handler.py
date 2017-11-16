@@ -322,7 +322,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             Third case: we have already recorded a delay but nothing is mentioned in the new trip update
             Then      : For IRE, we do nothing but only update stop time's order
                         For gtfs-rt, according to the specification, we should use the delay from the previous
-                        stop time, which will be handled later by the connector-specified model maker 
+                        stop time, which will be handled sooner by the connector-specified model maker
+                        
+                        *** Here, we MUST NOT do anything, only update stop time's order ***
             """
             db_st = db_trip_update.find_stop(stop_id)
             res_st = db_st if db_st is not None else StopTimeUpdate(navitia_stop['stop_point'],
