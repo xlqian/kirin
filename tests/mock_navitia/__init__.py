@@ -68,4 +68,4 @@ def mock_navitia_query(self, query, q=None):
 
 
 def mock_publication_date(self):
-    return "12345678910"
+    return "20171115T195211.961411"
