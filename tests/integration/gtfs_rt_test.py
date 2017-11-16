@@ -236,8 +236,8 @@ def pass_midnight_gtfs_rt_data():
     stu.stop_id = "Code-StopR1"
 
     stu = trip_update.stop_time_update.add()
-    stu.arrival.delay = 120
-    stu.departure.delay = 120
+    stu.arrival.delay = 60
+    stu.departure.delay = 60
     stu.stop_sequence = 2
     stu.stop_id = "Code-StopR2"
 
@@ -290,9 +290,9 @@ def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
         second_stop = trip_updates[0].stop_time_updates[1]
         assert second_stop.stop_id == 'StopR2'
         assert second_stop.arrival_status == 'update'
-        assert second_stop.arrival_delay == timedelta(minutes=2)
+        assert second_stop.arrival_delay == timedelta(minutes=1)
         assert second_stop.departure_status == 'update'
-        assert second_stop.departure_delay == timedelta(minutes=2)
+        assert second_stop.departure_delay == timedelta(minutes=1)
         assert second_stop.message is None
 
         second_stop = trip_updates[0].stop_time_updates[2]
@@ -361,10 +361,10 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
         second_stop = trip_update.stop_time_updates[1]
         assert second_stop.stop_id == 'StopR2'
         assert second_stop.arrival_status == 'update'
-        assert second_stop.arrival == datetime.datetime(2012, 6, 16, 04, 01)
-        assert second_stop.arrival_delay == timedelta(minutes=2)
-        assert second_stop.departure == datetime.datetime(2012, 6, 16, 04, 02)
-        assert second_stop.departure_delay == timedelta(minutes=2)
+        assert second_stop.arrival == datetime.datetime(2012, 6, 16, 04, 00)
+        assert second_stop.arrival_delay == timedelta(minutes=1)
+        assert second_stop.departure == datetime.datetime(2012, 6, 16, 04, 01)
+        assert second_stop.departure_delay == timedelta(minutes=1)
         assert second_stop.departure_status == 'update'
         assert second_stop.message is None
 

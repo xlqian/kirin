@@ -191,8 +191,9 @@ def _make_stop_time_update(base_arrival, base_departure, last_departure, input_s
                                                                input_st.arrival_delay)
 
     # in case where arrival/departure time are None
-    arr = arr or dep or last_departure
-    dep = dep or arr
+    if arr is None:
+        arr = dep if dep is not None else last_departure
+    dep = dep if dep is not None else arr
 
     # in case where the previous departure time are greater than the current arrival
     if last_departure and last_departure > arr:
@@ -287,7 +288,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id)
 
-        if db_trip_update and new_st:
+        if db_trip_update is not None and new_st is not None:
             """
             First case: we already have recorded the delay and we find update info in the new trip update
             Then      : we should probably update it or not if the input info is exactly the same as the one in db
@@ -299,7 +300,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                    new_st,
                                                    navitia_stop['stop_point'],
                                                    order=len(res_stoptime_updates))
-            has_changes |= (not db_st) or db_st.is_ne(new_st_update)
+            has_changes |= (db_st is None) or db_st.is_ne(new_st_update)
             res_st = new_st_update if has_changes else db_st
 
         elif db_trip_update is None and new_st is not None:
@@ -319,16 +320,18 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         elif db_trip_update is not None and new_st is None:
             """
             Third case: we have already recorded a delay but nothing is mentioned in the new trip update
-            Then      : we do nothing but only update stop time's order(?)
+            Then      : For IRE, we do nothing but only update stop time's order
+                        For gtfs-rt, according to the specification, we should use the delay from the previous
+                        stop time, which will be handled later by the connector-specified model maker 
             """
             db_st = db_trip_update.find_stop(stop_id)
-            res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'],
-                                             departure=base_departure,
-                                             arrival=base_arrival,
-                                             order=len(res_stoptime_updates))
+            res_st = db_st if db_st is not None else StopTimeUpdate(navitia_stop['stop_point'],
+                                                                    departure=base_departure,
+                                                                    arrival=base_arrival,
+                                                                    order=len(res_stoptime_updates))
             new_order = len(res_stoptime_updates)
             # We need to deal with this case more carefully, this won't work if the trip is a lollipop 
-            has_changes |= (not db_st) or db_st.order != new_order
+            has_changes |= (db_st is None) or db_st.order != new_order
             res_st.order = new_order
 
         else:
