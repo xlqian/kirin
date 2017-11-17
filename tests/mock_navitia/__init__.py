@@ -65,3 +65,7 @@ def mock_navitia_query(self, query, q=None):
     mock = _mock_navitia_call[query_str]
 
     return json.loads(mock.json_response), mock.response_code
+
+
+def mock_publication_date(self):
+    return "20171115T195211.961411"

@@ -58,6 +58,8 @@ NAVITIA_QUERY_CACHE_TIMEOUT = int(os.getenv('KIRIN_NAVITIA_QUERY_CACHE_TIMEOUT',
 NAVITIA_PUBDATE_CACHE_TIMEOUT = int(os.getenv('KIRIN_NAVITIA_PUBDATE_CACHE_TIMEOUT',
                                               timedelta(minutes=5).total_seconds()))  # in seconds
 
+CACHE_TYPE = os.getenv('KIRIN_CACHE_TYPE', 'simple')
+
 NEW_RELIC_CONFIG_FILE = os.getenv('KIRIN_NEW_RELIC_CONFIG_FILE', None)
 
 log_level = os.getenv('KIRIN_LOG_LEVEL', 'DEBUG')
