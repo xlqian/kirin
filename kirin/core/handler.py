@@ -37,7 +37,7 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
-from kirin.utils import get_timezone, record_call
+from kirin.utils import get_timezone
 
 
 def persist(real_time_update):
@@ -141,7 +141,7 @@ def handle(real_time_update, trip_updates, contributor):
         current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
 
         # manage and adjust consistency if possible
-        if manage_consistency(current_trip_update):
+        if current_trip_update and manage_consistency(current_trip_update):
             # we have to link the current_vj_update with the new real_time_update
             # this link is done quite late to avoid too soon persistence of trip_update by sqlalchemy
             current_trip_update.real_time_updates.append(real_time_update)
@@ -164,6 +164,58 @@ def _get_datetime(local_circulation_date, time, timezone):
     # in the db dt with timezone cannot coexist with dt without tz
     # since at the beginning there was dt without tz, we need to erase the tz info
     return dt.replace(tzinfo=None)
+
+
+def _get_update_info_of_stop_time(base_time, input_status, input_delay):
+    new_time = None
+    status = 'none'
+    delay = timedelta(0)
+    if input_status == 'update':
+        new_time = (base_time + input_delay) if base_time else None
+        status = input_status
+        delay = input_delay
+    elif input_status == 'delete':
+        # passing status delete on the stoptime
+        # Note: we keep providing base_schedule stoptime to better identify the stoptime
+        # in the vj (for lolipop lines for example)
+        status = input_status
+    else:
+        new_time = base_time
+    return new_time, status, delay
+
+
+def _make_stop_time_update(base_arrival, base_departure, last_departure, input_st, stop_point, order):
+    dep, dep_status, dep_delay = _get_update_info_of_stop_time(base_departure,
+                                                               input_st.departure_status,
+                                                               input_st.departure_delay)
+    arr, arr_status, arr_delay = _get_update_info_of_stop_time(base_arrival,
+                                                               input_st.arrival_status,
+                                                               input_st.arrival_delay)
+
+    # in case where arrival/departure time are None
+    if arr is None:
+        arr = dep if dep is not None else last_departure
+    dep = dep if dep is not None else arr
+
+    # in case where the previous departure time are greater than the current arrival
+    if last_departure and last_departure > arr:
+        arr_delay += (last_departure - arr)
+        arr = last_departure
+
+    # in the real world, the departure time must be greater or equal to the arrival time
+    if arr > dep:
+        dep_delay += (arr - dep)
+        dep = arr
+
+    return StopTimeUpdate(navitia_stop=stop_point,
+                          departure=dep,
+                          departure_delay=dep_delay,
+                          dep_status=dep_status,
+                          arrival=arr,
+                          arrival_delay=arr_delay,
+                          arr_status=arr_status,
+                          message=input_st.message,
+                          order=order)
 
 
 def merge(navitia_vj, db_trip_update, new_trip_update):
@@ -210,81 +262,102 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
         return res
 
     last_nav_dep = None
+    last_departure = None
     local_circulation_date = new_trip_update.vj.get_local_circulation_date()
-    for navitia_stop in navitia_vj.get('stop_times', []):
-        stop_id = navitia_stop.get('stop_point', {}).get('id')
-        new_st = new_trip_update.find_stop(stop_id)
-        db_st = db_trip_update.find_stop(stop_id) if db_trip_update else None
 
+    has_changes = False
+    for navitia_stop in navitia_vj.get('stop_times', []):
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
         timezone = get_timezone(navitia_stop)
 
-        arrival = departure = None
+        # we compute the arrival time and departure time on base schedule and take past mid-night into
+        # consideration
+        base_arrival = base_departure = None
         if nav_arrival_time is not None:
             if last_nav_dep is not None and last_nav_dep > nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
                 local_circulation_date += timedelta(days=1)
-            arrival = _get_datetime(local_circulation_date, nav_arrival_time, timezone)
+            base_arrival = _get_datetime(local_circulation_date, nav_arrival_time, timezone)
+
         if nav_departure_time is not None:
             if nav_arrival_time is not None and nav_arrival_time > nav_departure_time:
                 # departure is before arrival, it's a past-midnight
                 local_circulation_date += timedelta(days=1)
-            departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
+            base_departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
 
-        if new_st is not None:
-            res_st = db_st or StopTimeUpdate(navitia_stop['stop_point'])
-            # we have an update on the stop time, we consider it
-            if new_st.departure_status == 'update':
-                dep = departure + new_st.departure_delay if departure else None
-                res_st.update_departure(time=dep, status='update', delay=new_st.departure_delay)
-            elif db_st is not None:
-                # we have no update on the departure for this st, we take it from the db (if it exists)
-                res_st.update_departure(time=db_st.departure,
-                                        status=db_st.departure_status,
-                                        delay=db_st.departure_delay)
-            else:
-                # we store the base's schedule
-                res_st.update_departure(time=departure, status='none', delay=None)
-            if new_st.departure_status == 'delete':
-                # passing status delete on the stoptime
-                # Note: we keep providing base_schedule stoptime to better identify the stoptime
-                # in the vj (for lolipop lines for example)
-                res_st.update_departure(status='delete')
+        stop_id = navitia_stop.get('stop_point', {}).get('id')
+        new_st = new_trip_update.find_stop(stop_id)
 
-            if new_st.arrival_status == 'update':
-                arr = arrival + new_st.arrival_delay if arrival else None
-                res_st.update_arrival(time=arr, status='update', delay=new_st.arrival_delay)
-            elif db_st is not None:
-                res_st.update_arrival(time=db_st.arrival,
-                                      status=db_st.arrival_status,
-                                      delay=db_st.arrival_delay)
-            else:
-                # we store the base's schedule
-                res_st.update_arrival(time=arrival, status='none', delay=None)
+        if db_trip_update is not None and new_st is not None:
+            """
+            First case: we already have recorded the delay and we find update info in the new trip update
+            Then      : we should probably update it or not if the input info is exactly the same as the one in db
+            """
+            db_st = db_trip_update.find_stop(stop_id)
+            new_st_update = _make_stop_time_update(base_arrival,
+                                                   base_departure,
+                                                   last_departure,
+                                                   new_st,
+                                                   navitia_stop['stop_point'],
+                                                   order=len(res_stoptime_updates))
+            has_changes |= (db_st is None) or db_st.is_ne(new_st_update)
+            res_st = new_st_update if has_changes else db_st
 
-            if new_st.arrival_status == 'delete':
-                res_st.update_arrival(status='delete')
-
+        elif db_trip_update is None and new_st is not None:
+            """
+            Second case: we have not yet recorded the delay
+            Then       : it's time to create one in the db
+            """
+            has_changes = True
+            res_st = _make_stop_time_update(base_arrival,
+                                            base_departure,
+                                            last_departure,
+                                            new_st,
+                                            navitia_stop['stop_point'],
+                                            order=len(res_stoptime_updates))
             res_st.message = new_st.message
-            # we might need to update the st's order
-            res_st.order = len(res_stoptime_updates)
-            res_stoptime_updates.append(res_st)
-        elif db_st is not None:
-            db_st.order = len(res_stoptime_updates)
-            res_stoptime_updates.append(db_st)
-        else:
-            # nothing in db and in new trip update, we take the base schedule
-            new_st = StopTimeUpdate(navitia_stop['stop_point'], departure=departure, arrival=arrival)
-            new_st.order = len(res_stoptime_updates)
-            res_stoptime_updates.append(new_st)
 
+        elif db_trip_update is not None and new_st is None:
+            """
+            Third case: we have already recorded a delay but nothing is mentioned in the new trip update
+            Then      : For IRE, we do nothing but only update stop time's order
+                        For gtfs-rt, according to the specification, we should use the delay from the previous
+                        stop time, which will be handled sooner by the connector-specified model maker
+                        
+                        *** Here, we MUST NOT do anything, only update stop time's order ***
+            """
+            db_st = db_trip_update.find_stop(stop_id)
+            res_st = db_st if db_st is not None else StopTimeUpdate(navitia_stop['stop_point'],
+                                                                    departure=base_departure,
+                                                                    arrival=base_arrival,
+                                                                    order=len(res_stoptime_updates))
+            new_order = len(res_stoptime_updates)
+            # We need to deal with this case more carefully, this won't work if the trip is a lollipop 
+            has_changes |= (db_st is None) or db_st.order != new_order
+            res_st.order = new_order
+
+        else:
+            """
+            Last case: nothing is recorded yet and there is no update info in the new trip update
+            Then     : take the base schedule's arrival/departure time and let's create a whole new world!
+            """
+            has_changes = True
+            res_st = StopTimeUpdate(navitia_stop['stop_point'],
+                                    departure=base_departure,
+                                    arrival=base_arrival,
+                                    order=len(res_stoptime_updates))
+
+        last_departure = res_st.departure
+        res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
 
-    res.stop_time_updates = res_stoptime_updates
+    if has_changes:
+        res.stop_time_updates = res_stoptime_updates
+        return res
 
-    return res
+    return None
 
 
 def publish(feed, contributor):

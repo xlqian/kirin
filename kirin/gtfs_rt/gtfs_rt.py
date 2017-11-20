@@ -70,8 +70,6 @@ class GtfsRT(Resource):
             proto.ParseFromString(raw_proto)
         except DecodeError:
             raise InvalidArguments('invalid protobuf')
-
-        proto.ParseFromString(raw_proto)
-        model_maker.handle(proto, self.navitia_wrapper, self.contributor)
-
-        return 'OK', 200
+        else:
+            model_maker.handle(proto, self.navitia_wrapper, self.contributor)
+            return 'OK', 200
