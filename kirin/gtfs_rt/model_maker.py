@@ -223,7 +223,7 @@ class KirinModelBuilder(object):
         arr_delay = read_delay(input_st_update.arrival)
         dep_status = 'none' if dep_delay is None else 'update'
         arr_status = 'none' if arr_delay is None else 'update'
-        #order of stop_times in navitia starts from (index=0) where as trip_update.stop_time_update.stop_sequence
+        #order of stop_times in navitia starts from (index=0) whereas trip_update.stop_time_update.stop_sequence
         #starts from 1 for the first stop of the trip.
         order = input_st_update.stop_sequence - 1
 
@@ -233,7 +233,7 @@ class KirinModelBuilder(object):
         return st_update
 
     def _get_navitia_stop_time(self, input_st_update, navitia_vj):
-        # To handle a vj with the same stop served multiple times(lollypop) we match the stop_point and order of navitia
+        # To handle a vj with the same stop served multiple times(lollipop) we match the stop_point and order of navitia
         # with stop_id and stop_sequence of trip_update of gtfs-rt
         for order, s in enumerate(navitia_vj.get('stop_times', [])):
             if any(c['type'] == self.stop_code_key and c['value'] == input_st_update.stop_id

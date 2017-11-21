@@ -610,8 +610,19 @@ def test_gtfs_rt_partial_update_diff_feed_2(partial_update_gtfs_rt_data_2,
                 assert len(trip_update.real_time_updates) == 1
 
 
+'''
+vj.stop_times:  StopR1	StopR2	StopR3	StopR2	StopR4
+order:          0       1       2       3       4
+
+gtfs-rt.stop:   StopR1  StopR2  StopR3  StopR2   StopR4
+stop_sequence:  1       2       3       4           5
+
+Stop-Match:     StopR1	StopR2	StopR3	StopR2	StopR4
+order:          0       1       2       3       4
+status:         Delay   Delay   Delay   None    None
+'''
 @pytest.fixture()
-def lollypop_gtfs_rt_data():
+def lollipop_gtfs_rt_data():
     feed = gtfs_realtime_pb2.FeedMessage()
 
     feed.header.gtfs_realtime_version = "1.0"
@@ -621,7 +632,7 @@ def lollypop_gtfs_rt_data():
     entity = feed.entity.add()
     entity.id = 'bob'
     trip_update = entity.trip_update
-    trip_update.trip.trip_id = "Code-lollypop"
+    trip_update.trip.trip_id = "Code-lollipop"
 
     #arrival and departure in vehiclejourney 100000
     stu = trip_update.stop_time_update.add()
@@ -661,14 +672,14 @@ def lollypop_gtfs_rt_data():
     return feed
 
 
-def test_gtfs_lollypop_model_builder(lollypop_gtfs_rt_data):
+def test_gtfs_lollipop_model_builder(lollipop_gtfs_rt_data):
     """
-    test the model builder with a lollypop gtfs-rt
+    test the model builder with a lollipop gtfs-rt
     """
     with app.app_context():
         data = ''
         rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
-        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, lollypop_gtfs_rt_data)
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, lollipop_gtfs_rt_data)
 
         # we associate the trip_update manually for sqlalchemy to make the links
         rt_update.trip_updates = trip_updates
@@ -719,8 +730,20 @@ def test_gtfs_lollypop_model_builder(lollypop_gtfs_rt_data):
         assert fifth_stop.message is None
 
         feed = convert_to_gtfsrt(trip_updates)
-        assert feed.entity[0].trip_update.trip.start_date == u'20120615' #must be UTC start date
+        assert feed.entity[0].trip_update.trip.start_date == u'20120615'
 
+
+'''
+vj.stop_times:  StopR1	StopR2	StopR3	StopR4	StopR5	StopR6
+order:          0       1       2       3       4       5
+
+gtfs-rt.stop:           StopR2  StopR3  Stop-RT-1   StopR4  StopR6
+stop_sequence:          2       3       4           5       6
+
+Stop-Match:     StopR1	StopR2	StopR3	StopR4	StopR5	StopR6
+order:          0       1       2       3       4       5
+status:         None    Delay   Delay   None    None   None
+'''
 @pytest.fixture()
 def bad_ordered_gtfs_rt_data():
     feed = gtfs_realtime_pb2.FeedMessage()
@@ -755,7 +778,7 @@ def bad_ordered_gtfs_rt_data():
     stu.stop_sequence = 4
     stu.stop_id = "Code-Stop-RT-1"
 
-    #stop laso present in vehiclejourney but since it's order doesn't match with stop_sequence, will be rejected.
+    #stop also present in vehiclejourney but since its order doesn't match with stop_sequence, will be rejected.
     stu = trip_update.stop_time_update.add()
     stu.arrival.delay = 120
     stu.departure.delay = 120
@@ -844,7 +867,6 @@ def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
             assert first_stop.stop_id == 'StopR1'
             assert first_stop.arrival_status == 'none'
             assert first_stop.arrival_delay == timedelta(0)
-            # 23:30 in local + 4h to get it in UTC + 1minute of delay
             assert first_stop.arrival == datetime.datetime(2012, 6, 15, 14, 00)
             assert first_stop.departure_delay == timedelta(0)
             assert first_stop.departure_status == 'none'
@@ -909,7 +931,7 @@ def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
     check(nb_rt_update=2)
 
 
-def test_gtfs_lollypop_model_builder_with_post(lollypop_gtfs_rt_data):
+def test_gtfs_lollipop_model_builder_with_post(lollipop_gtfs_rt_data):
     """
     test the model builder with stops served more than once
 
@@ -918,7 +940,7 @@ def test_gtfs_lollypop_model_builder_with_post(lollypop_gtfs_rt_data):
 
     """
     tester = app.test_client()
-    resp = tester.post('/gtfs_rt', data=lollypop_gtfs_rt_data.SerializeToString())
+    resp = tester.post('/gtfs_rt', data=lollipop_gtfs_rt_data.SerializeToString())
     assert resp.status_code == 200
 
     def check(nb_rt_update):
@@ -933,12 +955,10 @@ def test_gtfs_lollypop_model_builder_with_post(lollypop_gtfs_rt_data):
 
             assert trip_update.vj.get_start_timestamp() == datetime.datetime(2012, 6, 15, 14, 00, tzinfo=utc)
 
-            # navitia's time are in local, but we return UTC time, and the stop is in sherbrooke, so UTC-4h
             first_stop = trip_update.stop_time_updates[0]
             assert first_stop.stop_id == 'StopR1'
             assert first_stop.arrival_status == 'update'
             assert first_stop.arrival_delay == timedelta(minutes=1)
-            # 23:30 in local + 4h to get it in UTC + 1minute of delay
             assert first_stop.arrival == datetime.datetime(2012, 6, 15, 14, 01)
             assert first_stop.departure_delay == timedelta(minutes=1)
             assert first_stop.departure_status == 'update'
@@ -988,7 +1008,7 @@ def test_gtfs_lollypop_model_builder_with_post(lollypop_gtfs_rt_data):
     check(nb_rt_update=1)
 
     # Now we apply exactly the same gtfs-rt, the new gtfs-rt will be save into the db,
-    # which increment the nb of RealTimeUpdate, but the rest remains the same
-    resp = tester.post('/gtfs_rt', data=lollypop_gtfs_rt_data.SerializeToString())
+    # which increment the nb of RealTimeUpdate, but every else remains the same
+    resp = tester.post('/gtfs_rt', data=lollipop_gtfs_rt_data.SerializeToString())
     assert resp.status_code == 200
     check(nb_rt_update=2)

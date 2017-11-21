@@ -301,7 +301,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                    last_departure,
                                                    new_st,
                                                    navitia_stop['stop_point'],
-                                                   order=len(res_stoptime_updates))
+                                                   order=nav_order)
             has_changes |= (db_st is None) or db_st.is_ne(new_st_update)
             res_st = new_st_update if has_changes else db_st
 
@@ -316,7 +316,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                             last_departure,
                                             new_st,
                                             navitia_stop['stop_point'],
-                                            order= nav_order)
+                                            order=nav_order)
             res_st.message = new_st.message
 
         elif db_trip_update is not None and new_st is None:
@@ -333,11 +333,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
                                                                     departure=base_departure,
                                                                     arrival=base_arrival,
                                                                     order=nav_order)
-            new_order = len(res_stoptime_updates)
-            # We need to deal with this case more carefully, this won't work if the trip is a lollipop 
-            has_changes |= (db_st is None) or db_st.order != new_order
-            #res_st.order = new_order
-
+            has_changes |= (db_st is None)
         else:
             """
             Last case: nothing is recorded yet and there is no update info in the new trip update
@@ -347,9 +343,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
             res_st = StopTimeUpdate(navitia_stop['stop_point'],
                                     departure=base_departure,
                                     arrival=base_arrival,
-                                    order = nav_order)
+                                    order=nav_order)
 
-        res_st.order = nav_order
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
         last_nav_dep = nav_departure_time
