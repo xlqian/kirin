@@ -105,16 +105,16 @@ response.json_response = '''
                         "id": "StopR1", 
                         "label": "StopR1", 
                         "links": [], 
-                        "name": "StopR1", 
+                        "name": "StopR1",
                         "stop_area": {
                             "coord": {
-                                "lat": "0", 
+                                "lat": "0",
                                 "lon": "0"
-                            }, 
-                            "id": "StopR1", 
-                            "label": "StopR1", 
-                            "links": [], 
-                            "name": "StopR1", 
+                            },
+                            "id": "StopR1",
+                            "label": "StopR1",
+                            "links": [],
+                            "name": "StopR1",
                             "timezone": "America/Montreal"
                         }
                     }
@@ -198,12 +198,12 @@ response.json_response = '''
                     }
                 },
                 {
-                    "arrival_time": "104000",
-                    "departure_time": "104000",
-                    "headsign": "R:vj1", 
+                    "arrival_time": "103000",
+                    "departure_time": "103000",
+                    "headsign": "R:vj1",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:17"
-                    }, 
+                    },
                     "stop_point": {
                         "codes": [
                             {

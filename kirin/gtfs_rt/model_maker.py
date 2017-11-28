@@ -105,6 +105,27 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
+    def _match_gtfsrt(self, main_list, sublist):
+        if len(sublist) > len(main_list):
+            return False, -1
+        if main_list == sublist:
+            return True, 0
+        if sublist == main_list[len(main_list) - len(sublist):len(main_list)]:
+            return True, (len(main_list) - len(sublist))
+        return False, -1
+
+    def _fill_vj_stop_codes(self, navitia_vj):
+        #list of vj.stops
+        vj_stop_codes = []
+        vj_stop_points = []
+        for s in navitia_vj.navitia_vj.get('stop_times', []):
+            for c in s.get('stop_point', {}).get('codes', []):
+                if c['type'] == self.stop_code_key:
+                    vj_stop_codes.append(c['value'])
+                    vj_stop_points.append(s.get('stop_point'))
+                    continue
+        return vj_stop_codes, vj_stop_points
+
     def _make_trip_updates(self, input_trip_update, data_time):
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
 
@@ -113,8 +134,28 @@ class KirinModelBuilder(object):
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
             trip_updates.append(trip_update)
+            tu_stops = [st.stop_id for st in input_trip_update.stop_time_update]
 
-            for input_st_update in input_trip_update.stop_time_update:
+            vj_stop_codes, vj_stop_points = self._fill_vj_stop_codes(vj)
+            gtfs_rt_matched, first_index = self._match_gtfsrt(vj_stop_codes, tu_stops)
+
+            if not gtfs_rt_matched:
+                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
+                               .format(input_trip_update.trip.trip_id))
+                record_internal_failure('stop_time_update do not match with stops in navitia',
+                                        contributor=self.contributor)
+                continue
+
+            #Initialize stops absent in trip_updates but present in vj
+            for order, stop in enumerate(vj_stop_points):
+                if order < first_index:
+                    st_update = self._init_stop_update(stop, order)
+                    if st_update is not None:
+                        trip_update.stop_time_updates.append(st_update)
+
+            #Manage stops present in gtfs_rt and navitia_vj
+            for order, input_st_update in enumerate(input_trip_update.stop_time_update):
+                input_st_update.stop_sequence = first_index + order
                 st_update = self._make_stoptime_update(input_st_update, vj.navitia_vj)
                 if st_update is None:
                     continue
@@ -203,8 +244,13 @@ class KirinModelBuilder(object):
 
         return self._make_db_vj(vj_source_code, since, until)
 
+    def _init_stop_update(self, nav_stop, stop_sequence):
+        st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
+                                         dep_status='none', arr_status='none', order=stop_sequence)
+        return st_update
+
     def _make_stoptime_update(self, input_st_update, navitia_vj):
-        nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
+        nav_st = self._get_navitia_stop_time(input_st_update.stop_id, input_st_update.stop_sequence, navitia_vj)
 
         if nav_st is None:
             self.log.info('impossible to find stop point {} in the vj {}, skipping it'.format(
@@ -225,19 +271,17 @@ class KirinModelBuilder(object):
         arr_status = 'none' if arr_delay is None else 'update'
         #order of stop_times in navitia starts from (index=0) whereas trip_update.stop_time_update.stop_sequence
         #starts from 1 for the first stop of the trip.
-        order = input_st_update.stop_sequence - 1
-
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status, order=order)
+                                         dep_status=dep_status, arr_status=arr_status, order=input_st_update.stop_sequence)
 
         return st_update
 
-    def _get_navitia_stop_time(self, input_st_update, navitia_vj):
+    def _get_navitia_stop_time(self, stop_id, stop_sequence, navitia_vj):
         # To handle a vj with the same stop served multiple times(lollipop) we match the stop_point and order of navitia
         # with stop_id and stop_sequence of trip_update of gtfs-rt
         for order, s in enumerate(navitia_vj.get('stop_times', [])):
-            if any(c['type'] == self.stop_code_key and c['value'] == input_st_update.stop_id
-                   and (order == input_st_update.stop_sequence - 1)
+            if any(c['type'] == self.stop_code_key and c['value'] == stop_id
+                   and (order == stop_sequence)
                    for c in s.get('stop_point', {}).get('codes', [])):
                 return s
         return None
