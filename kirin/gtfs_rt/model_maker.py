@@ -105,6 +105,11 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
+    '''
+    We verify  strict match list of trip_update stop codes(trip_update_stop_list) with the list of vehiclejourney
+    stop codes(vehicle_journey_stop_list) from the last element towards the left the left. if trip_update_stop_list is
+    a subset of vehicle_journey_stop_list from the last element, the gtfs-rt trip update is valid for treatment.
+    '''
     def _match_gtfsrt(self, main_list, sublist):
         if len(sublist) > len(main_list):
             return False, -1
@@ -269,10 +274,9 @@ class KirinModelBuilder(object):
         arr_delay = read_delay(input_st_update.arrival)
         dep_status = 'none' if dep_delay is None else 'update'
         arr_status = 'none' if arr_delay is None else 'update'
-        #order of stop_times in navitia starts from (index=0) whereas trip_update.stop_time_update.stop_sequence
-        #starts from 1 for the first stop of the trip.
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status, order=input_st_update.stop_sequence)
+                                         dep_status=dep_status, arr_status=arr_status,
+                                         order=input_st_update.stop_sequence)
 
         return st_update
 

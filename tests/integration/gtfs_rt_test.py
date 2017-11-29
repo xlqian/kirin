@@ -673,7 +673,7 @@ def lollipop_gtfs_rt_data():
 
     feed.header.gtfs_realtime_version = "1.0"
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
-    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=9))
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
 
     entity = feed.entity.add()
     entity.id = 'bob'
@@ -786,6 +786,7 @@ order:          0       1       2       3           4       5
 gtfs-rt.stop:           StopR2  StopR3  Stop-RT-1   StopR4  StopR6
 stop_sequence:          2       3       4           5       6
 
+Since two lists above do not match from the last element towards left, we reject this trip update.
 Stop-Match:     None
 '''
 @pytest.fixture()
@@ -794,7 +795,7 @@ def bad_ordered_gtfs_rt_data():
 
     feed.header.gtfs_realtime_version = "1.0"
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
-    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=9))
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
 
     entity = feed.entity.add()
     entity.id = 'bob'
@@ -972,7 +973,7 @@ def lollipop_gtfs_rt_from_second_passage_data():
 
     feed.header.gtfs_realtime_version = "1.0"
     feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
-    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=9))
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
 
     entity = feed.entity.add()
     entity.id = 'bob'
