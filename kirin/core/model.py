@@ -278,7 +278,8 @@ class TripUpdate(db.Model, TimestampMixin):
     def find_stop(self, stop_id, order=None):
         # To handle a vj with the same stop served multiple times(lollipop) we search first with stop_id and order
         # For IRE since we dont care of the order search only with stop_id if no element found
-        # Note: Stops with mis-matched order between navitia-II and gtfs-rt are ignored in model_maker
+        # Note: if the trip_update stops list is not a strict ending sublist of stops list of navitia_vj
+        # then the whole trip is ignored in model_maker.
         first = next((st for st in self.stop_time_updates
                       if st.stop_id == stop_id and st.order == order), None)
         if first:

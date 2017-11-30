@@ -1139,3 +1139,53 @@ def test_gtfs_lollipop_with_second_passage_model_builder_with_post(lollipop_gtfs
     resp = tester.post('/gtfs_rt', data=lollipop_gtfs_rt_from_second_passage_data.SerializeToString())
     assert resp.status_code == 200
     check(nb_rt_update=2)
+
+
+def test_matching_lists():
+    """
+    tests that a list is a strict ending sublist of another list
+    """
+    with app.app_context():
+        main_list = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']
+        sub_list = ['S4', 'S5', 'S6']
+        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
+        assert is_sublist is True
+        assert start_index == 3
+
+
+def test_mismatching_lists_1():
+    """
+    tests that a list is not  a strict ending sublist of another list
+    """
+    with app.app_context():
+        main_list = ['S1', 'S2', 'S3', 'S4', 'S5']
+        sub_list = ['S4', 'S5', 'S6']
+        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
+        assert is_sublist is False
+        assert start_index == -1
+
+
+def test_mismatching_lists_2():
+    """
+    tests that a list is not  a strict ending sublist of another list
+    """
+    with app.app_context():
+        main_list = ['S1', 'S2', 'S3', 'S4', 's6']
+        sub_list = ['S4', 'S5', 'S6']
+        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
+        assert is_sublist is False
+        assert start_index == -1
+
+def test_mismatching_lists_3():
+    """
+    tests that a list is not  a strict ending sublist of another list
+    """
+    with app.app_context():
+        main_list = ['S1', 'S2', 'S3', 'S4', 'S5', 's6']
+        sub_list = ['S1', 'S2', 'S3', 'S4']
+        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
+        assert is_sublist is False
+        assert start_index == -1
+
+
+

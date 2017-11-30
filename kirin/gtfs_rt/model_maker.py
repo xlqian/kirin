@@ -105,31 +105,27 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
-    '''
-    We verify  strict match list of trip_update stop codes(trip_update_stop_list) with the list of vehiclejourney
-    stop codes(vehicle_journey_stop_list) from the last element towards the left the left. if trip_update_stop_list is
-    a subset of vehicle_journey_stop_list from the last element, the gtfs-rt trip update is valid for treatment.
-    '''
-    def _match_gtfsrt(self, main_list, sublist):
+    def _is_ending_sublist(self, main_list, sublist):
+        """
+        The trip_update stop list must be a strict ending sublist of of stops list of navitia_vj
+        """
         if len(sublist) > len(main_list):
             return False, -1
-        if main_list == sublist:
-            return True, 0
-        if sublist == main_list[len(main_list) - len(sublist):len(main_list)]:
+        if main_list[len(main_list) - len(sublist):] == sublist:
             return True, (len(main_list) - len(sublist))
         return False, -1
 
-    def _fill_vj_stop_codes(self, navitia_vj):
+    def _extract_stop_codes(self, navitia_vj):
         #list of vj.stops
-        vj_stop_codes = []
+        vj_stop_source_codes = []
         vj_stop_points = []
-        for s in navitia_vj.navitia_vj.get('stop_times', []):
+        for s in navitia_vj.get('stop_times', []):
             for c in s.get('stop_point', {}).get('codes', []):
                 if c['type'] == self.stop_code_key:
-                    vj_stop_codes.append(c['value'])
+                    vj_stop_source_codes.append(c['value'])
                     vj_stop_points.append(s.get('stop_point'))
                     continue
-        return vj_stop_codes, vj_stop_points
+        return vj_stop_source_codes, vj_stop_points
 
     def _make_trip_updates(self, input_trip_update, data_time):
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
@@ -139,12 +135,12 @@ class KirinModelBuilder(object):
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
             trip_updates.append(trip_update)
-            tu_stops = [st.stop_id for st in input_trip_update.stop_time_update]
+            tu_stop_ids = [st.stop_id for st in input_trip_update.stop_time_update]
 
-            vj_stop_codes, vj_stop_points = self._fill_vj_stop_codes(vj)
-            gtfs_rt_matched, first_index = self._match_gtfsrt(vj_stop_codes, tu_stops)
+            vj_stop_source_codes, vj_stop_points = self._extract_stop_codes(vj.navitia_vj)
+            is_gtfs_rt_matched, first_index = self._is_ending_sublist(vj_stop_source_codes, tu_stop_ids)
 
-            if not gtfs_rt_matched:
+            if not is_gtfs_rt_matched:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
                                .format(input_trip_update.trip.trip_id))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
@@ -152,16 +148,17 @@ class KirinModelBuilder(object):
                 continue
 
             #Initialize stops absent in trip_updates but present in vj
-            for order, stop in enumerate(vj_stop_points):
+            for order, nav_stop in enumerate(vj_stop_points):
                 if order < first_index:
-                    st_update = self._init_stop_update(stop, order)
+                    st_update = self._init_stop_update(nav_stop, order)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
 
             #Manage stops present in gtfs_rt and navitia_vj
             for order, input_st_update in enumerate(input_trip_update.stop_time_update):
                 input_st_update.stop_sequence = first_index + order
-                st_update = self._make_stoptime_update(input_st_update, vj.navitia_vj)
+                nav_stop = vj_stop_points[first_index + order]
+                st_update = self._make_stoptime_update(input_st_update, nav_stop)
                 if st_update is None:
                     continue
                 trip_update.stop_time_updates.append(st_update)
@@ -254,17 +251,7 @@ class KirinModelBuilder(object):
                                          dep_status='none', arr_status='none', order=stop_sequence)
         return st_update
 
-    def _make_stoptime_update(self, input_st_update, navitia_vj):
-        nav_st = self._get_navitia_stop_time(input_st_update.stop_id, input_st_update.stop_sequence, navitia_vj)
-
-        if nav_st is None:
-            self.log.info('impossible to find stop point {} in the vj {}, skipping it'.format(
-                input_st_update.stop_id, navitia_vj.get('id')))
-            record_internal_failure('missing stop point', contributor=self.contributor)
-            return None
-
-        nav_stop = nav_st.get('stop_point', {})
-
+    def _make_stoptime_update(self, input_st_update, nav_stop):
         # TODO handle delay uncertainty
         # TODO handle schedule_relationship
         def read_delay(st_event):
@@ -279,13 +266,3 @@ class KirinModelBuilder(object):
                                          order=input_st_update.stop_sequence)
 
         return st_update
-
-    def _get_navitia_stop_time(self, stop_id, stop_sequence, navitia_vj):
-        # To handle a vj with the same stop served multiple times(lollipop) we match the stop_point and order of navitia
-        # with stop_id and stop_sequence of trip_update of gtfs-rt
-        for order, s in enumerate(navitia_vj.get('stop_times', [])):
-            if any(c['type'] == self.stop_code_key and c['value'] == stop_id
-                   and (order == stop_sequence)
-                   for c in s.get('stop_point', {}).get('codes', [])):
-                return s
-        return None
