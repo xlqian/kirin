@@ -113,7 +113,7 @@ class KirinModelBuilder(object):
             for c in s.get('stop_point', {}).get('codes', []):
                 if c['type'] == self.stop_code_key:
                     vj_sp_with_code.append((c['value'], s.get('stop_point')))
-                    continue
+                    break
         return vj_sp_with_code
 
     def _make_trip_updates(self, input_trip_update, data_time):
@@ -135,18 +135,17 @@ class KirinModelBuilder(object):
 
             vj_sp_with_code = self._extract_stop_codes(vj.navitia_vj)
             vj_stop_order = len(vj_sp_with_code) - 1
+            is_tu_valid = True
             for vj_stop, tu_stop in itertools.izip_longest(reversed(vj_sp_with_code),
                                                            reversed(input_trip_update.stop_time_update)):
+                if vj_stop is None:
+                    is_tu_valid = False
+                    break
                 nav_stop = vj_stop[1]
                 if tu_stop is not None:
 
                     if vj_stop[0] != tu_stop.stop_id:
-                        self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
-                                       .format(input_trip_update.trip.trip_id))
-                        record_internal_failure('stop_time_update do not match with stops in navitia',
-                                                contributor=self.contributor)
-                        del trip_update.stop_time_updates[:]
-                        trip_update.status == 'none'
+                        is_tu_valid = False
                         break
 
                     tu_stop.stop_sequence = vj_stop_order
@@ -159,6 +158,14 @@ class KirinModelBuilder(object):
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
                 vj_stop_order -= 1
+
+            if not is_tu_valid:
+                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
+                               .format(input_trip_update.trip.trip_id))
+                record_internal_failure('stop_time_update do not match with stops in navitia',
+                                        contributor=self.contributor)
+                del trip_update.stop_time_updates[:]
+                trip_update.status == 'none'
 
         return trip_updates
 

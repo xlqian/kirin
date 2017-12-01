@@ -1155,3 +1155,58 @@ def test_gtfs_lollipop_with_second_passage_model_builder_with_post(lollipop_gtfs
     assert resp.status_code == 200
     check(nb_rt_update=2)
 
+@pytest.fixture()
+def gtfs_rt_data_with_more_stops():
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 0
+    stu.stop_sequence = 0
+    stu.stop_id = "Code-StopR0"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 0
+    stu.stop_sequence = 1
+    stu.stop_id = "Code-StopR1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 60
+    stu.stop_sequence = 2
+    stu.stop_id = "Code-StopR2"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 0
+    stu.stop_sequence = 3
+    stu.stop_id = "Code-StopR3"
+
+    stu = trip_update.stop_time_update.add()
+    stu.arrival.delay = 180
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR4"
+
+    return feed
+
+def test_gtfs_more_stops_model_builder(gtfs_rt_data_with_more_stops):
+    """
+    test the model builder with gtfs-rt having more stops than in vj
+    """
+    with app.app_context():
+        data = ''
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, gtfs_rt_data_with_more_stops)
+
+        rt_update.trip_updates = trip_updates
+        db.session.add(rt_update)
+        db.session.commit()
+
+        assert len(trip_updates) == 1
+        assert len(trip_updates[0].stop_time_updates) == 0
