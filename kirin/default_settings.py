@@ -165,8 +165,8 @@ TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2).total_
 CELERYBEAT_SCHEDULE = {
     'poller': {
         'task': 'kirin.tasks.poller',
-        'schedule': timedelta(seconds=60),
-        'options': {'expires': 30}
+        'schedule': timedelta(seconds=1),
+        'options': {'expires': 1}
     },
     'purge_gtfs_trip_update': {
         'task': 'kirin.tasks.purge_gtfs_trip_update',

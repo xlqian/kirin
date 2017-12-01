@@ -80,11 +80,22 @@ def record_custom_event(event_type, params):
 
 def ignore():
     """
-    the transaction won't be sent to newrelic
+    the transaction will be suppressed by newrelic
     """
     if agent:
         try:
             agent.suppress_transaction_trace()
+        except:
+            logger = logging.getLogger(__name__)
+            logger.exception('failure while suppressing transaction')
+
+def ignore_transaction():
+    """
+    the transaction will be ignored by newrelic
+    """
+    if agent:
+        try:
+            agent.ignore_transaction()
         except:
             logger = logging.getLogger(__name__)
             logger.exception('failure while ignoring transaction')
