@@ -108,17 +108,13 @@ class KirinModelBuilder(object):
 
     def _extract_stop_codes(self, navitia_vj):
         #list of vj.stops
-        vj_stop_source_codes = []
-        vj_stop_points = []
         vj_sp_with_code = []
         for s in navitia_vj.get('stop_times', []):
             for c in s.get('stop_point', {}).get('codes', []):
                 if c['type'] == self.stop_code_key:
-                    vj_stop_source_codes.append(c['value'])
-                    vj_stop_points.append(s.get('stop_point'))
                     vj_sp_with_code.append((c['value'], s.get('stop_point')))
                     continue
-        return vj_stop_source_codes, vj_stop_points, vj_sp_with_code
+        return vj_sp_with_code
 
     def _make_trip_updates(self, input_trip_update, data_time):
         """
@@ -137,7 +133,7 @@ class KirinModelBuilder(object):
             trip_update.contributor = self.contributor
             trip_updates.append(trip_update)
 
-            vj_stop_sc, vj_sps, vj_sp_with_code = self._extract_stop_codes(vj.navitia_vj)
+            vj_sp_with_code = self._extract_stop_codes(vj.navitia_vj)
             vj_stop_order = len(vj_sp_with_code) - 1
             for vj_stop, tu_stop in itertools.izip_longest(reversed(vj_sp_with_code),
                                                            reversed(input_trip_update.stop_time_update)):
