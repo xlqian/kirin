@@ -39,6 +39,7 @@ from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
 from kirin import app
+import itertools
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -105,29 +106,29 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
-    def _is_ending_sublist(self, main_list, sublist):
-        """
-        The trip_update stop list must be a strict ending sublist of of stops list of navitia_vj
-        """
-        if len(sublist) > len(main_list):
-            return False, -1
-        if main_list[len(main_list) - len(sublist):] == sublist:
-            return True, (len(main_list) - len(sublist))
-        return False, -1
-
     def _extract_stop_codes(self, navitia_vj):
         #list of vj.stops
         vj_stop_source_codes = []
         vj_stop_points = []
+        vj_sp_with_code = []
         for s in navitia_vj.get('stop_times', []):
             for c in s.get('stop_point', {}).get('codes', []):
                 if c['type'] == self.stop_code_key:
                     vj_stop_source_codes.append(c['value'])
                     vj_stop_points.append(s.get('stop_point'))
+                    vj_sp_with_code.append((c['value'], s.get('stop_point')))
                     continue
-        return vj_stop_source_codes, vj_stop_points
+        return vj_stop_source_codes, vj_stop_points, vj_sp_with_code
 
     def _make_trip_updates(self, input_trip_update, data_time):
+        """
+        If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
+        On the other hand:
+        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging informations
+        with that of navitia stop
+        2. For the stop point absent in trip_update.stop_time_updates we initialize a trip_update with
+        that navitia stop
+        """
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
 
         trip_updates = []
@@ -135,33 +136,33 @@ class KirinModelBuilder(object):
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
             trip_updates.append(trip_update)
-            tu_stop_ids = [st.stop_id for st in input_trip_update.stop_time_update]
 
-            vj_stop_source_codes, vj_stop_points = self._extract_stop_codes(vj.navitia_vj)
-            is_gtfs_rt_matched, first_index = self._is_ending_sublist(vj_stop_source_codes, tu_stop_ids)
+            vj_stop_sc, vj_sps, vj_sp_with_code = self._extract_stop_codes(vj.navitia_vj)
+            vj_stop_order = len(vj_sp_with_code) - 1
+            for vj_stop, tu_stop in itertools.izip_longest(reversed(vj_sp_with_code),
+                                                           reversed(input_trip_update.stop_time_update)):
+                nav_stop = vj_stop[1]
+                if tu_stop is not None:
 
-            if not is_gtfs_rt_matched:
-                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
-                               .format(input_trip_update.trip.trip_id))
-                record_internal_failure('stop_time_update do not match with stops in navitia',
-                                        contributor=self.contributor)
-                continue
+                    if vj_stop[0] != tu_stop.stop_id:
+                        self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
+                                       .format(input_trip_update.trip.trip_id))
+                        record_internal_failure('stop_time_update do not match with stops in navitia',
+                                                contributor=self.contributor)
+                        del trip_update.stop_time_updates[:]
+                        trip_update.status == 'none'
+                        break
 
-            #Initialize stops absent in trip_updates but present in vj
-            for order, nav_stop in enumerate(vj_stop_points):
-                if order < first_index:
-                    st_update = self._init_stop_update(nav_stop, order)
+                    tu_stop.stop_sequence = vj_stop_order
+                    st_update = self._make_stoptime_update(tu_stop, nav_stop)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
-
-            #Manage stops present in gtfs_rt and navitia_vj
-            for order, input_st_update in enumerate(input_trip_update.stop_time_update):
-                input_st_update.stop_sequence = first_index + order
-                nav_stop = vj_stop_points[first_index + order]
-                st_update = self._make_stoptime_update(input_st_update, nav_stop)
-                if st_update is None:
-                    continue
-                trip_update.stop_time_updates.append(st_update)
+                else:
+                    #Initialize stops absent in trip_updates but present in vj
+                    st_update = self._init_stop_update(nav_stop, vj_stop_order)
+                    if st_update is not None:
+                        trip_update.stop_time_updates.append(st_update)
+                vj_stop_order -= 1
 
         return trip_updates
 

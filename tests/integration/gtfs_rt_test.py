@@ -117,8 +117,9 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
     """
     test the model builder with a simple gtfs-rt
 
-    we have realtime data on only 2 stops, so the model builder should only have 2 stops (even if the VJ
+    we have realtime data on only 3 stops, so the model builder should only have 3 stops (even if the VJ
     have 4 stops)
+    Note: The trip_update stop list is a strict ending sublist of of stops list of navitia_vj
     """
     with app.app_context():
         data = ''
@@ -157,7 +158,7 @@ def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
     """
     test the gtfs-rt post with a simple gtfs-rt
 
-    we have realtime data on only 2 stops, so the model builder should only have 2 stops (even if the VJ
+    we have realtime data on only 3 stops, so the model builder should only have 3 stops (even if the VJ
     have 4 stops)
 
     after the merge, we should have 4 stops (and only 2 delayed)
@@ -333,9 +334,9 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
     """
     test the gtfs-rt post with a pass-midnight gtfs-rt
 
-    we have realtime data on only the 4 stops
+    we have realtime data on only the 5 stops
 
-    after the merge, we should have 4 stops properly delayed
+    after the merge, we should have 5 stops properly delayed
     """
     tester = app.test_client()
     resp = tester.post('/gtfs_rt', data=pass_midnight_gtfs_rt_data.SerializeToString())
@@ -661,7 +662,7 @@ gtfs-rt.stop:   StopR1  StopR2  StopR3  StopR2  StopR4
 stop_sequence:  1       2       3       4       5
 Status:         Delay   Delay   Delay   None    None
 
-We match above two list from last element towards left and if all the stop codes match perfectly then we merge
+Since the gtfs-rt.stop list is a strict ending sublist of vj.stop_times we merge
 informations of each trip update stop with that of navitia vj
 Stop-Match:     StopR1	StopR2	StopR3	StopR2	StopR4
 order:          0       1       2       3       4
@@ -786,7 +787,7 @@ order:          0       1       2       3           4       5
 gtfs-rt.stop:           StopR2  StopR3  Stop-RT-1   StopR4  StopR6
 stop_sequence:          2       3       4           5       6
 
-Since two lists above do not match from the last element towards left, we reject this trip update.
+Since the gtfs-rt.stop list is a strict ending sublist of vj.stop_times, we reject this trip update.
 Stop-Match:     None
 '''
 @pytest.fixture()
@@ -864,7 +865,7 @@ def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
 
     we have realtime data with 6 stops and vehicle journey with 6 stops
 
-    Since the stops in gtfs-rt do not match with stops in vj we reject the trip update
+    Since two lists above do not match from the last element towards left, we reject this trip update
 
     """
     tester = app.test_client()
@@ -891,7 +892,7 @@ def test_gtfs_lollipop_model_builder_with_post(lollipop_gtfs_rt_data):
 
     we have realtime data with 4 stops with stop StopR2 served twice
 
-
+    Since the gtfs-rt.stop list is a strict ending sublist of vj.stop_times we merge
     """
     tester = app.test_client()
     resp = tester.post('/gtfs_rt', data=lollipop_gtfs_rt_data.SerializeToString())
@@ -967,6 +968,20 @@ def test_gtfs_lollipop_model_builder_with_post(lollipop_gtfs_rt_data):
     assert resp.status_code == 200
     check(nb_rt_update=2)
 
+'''
+vj.stop_times:  StopR1	StopR2	StopR3	StopR2	StopR4
+order:          0       1       2       3       4
+
+gtfs-rt.stop:                           StopR2  StopR4
+stop_sequence:                          4       5
+Status:         None    None    None    Delay   None
+
+Since the gtfs-rt.stop list is a strict ending sublist of vj.stop_times we merge
+informations of each trip update stop with that of navitia vj
+Stop-Match:     StopR1	StopR2	StopR3	StopR2	StopR4
+order:          0       1       2       3       4
+status:         None    None    None    Delay   None
+'''
 @pytest.fixture()
 def lollipop_gtfs_rt_from_second_passage_data():
     feed = gtfs_realtime_pb2.FeedMessage()
@@ -1139,53 +1154,4 @@ def test_gtfs_lollipop_with_second_passage_model_builder_with_post(lollipop_gtfs
     resp = tester.post('/gtfs_rt', data=lollipop_gtfs_rt_from_second_passage_data.SerializeToString())
     assert resp.status_code == 200
     check(nb_rt_update=2)
-
-
-def test_matching_lists():
-    """
-    tests that a list is a strict ending sublist of another list
-    """
-    with app.app_context():
-        main_list = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']
-        sub_list = ['S4', 'S5', 'S6']
-        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
-        assert is_sublist is True
-        assert start_index == 3
-
-
-def test_mismatching_lists_1():
-    """
-    tests that a list is not  a strict ending sublist of another list
-    """
-    with app.app_context():
-        main_list = ['S1', 'S2', 'S3', 'S4', 'S5']
-        sub_list = ['S4', 'S5', 'S6']
-        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
-        assert is_sublist is False
-        assert start_index == -1
-
-
-def test_mismatching_lists_2():
-    """
-    tests that a list is not  a strict ending sublist of another list
-    """
-    with app.app_context():
-        main_list = ['S1', 'S2', 'S3', 'S4', 's6']
-        sub_list = ['S4', 'S5', 'S6']
-        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
-        assert is_sublist is False
-        assert start_index == -1
-
-def test_mismatching_lists_3():
-    """
-    tests that a list is not  a strict ending sublist of another list
-    """
-    with app.app_context():
-        main_list = ['S1', 'S2', 'S3', 'S4', 'S5', 's6']
-        sub_list = ['S1', 'S2', 'S3', 'S4']
-        is_sublist, start_index = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper())._is_ending_sublist(main_list, sub_list)
-        assert is_sublist is False
-        assert start_index == -1
-
-
 
