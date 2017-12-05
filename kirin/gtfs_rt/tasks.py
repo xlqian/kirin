@@ -36,6 +36,7 @@ from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app, redis
+from kirin import new_relic
 
 TASK_STOP_MAX_DELAY = app.config['TASK_STOP_MAX_DELAY']
 TASK_WAIT_FIXED = app.config['TASK_WAIT_FIXED']
@@ -86,13 +87,14 @@ def gtfs_poller(self, config):
     lock_name = make_kirin_lock_name(func_name, contributor)
     with get_lock(logger, lock_name, app.config['REDIS_LOCK_TIMEOUT_POLLER']) as locked:
         if not locked:
-            logger.warning('%s for %s is already in progress', func_name, contributor)
+            new_relic.ignore_transaction()
             return
 
         # We do a HEAD request at the very beginning of polling and we compare it with the previous one to check if
         # the gtfs-rt is changed.
         # If the HEAD request or Redis get/set fail, we just ignore this part and do the polling anyway
         if not _is_newer(config):
+            new_relic.ignore_transaction()
             return
 
         response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
