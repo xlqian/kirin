@@ -154,7 +154,7 @@ REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 1))
 REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
 
-REDIS_LOCK_TIMEOUT_POLLER = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=10).total_seconds())
+REDIS_LOCK_TIMEOUT_POLLER = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=5).total_seconds())
 REDIS_LOCK_TIMEOUT_PURGE = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_PURGE', timedelta(hours=12).total_seconds())
 
 TASK_LOCK_PREFIX = 'kirin.lock'
