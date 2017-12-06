@@ -117,8 +117,8 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
     """
     test the model builder with a simple gtfs-rt
 
-    we have realtime data on only 3 stops, so the model builder should only have 3 stops (even if the VJ
-    have 4 stops)
+    we have realtime data on only 3 stops, so the model builder should have 4 stops with that absent in
+    realtime data created with no delay(the VJ has 4 stops)
     Note: The trip_update stop list is a strict ending sublist of of stops list of navitia_vj
     """
     with app.app_context():
@@ -133,6 +133,15 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
 
         assert len(trip_updates) == 1
         assert len(trip_updates[0].stop_time_updates) == 4
+
+        #stop_time_update created with no delay
+        first_stop = trip_updates[0].stop_time_updates[0]
+        assert first_stop.stop_id == 'StopR1'
+        assert first_stop.arrival_status == 'none'
+        assert first_stop.arrival_delay is None
+        assert first_stop.departure_delay is None
+        assert first_stop.departure_status == 'none'
+        assert first_stop.message is None
 
         second_stop = trip_updates[0].stop_time_updates[1]
         assert second_stop.stop_id == 'StopR2'
@@ -158,8 +167,8 @@ def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
     """
     test the gtfs-rt post with a simple gtfs-rt
 
-    we have realtime data on only 3 stops, so the model builder should only have 3 stops (even if the VJ
-    have 4 stops)
+    we have realtime data on only 3 stops, so the model builder should have 4 stops with that absent in
+    realtime data created with no delay(the VJ has 4 stops)
 
     after the merge, we should have 4 stops (and only 2 delayed)
     """
@@ -177,6 +186,7 @@ def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
         assert trip_update
 
         # navitia's time are in local, but we return UTC time, and the stop is in sherbrooke, so UTC-4h
+        #stop_time_update created with no delay
         first_stop = trip_update.stop_time_updates[0]
         assert first_stop.stop_id == 'StopR1'
         assert first_stop.arrival_status == 'none'
@@ -334,7 +344,7 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
     """
     test the gtfs-rt post with a pass-midnight gtfs-rt
 
-    we have realtime data on only the 5 stops
+    we have realtime data on all 5 stops
 
     after the merge, we should have 5 stops properly delayed
     """
@@ -855,8 +865,7 @@ def test_gtfs_bad_order_model_builder(bad_ordered_gtfs_rt_data):
         db.session.add(rt_update)
         db.session.commit()
 
-        assert len(trip_updates) == 1
-        assert len(trip_updates[0].stop_time_updates) == 0
+        assert len(trip_updates) == 0
 
 
 def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
@@ -1208,5 +1217,4 @@ def test_gtfs_more_stops_model_builder(gtfs_rt_data_with_more_stops):
         db.session.add(rt_update)
         db.session.commit()
 
-        assert len(trip_updates) == 1
-        assert len(trip_updates[0].stop_time_updates) == 0
+        assert len(trip_updates) == 0

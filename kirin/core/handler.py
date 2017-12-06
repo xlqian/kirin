@@ -133,10 +133,6 @@ def handle(real_time_update, trip_updates, contributor):
     id_timestamp_tuples = [(tu.vj.navitia_trip_id, tu.vj.get_start_timestamp()) for tu in trip_updates]
     old_trip_updates = TripUpdate.find_by_dated_vjs(id_timestamp_tuples)
     for trip_update in trip_updates:
-        #Nothing to do if trip_update state is none and it doesn't have any stop_time_update
-        if (trip_update.status == 'none') and (len(trip_update.stop_time_updates) == 0):
-            continue
-
         # find if there is already a row in db
         old = next((tu for tu in old_trip_updates if tu.vj.navitia_trip_id == trip_update.vj.navitia_trip_id
                     and tu.vj.get_start_timestamp() == trip_update.vj.get_start_timestamp()), None)

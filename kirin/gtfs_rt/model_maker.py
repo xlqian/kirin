@@ -106,15 +106,10 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
-    def _extract_stop_codes(self, navitia_vj):
-        #list of vj.stops
-        vj_sp_with_code = []
-        for s in navitia_vj.get('stop_times', []):
-            for c in s.get('stop_point', {}).get('codes', []):
-                if c['type'] == self.stop_code_key:
-                    vj_sp_with_code.append((c['value'], s.get('stop_point')))
-                    break
-        return vj_sp_with_code
+    def _get_stop_code(self, nav_stop):
+        for c in nav_stop.get('codes', []):
+            if c['type'] == self.stop_code_key:
+                return c['value']
 
     def _make_trip_updates(self, input_trip_update, data_time):
         """
@@ -122,50 +117,53 @@ class KirinModelBuilder(object):
         On the other hand:
         1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging informations
         with that of navitia stop
-        2. For the stop point absent in trip_update.stop_time_updates we initialize a trip_update with
-        that navitia stop
+        2. For the first stop point absent in trip_update.stop_time_updates we create a stop_time_update
+        with no delay for that stop
         """
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
-
         trip_updates = []
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
-            trip_updates.append(trip_update)
 
-            vj_sp_with_code = self._extract_stop_codes(vj.navitia_vj)
-            vj_stop_order = len(vj_sp_with_code) - 1
             is_tu_valid = True
-            for vj_stop, tu_stop in itertools.izip_longest(reversed(vj_sp_with_code),
+            vj_stop_order = len(vj.navitia_vj.get('stop_times', [])) - 1
+            for vj_stop, tu_stop in itertools.izip_longest(reversed(vj.navitia_vj.get('stop_times', [])),
                                                            reversed(input_trip_update.stop_time_update)):
                 if vj_stop is None:
                     is_tu_valid = False
                     break
-                nav_stop = vj_stop[1]
-                if tu_stop is not None:
 
-                    if vj_stop[0] != tu_stop.stop_id:
+                vj_stop_point = vj_stop.get('stop_point')
+                if vj_stop_point is None:
+                    is_tu_valid = False
+                    break
+
+                if tu_stop is not None:
+                    if self._get_stop_code(vj_stop_point) != tu_stop.stop_id:
                         is_tu_valid = False
                         break
 
                     tu_stop.stop_sequence = vj_stop_order
-                    st_update = self._make_stoptime_update(tu_stop, nav_stop)
+                    st_update = self._make_stoptime_update(tu_stop, vj_stop_point)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
                 else:
                     #Initialize stops absent in trip_updates but present in vj
-                    st_update = self._init_stop_update(nav_stop, vj_stop_order)
+                    st_update = self._init_stop_update(vj_stop_point, vj_stop_order)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
+
                 vj_stop_order -= 1
 
-            if not is_tu_valid:
+            if is_tu_valid:
+                trip_updates.append(trip_update)
+            else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
                                .format(input_trip_update.trip.trip_id))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
                                         contributor=self.contributor)
                 del trip_update.stop_time_updates[:]
-                trip_update.status == 'none'
 
         return trip_updates
 
