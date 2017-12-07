@@ -62,35 +62,41 @@ def make_96231_20150728_0():
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-87212027"
     stop_time.arrival.time = unix_time(2015, 07, 28, 17, 21, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 17, 21, 0)
+    stop_time.stop_sequence = 1
 
     # Sélestat
     stop_time = trip_update.stop_time_update.add()
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-87214056"
     stop_time.arrival.time = unix_time(2015, 07, 28, 17, 38, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 17, 40 + 15, 0)
+    stop_time.stop_sequence = 2
 
     # Colmar
     stop_time = trip_update.stop_time_update.add()
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-87182014"
     stop_time.arrival.time = unix_time(2015, 07, 28, 17, 51 + 15, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 17, 53 + 15, 0)
+    stop_time.stop_sequence = 3
 
     # Mulhouse
     stop_time = trip_update.stop_time_update.add()
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-87182063"
     stop_time.arrival.time = unix_time(2015, 07, 28, 18, 14 + 15, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 18, 16 + 15, 0)
+    stop_time.stop_sequence = 4
 
     # St-Louis
     stop_time = trip_update.stop_time_update.add()
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-87182139"
     stop_time.arrival.time = unix_time(2015, 07, 28, 18, 30 + 15, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 18, 31 + 15, 0)
+    stop_time.stop_sequence = 6
 
     # Basel-SBB
     stop_time = trip_update.stop_time_update.add()
     stop_time.stop_id = "stop_point:OCE:SP:TrainTER-85000109"
     stop_time.arrival.time = unix_time(2015, 07, 28, 18, 39 + 15, 0)
     stop_time.departure.time = unix_time(2015, 07, 28, 18, 39, 0)# ?
+    stop_time.stop_sequence = 7
 
     return message

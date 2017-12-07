@@ -39,6 +39,7 @@ from kirin import new_relic
 from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
 from kirin import app
+import itertools
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -105,20 +106,66 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
         return trip_updates
 
-    def _make_trip_updates(self, input_trip_update, data_time):
-        vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
+    def _get_stop_code(self, nav_stop):
+        for c in nav_stop.get('codes', []):
+            if c['type'] == self.stop_code_key:
+                return c['value']
 
+    def _make_trip_updates(self, input_trip_update, data_time):
+        """
+        If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
+        On the other hand:
+        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging informations
+        with that of navitia stop
+        2. For the first stop point absent in trip_update.stop_time_updates we create a stop_time_update
+        with no delay for that stop
+        """
+        vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
         trip_updates = []
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
-            trip_updates.append(trip_update)
 
-            for input_st_update in input_trip_update.stop_time_update:
-                st_update = self._make_stoptime_update(input_st_update, vj.navitia_vj)
-                if st_update is None:
-                    continue
-                trip_update.stop_time_updates.append(st_update)
+            is_tu_valid = True
+            vj_stop_order = len(vj.navitia_vj.get('stop_times', [])) - 1
+            for vj_stop, tu_stop in itertools.izip_longest(reversed(vj.navitia_vj.get('stop_times', [])),
+                                                           reversed(input_trip_update.stop_time_update)):
+                if vj_stop is None:
+                    is_tu_valid = False
+                    break
+
+                vj_stop_point = vj_stop.get('stop_point')
+                if vj_stop_point is None:
+                    is_tu_valid = False
+                    break
+
+                if tu_stop is not None:
+                    if self._get_stop_code(vj_stop_point) != tu_stop.stop_id:
+                        is_tu_valid = False
+                        break
+
+                    tu_stop.stop_sequence = vj_stop_order
+                    st_update = self._make_stoptime_update(tu_stop, vj_stop_point)
+                    if st_update is not None:
+                        trip_update.stop_time_updates.append(st_update)
+                else:
+                    #Initialize stops absent in trip_updates but present in vj
+                    st_update = self._init_stop_update(vj_stop_point, vj_stop_order)
+                    if st_update is not None:
+                        trip_update.stop_time_updates.append(st_update)
+
+                vj_stop_order -= 1
+
+            if is_tu_valid:
+                #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
+                trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
+                trip_updates.append(trip_update)
+            else:
+                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
+                               .format(input_trip_update.trip.trip_id))
+                record_internal_failure('stop_time_update do not match with stops in navitia',
+                                        contributor=self.contributor)
+                del trip_update.stop_time_updates[:]
 
         return trip_updates
 
@@ -203,17 +250,12 @@ class KirinModelBuilder(object):
 
         return self._make_db_vj(vj_source_code, since, until)
 
-    def _make_stoptime_update(self, input_st_update, navitia_vj):
-        nav_st = self._get_navitia_stop_time(input_st_update, navitia_vj)
+    def _init_stop_update(self, nav_stop, stop_sequence):
+        st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
+                                         dep_status='none', arr_status='none', order=stop_sequence)
+        return st_update
 
-        if nav_st is None:
-            self.log.info('impossible to find stop point {} in the vj {}, skipping it'.format(
-                input_st_update.stop_id, navitia_vj.get('id')))
-            record_internal_failure('missing stop point', contributor=self.contributor)
-            return None
-
-        nav_stop = nav_st.get('stop_point', {})
-
+    def _make_stoptime_update(self, input_st_update, nav_stop):
         # TODO handle delay uncertainty
         # TODO handle schedule_relationship
         def read_delay(st_event):
@@ -223,17 +265,8 @@ class KirinModelBuilder(object):
         arr_delay = read_delay(input_st_update.arrival)
         dep_status = 'none' if dep_delay is None else 'update'
         arr_status = 'none' if arr_delay is None else 'update'
-
-
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status)
+                                         dep_status=dep_status, arr_status=arr_status,
+                                         order=input_st_update.stop_sequence)
 
         return st_update
-
-    def _get_navitia_stop_time(self, input_st_update, navitia_vj):
-        # TODO use input_st_update.stop_sequence to get the right stop_time even for loops
-        for s in navitia_vj.get('stop_times', []):
-            if any(c['type'] == self.stop_code_key and c['value'] == input_st_update.stop_id
-                   for c in s.get('stop_point', {}).get('codes', [])):
-                return s
-        return None

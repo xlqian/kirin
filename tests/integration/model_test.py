@@ -80,15 +80,17 @@ def test_find_by_vj(setup_database):
 def test_find_stop():
     with app.app_context():
         vj = create_trip_update('70866ce8-0638-4fa1-8556-1ddfa22d09d3', 'vj1', datetime.date(2015, 9, 8))
-        st1 = StopTimeUpdate({'id': 'sa:1'}, None, None)
+        st1 = StopTimeUpdate({'id': 'sa:1'}, None, None, order=0)
         vj.stop_time_updates.append(st1)
-        st2 = StopTimeUpdate({'id': 'sa:2'}, None, None)
+        st2 = StopTimeUpdate({'id': 'sa:2'}, None, None, order=1)
         vj.stop_time_updates.append(st2)
-        st3 = StopTimeUpdate({'id': 'sa:3'}, None, None)
+        st3 = StopTimeUpdate({'id': 'sa:3'}, None, None, order=2)
         vj.stop_time_updates.append(st3)
 
+        assert vj.find_stop('sa:1', 0) == st1
         assert vj.find_stop('sa:1') == st1
-        assert vj.find_stop('sa:3') == st3
+        assert vj.find_stop('sa:2', 1) == st2
+        assert vj.find_stop('sa:3', 2) == st3
         assert vj.find_stop('sa:4') is None
 
 
