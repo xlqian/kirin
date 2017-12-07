@@ -157,6 +157,8 @@ class KirinModelBuilder(object):
                 vj_stop_order -= 1
 
             if is_tu_valid:
+                #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
+                trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
                 trip_updates.append(trip_update)
             else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
