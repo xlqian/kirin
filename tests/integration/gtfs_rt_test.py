@@ -1220,7 +1220,7 @@ def test_gtfs_more_stops_model_builder(gtfs_rt_data_with_more_stops):
         assert len(trip_updates) == 0
 
 '''
-This error message occurred many times a day for the same vehicle_journey between 1h and 2h
+This error message occurred many times a day for the same vehicle_journey between 1h and 2h UTC
 @timestamp: 2017-12-12T01:58:44.000Z -> localtime : 2017-12-11T20:58:44.000
 impossible to calculate the circulate date (local) of vj: vehicle_journey:STS:462247-1
 Analysis:
