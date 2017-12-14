@@ -45,12 +45,12 @@ meta = sqlalchemy.schema.MetaData(naming_convention={
         "pk": "pk_%(table_name)s"
       })
 
-#force the server to use UTC time for each connection
-def set_utc_on_connect(dbapi_con, con_record):
+#force the server to use UTC time for each connection checkouted from the pool
+@sqlalchemy.event.listens_for(sqlalchemy.pool.Pool, 'checkout')
+def set_utc_on_connect(dbapi_con, connection_record, connection_proxy):
     c = dbapi_con.cursor()
     c.execute("SET timezone='utc'")
     c.close()
-sqlalchemy.event.listen(sqlalchemy.pool.Pool, 'connect', set_utc_on_connect)
 
 
 def gen_uuid():
