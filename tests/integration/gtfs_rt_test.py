@@ -1221,7 +1221,7 @@ def test_gtfs_more_stops_model_builder(gtfs_rt_data_with_more_stops):
 
 '''
 This error message occurred many times a day for the same vehicle_journey between 1h and 2h
-@timestamp: 2017-12-12T01:58:44.000Z
+@timestamp: 2017-12-12T01:58:44.000Z -> localtime : 2017-12-11T20:58:44.000
 impossible to calculate the circulate date (local) of vj: vehicle_journey:STS:462247-1
 Analysis:
 1. Concerns gtfs-rt which arrives between 20h and 21h localtime of the day before (1h and 2h UTC) in the morning
@@ -1229,13 +1229,17 @@ with a vehicle_journey having first stop_time at mid-night localtime (5h UTC)
 
 2. since = 20171211T220000Z , until = 20171212T050000Z
 3. The first stop_time of the vehicle_journey is at 00 00 00 localtime (05h UTC) where as the gtfs-rt arrives after
- 1h UTC -> GTFS-RT has an information on a vehicle journey with departure after 4 hours !!!
+ 1h UTC -> GTFS-RT has an information on a vehicle journey with departure 4 hours in the future!!!
 
 4. Filter in the code:
  since_local = 20171211T170000 -05:00, until_local = 20171212T000000 -05:00
 
- since_local <= date(since_local) + 00 00 00 <= until_local -> false
- since_local <= date(until_local) + 00 00 00 <= until_local -> true
+ since_local <= date(since_local) + 00 00 00 (first_vj_stop_time) <= until_local -> false
+ 20171211T170000 -05:00 <= 20171211T000000 -05:00<=  20171212T000000 -05:00
+
+ since_local <= date(until_local) + 00 00 00 (first_vj_stop_time) <= until_local -> true
+ 20171211T170000 -05:00 <= 20171212T000000 -05:00 <= 20171212T000000 -05:00
+
  No realtime in navitia.
 '''
 @pytest.fixture()

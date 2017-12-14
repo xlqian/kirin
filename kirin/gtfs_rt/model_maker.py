@@ -40,6 +40,7 @@ from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
 from kirin import app
 import itertools
+import calendar
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -102,7 +103,7 @@ class KirinModelBuilder(object):
         for entity in data.entity:
             if not entity.trip_update:
                 continue
-            tu = self._make_trip_updates(entity.trip_update, data_time=data_time, time_stamp=data.header.timestamp)
+            tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
             trip_updates.extend(tu)
         return trip_updates
 
@@ -111,7 +112,7 @@ class KirinModelBuilder(object):
             if c['type'] == self.stop_code_key:
                 return c['value']
 
-    def _make_trip_updates(self, input_trip_update, data_time, time_stamp):
+    def _make_trip_updates(self, input_trip_update, data_time):
         """
         If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
         On the other hand:
@@ -162,7 +163,7 @@ class KirinModelBuilder(object):
                 trip_updates.append(trip_update)
             else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
-                               .format(input_trip_update.trip.trip_id, time_stamp))
+                               .format(input_trip_update.trip.trip_id, calendar.timegm(data_time.utctimetuple())))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
                                         contributor=self.contributor)
                 del trip_update.stop_time_updates[:]
