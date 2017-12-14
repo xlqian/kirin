@@ -40,6 +40,7 @@ from kirin.utils import record_internal_failure, record_call
 from kirin.utils import get_timezone
 from kirin import app
 import itertools
+import calendar
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -161,8 +162,8 @@ class KirinModelBuilder(object):
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
                 trip_updates.append(trip_update)
             else:
-                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
-                               .format(input_trip_update.trip.trip_id))
+                self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
+                               .format(input_trip_update.trip.trip_id, calendar.timegm(data_time.utctimetuple())))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
                                         contributor=self.contributor)
                 del trip_update.stop_time_updates[:]
@@ -221,11 +222,11 @@ class KirinModelBuilder(object):
         else:
             arrival_time = first_stop_time['arrival_time']
             # At first, we suppose that the circulate_date is local_since's date
-            if local_since < tzinfo.localize(datetime.datetime.combine(local_since.date(),
-                                                                       arrival_time)) < local_until:
+            if local_since <= tzinfo.localize(datetime.datetime.combine(local_since.date(),
+                                                                       arrival_time)) <= local_until:
                 circulate_date = local_since.date()
-            elif local_since < tzinfo.localize(datetime.datetime.combine(local_until.date(),
-                                                                         arrival_time)) < local_until:
+            elif local_since <= tzinfo.localize(datetime.datetime.combine(local_until.date(),
+                                                                         arrival_time)) <= local_until:
                 circulate_date = local_until.date()
 
         if circulate_date is None:

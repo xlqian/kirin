@@ -37,6 +37,7 @@ import vj_R_vj2
 import vj_pass_midnight
 import vj_lollipop
 import vj_bad_order
+import vj_start_midnight
 
 mocks = [
     vj_john.response,
@@ -49,7 +50,8 @@ mocks = [
     vj_R_vj2.response,
     vj_pass_midnight.response,
     vj_lollipop.response,
-    vj_bad_order.response
+    vj_bad_order.response,
+    vj_start_midnight.response
 ]
 _mock_navitia_call = {r.query: r for r in mocks}
 
