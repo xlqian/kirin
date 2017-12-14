@@ -102,7 +102,7 @@ class KirinModelBuilder(object):
         for entity in data.entity:
             if not entity.trip_update:
                 continue
-            tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
+            tu = self._make_trip_updates(entity.trip_update, data_time=data_time, time_stamp=data.header.timestamp)
             trip_updates.extend(tu)
         return trip_updates
 
@@ -111,7 +111,7 @@ class KirinModelBuilder(object):
             if c['type'] == self.stop_code_key:
                 return c['value']
 
-    def _make_trip_updates(self, input_trip_update, data_time):
+    def _make_trip_updates(self, input_trip_update, data_time, time_stamp):
         """
         If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
         On the other hand:
@@ -161,8 +161,8 @@ class KirinModelBuilder(object):
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
                 trip_updates.append(trip_update)
             else:
-                self.log.error('stop_time_update do not match with stops in navitia for trip : {}'
-                               .format(input_trip_update.trip.trip_id))
+                self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
+                               .format(input_trip_update.trip.trip_id, time_stamp))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
                                         contributor=self.contributor)
                 del trip_update.stop_time_updates[:]
@@ -221,11 +221,11 @@ class KirinModelBuilder(object):
         else:
             arrival_time = first_stop_time['arrival_time']
             # At first, we suppose that the circulate_date is local_since's date
-            if local_since < tzinfo.localize(datetime.datetime.combine(local_since.date(),
-                                                                       arrival_time)) < local_until:
+            if local_since <= tzinfo.localize(datetime.datetime.combine(local_since.date(),
+                                                                       arrival_time)) <= local_until:
                 circulate_date = local_since.date()
-            elif local_since < tzinfo.localize(datetime.datetime.combine(local_until.date(),
-                                                                         arrival_time)) < local_until:
+            elif local_since <= tzinfo.localize(datetime.datetime.combine(local_until.date(),
+                                                                         arrival_time)) <= local_until:
                 circulate_date = local_until.date()
 
         if circulate_date is None:
