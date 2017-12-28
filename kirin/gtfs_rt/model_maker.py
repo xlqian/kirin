@@ -105,6 +105,11 @@ class KirinModelBuilder(object):
                 continue
             tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
             trip_updates.extend(tu)
+
+        if len(trip_updates) == 0:
+            rt_update.validity = False
+            self.log.error('No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp))
+
         return trip_updates
 
     def _get_stop_code(self, nav_stop):

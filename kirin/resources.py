@@ -48,5 +48,6 @@ class Status(Resource):
                    'db_version': kirin.db.engine.scalar('select version_num from alembic_version;'),
                    'navitia_url': current_app.config['NAVITIA_URL'],
                    'rabbitmq_info': kirin.rabbitmq_handler.info(),
-                   'last_update': model.RealTimeUpdate.get_last_update_by_contributor(),
+                   'last_update': model.RealTimeUpdate.get_last_update_by_contributor(validity=False),
+                   'last_valid_update': model.RealTimeUpdate.get_last_update_by_contributor(validity=True),
                }, 200
