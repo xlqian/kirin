@@ -14,12 +14,18 @@ down_revision = '2763a0e3f0bf'
 from alembic import op
 import sqlalchemy as sa
 
+rt_validity = sa.Enum('valid', 'empty', 'invalid', name='rt_validity')
+
 
 def upgrade():
-    op.add_column('real_time_update', sa.Column('validity', sa.Boolean(), nullable=True))
-    op.execute("UPDATE real_time_update SET validity = True WHERE validity IS NULL")
+    rt_validity.create(op.get_bind())
+    op.add_column('real_time_update', sa.Column('validity', rt_validity, nullable=True))
+    op.execute("UPDATE real_time_update SET validity = 'valid' WHERE validity IS NULL")
     op.alter_column('real_time_update', 'validity', nullable=False)
+    op.create_index('ix_rt_validity', 'real_time_update', ['validity'], unique=False)
 
 
 def downgrade():
+    op.drop_index('ix_rt_validity', 'real_time_update')
     op.drop_column('real_time_update', 'validity')
+    rt_validity.drop(op.get_bind())
