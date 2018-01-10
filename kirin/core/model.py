@@ -305,7 +305,6 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     error = db.Column(db.Text, nullable=True)
     raw_data = deferred(db.Column(db.Text, nullable=True))
     contributor = db.Column(db.Text, nullable=True)
-    validity = db.Column(db.Enum('valid', 'empty', 'invalid', name='rt_validity'), nullable=True)
 
     trip_updates = db.relationship("TripUpdate", secondary=associate_realtimeupdate_tripupdate, cascade='all',
                                    lazy='select', backref=backref('real_time_updates', cascade='all'))
@@ -313,7 +312,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),
                       db.Index('realtime_update_contributor_and_created_at', 'created_at', 'contributor'))
 
-    def __init__(self, raw_data, connector, contributor, status=None, error=None, received_at=None):
+    def __init__(self, raw_data, connector, contributor, status='OK', error=None, received_at=None):
         self.id = gen_uuid()
         self.raw_data = raw_data
         self.connector = connector
@@ -321,17 +320,16 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.error = error
         self.contributor = contributor
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
-        self.validity = 'valid'
 
     @classmethod
-    def get_last_update_by_contributor(cls, is_valid=False):
+    def get_last_update_by_contributor(cls, only_valid=False):
         from kirin import app
         result = {}
         contributor = [app.config['CONTRIBUTOR'], app.config['GTFS_RT_CONTRIBUTOR']]
         for c in contributor:
             sql = db.session.query(db.func.max(cls.created_at)).filter(cls.contributor == c)
-            if is_valid:
-                sql = sql.filter(cls.validity == 'valid')
+            if only_valid:
+                sql = sql.filter(cls.status == 'OK')
             row = sql.one()
             if row[0]:
                 result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')

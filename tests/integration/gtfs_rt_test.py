@@ -295,6 +295,7 @@ def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
 
         assert len(trip_updates) == 1
         assert len(trip_updates[0].stop_time_updates) == 5
+        assert RealTimeUpdate.query.first().status == 'OK'
 
         first_stop = trip_updates[0].stop_time_updates[0]
         assert first_stop.stop_id == 'StopR1'
@@ -356,6 +357,7 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 5
+        assert RealTimeUpdate.query.first().status == 'OK'
 
         trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.datetime(2012, 6, 16, 3, 30))
 
@@ -866,6 +868,9 @@ def test_gtfs_bad_order_model_builder(bad_ordered_gtfs_rt_data):
         db.session.commit()
 
         assert len(trip_updates) == 0
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'No information for this gtfs-rt with timestamp: 1339772400'
 
 
 def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
@@ -885,6 +890,8 @@ def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
         with app.app_context():
             assert len(RealTimeUpdate.query.all()) == nb_rt_update
             assert len(TripUpdate.query.all()) == 0
+            assert RealTimeUpdate.query.first().status == 'KO'
+            assert RealTimeUpdate.query.first().error == 'No information for this gtfs-rt with timestamp: 1339772400'
 
     check(nb_rt_update=1)
 
@@ -910,6 +917,7 @@ def test_gtfs_lollipop_model_builder_with_post(lollipop_gtfs_rt_data):
     def check(nb_rt_update):
         with app.app_context():
             assert len(RealTimeUpdate.query.all()) == nb_rt_update
+            assert RealTimeUpdate.query.first().status == 'OK'
             assert len(TripUpdate.query.all()) == 1
             assert len(StopTimeUpdate.query.all()) == 5
 

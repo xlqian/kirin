@@ -515,6 +515,7 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
+        assert RealTimeUpdate.query.first().status == 'OK'
     check_db_ire_96231_delayed()
     assert mock_rabbitmq.call_count == 1
 
@@ -546,6 +547,7 @@ def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
+        assert RealTimeUpdate.query.first().status == 'OK'
     check_db_ire_96231_delayed(motif_externe_is_null=True)
     assert mock_rabbitmq.call_count == 1
 

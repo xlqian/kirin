@@ -49,5 +49,5 @@ class Status(Resource):
                    'navitia_url': current_app.config['NAVITIA_URL'],
                    'rabbitmq_info': kirin.rabbitmq_handler.info(),
                    'last_update': model.RealTimeUpdate.get_last_update_by_contributor(),
-                   'last_valid_update': model.RealTimeUpdate.get_last_update_by_contributor(is_valid=True),
+                   'last_valid_update': model.RealTimeUpdate.get_last_update_by_contributor(only_valid=True),
                }, 200

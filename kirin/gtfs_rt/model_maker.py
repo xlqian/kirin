@@ -101,11 +101,6 @@ class KirinModelBuilder(object):
 
         trip_updates = []
 
-        if len(data.entity) == 0:
-            rt_update.validity = 'empty'
-            self.log.error('No entity present in gtfs-rt with timestamp: {}'.format(data.header.timestamp))
-            return trip_updates
-
         for entity in data.entity:
             if not entity.trip_update:
                 continue
@@ -113,7 +108,8 @@ class KirinModelBuilder(object):
             trip_updates.extend(tu)
 
         if len(trip_updates) == 0:
-            rt_update.validity = 'invalid'
+            rt_update.status = 'KO'
+            rt_update.error = 'No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp)
             self.log.error('No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp))
 
         return trip_updates
