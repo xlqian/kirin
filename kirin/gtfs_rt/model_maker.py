@@ -107,7 +107,7 @@ class KirinModelBuilder(object):
             tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
             trip_updates.extend(tu)
 
-        if len(trip_updates) == 0:
+        if not trip_updates:
             rt_update.status = 'KO'
             rt_update.error = 'No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp)
             self.log.error('No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp))

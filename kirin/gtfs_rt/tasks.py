@@ -32,11 +32,14 @@ import requests
 from kirin import gtfs_realtime_pb2
 import navitia_wrapper
 from kirin.tasks import celery
-from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock
+from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, save_gtfs_rt_with_error
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app, redis
 from kirin import new_relic
+from kirin.core import model
+from google.protobuf.message import DecodeError
+from kirin.exceptions import InvalidArguments
 
 TASK_STOP_MAX_DELAY = app.config['TASK_STOP_MAX_DELAY']
 TASK_WAIT_FIXED = app.config['TASK_WAIT_FIXED']
@@ -107,7 +110,13 @@ def gtfs_poller(self, config):
                                       query_timeout=app.config.get('NAVITIA_QUERY_CACHE_TIMEOUT', 600),
                                       pubdate_timeout=app.config.get('NAVITIA_PUBDATE_CACHE_TIMEOUT', 600))\
             .instance(config['coverage'])
+
         proto = gtfs_realtime_pb2.FeedMessage()
-        proto.ParseFromString(response.content)
-        model_maker.handle(proto, nav, contributor)
-        logger.info('%s for %s is finished', func_name, contributor)
+        try:
+            proto.ParseFromString(response.content)
+        except DecodeError:
+            save_gtfs_rt_with_error(proto, 'gtfs-rt', contributor=contributor, status='KO', error='Decode Error')
+            logger.debug('invalid protobuf')
+        else:
+            model_maker.handle(proto, nav, contributor)
+            logger.info('%s for %s is finished', func_name, contributor)

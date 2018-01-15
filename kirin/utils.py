@@ -78,11 +78,11 @@ def make_navitia_wrapper():
     return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
 
 
-def make_rt_update(data, connector, contributor):
+def make_rt_update(data, connector, contributor, status='OK'):
     """
     Create an RealTimeUpdate object for the query and persist it
     """
-    rt_update = model.RealTimeUpdate(data, connector=connector, contributor=contributor)
+    rt_update = model.RealTimeUpdate(data, connector=connector, contributor=contributor, status=status)
 
     model.db.session.add(rt_update)
     model.db.session.commit()
@@ -124,6 +124,15 @@ def should_retry_exception(exception):
 def make_kirin_lock_name(*args):
     from kirin import app
     return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
+
+
+def save_gtfs_rt_with_error(data, connector, contributor, status='OK', error=None):
+    data = str(data)
+    rt_update = make_rt_update(data, connector=connector, contributor=contributor, status=status)
+    rt_update.status = status
+    rt_update.error = error
+    model.db.session.add(rt_update)
+    model.db.session.commit()
 
 
 @contextmanager

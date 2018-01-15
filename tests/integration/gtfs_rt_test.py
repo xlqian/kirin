@@ -35,6 +35,7 @@ from kirin import gtfs_rt
 from tests import mock_navitia
 from tests.check_utils import dumb_nav_wrapper, api_post
 from kirin import gtfs_realtime_pb2, app
+from kirin.utils import save_gtfs_rt_with_error
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -1338,3 +1339,30 @@ def test_gtfs_midnight_model_builder_with_post(gtfs_rt_data_with_vj_starting_at_
             assert third_stop.message is None
 
     check(nb_rt_update=1)
+
+
+def test_gtfs_rt_api_with_decode_error(basic_gtfs_rt_data):
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=basic_gtfs_rt_data.SerializeToString() + 'toto')
+    assert resp.status_code == 400
+
+    def check(nb_rt_update):
+        with app.app_context():
+            assert len(RealTimeUpdate.query.all()) == nb_rt_update
+            assert len(TripUpdate.query.all()) == 0
+            assert RealTimeUpdate.query.first().status == 'KO'
+            assert RealTimeUpdate.query.first().error == 'Decode Error'
+
+    check(nb_rt_update=1)
+
+
+def test_save_gtfs_rt_with_error():
+    """
+    test the function "save_gtfs_rt_with_error"
+    """
+    with app.app_context():
+        save_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                status='KO', error='Decode Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Decode Error'
