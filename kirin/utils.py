@@ -126,7 +126,7 @@ def make_kirin_lock_name(*args):
     return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
 
 
-def save_gtfs_rt_with_error(data, connector, contributor, status='OK', error=None):
+def save_gtfs_rt_with_error(data, connector, contributor, status, error=None):
     data = str(data)
     rt_update = make_rt_update(data, connector=connector, contributor=contributor, status=status)
     rt_update.status = status
