@@ -135,6 +135,25 @@ def save_gtfs_rt_with_error(data, connector, contributor, status, error=None):
     model.db.session.commit()
 
 
+def manage_gtfs_rt_with_error(data, connector, contributor, status, error=None):
+    """
+    If error='Http Error' and last gtfs rt with the same error is inserted before 5 second then
+    insert in the table real_time_update with error message (5 seconds is fixed value)
+
+    For other error messages, insert gtfs-rt in the table real_time_update with status and error.
+
+    parameters: data, connector, contributor, status, error
+    """
+    if error == 'Http Error':
+        rt_update_error = model.RealTimeUpdate.get_last_error(connector, status, error)
+        if rt_update_error is None:
+            save_gtfs_rt_with_error('', connector, contributor, status, error)
+        elif rt_update_error.created_at + datetime.timedelta(0, 5) < datetime.datetime.utcnow():
+            save_gtfs_rt_with_error('', connector, contributor, status, error)
+    else:
+        save_gtfs_rt_with_error(data, connector, contributor, status, error)
+
+
 @contextmanager
 def get_lock(logger, lock_name, lock_timeout):
     from kirin import redis

@@ -35,7 +35,9 @@ from kirin import gtfs_rt
 from tests import mock_navitia
 from tests.check_utils import dumb_nav_wrapper, api_post
 from kirin import gtfs_realtime_pb2, app
-from kirin.utils import save_gtfs_rt_with_error
+from kirin.utils import save_gtfs_rt_with_error, manage_gtfs_rt_with_error
+import time
+from sqlalchemy import desc
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -1366,3 +1368,46 @@ def test_save_gtfs_rt_with_error():
         assert len(RealTimeUpdate.query.all()) == 1
         assert RealTimeUpdate.query.first().status == 'KO'
         assert RealTimeUpdate.query.first().error == 'Decode Error'
+
+def test_manage_gtfs_rt_with_http_error_without_insert():
+    """
+    test the function "manage_gtfs_rt_with_http_error" without any insert of a new gtfs-rt
+    """
+    with app.app_context():
+        manage_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                  status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == ''
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+
+        created_at = RealTimeUpdate.query.first().created_at
+        manage_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                  status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == ''
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+        assert RealTimeUpdate.query.first().created_at == created_at
+
+def test_manage_gtfs_rt_with_http_error_with_insert():
+    """
+    test the function "manage_gtfs_rt_with_http_error" with a new gtfs-rt inserted with 'Http Error' since
+    no gtfs-rt with 'Http Error' inserted since more than 5 seconds
+    """
+    with app.app_context():
+        manage_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                  status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == ''
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+
+        created_at = RealTimeUpdate.query.first().created_at
+        time.sleep(6)
+        manage_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                  status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().status == 'KO'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().error == 'Http Error'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().created_at != created_at

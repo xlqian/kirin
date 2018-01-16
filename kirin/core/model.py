@@ -33,6 +33,8 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
+from sqlalchemy import desc
+
 
 db = SQLAlchemy()
 
@@ -327,12 +329,17 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         result = {}
         contributor = [app.config['CONTRIBUTOR'], app.config['GTFS_RT_CONTRIBUTOR']]
         for c in contributor:
-            sql = db.session.query(db.func.max(cls.created_at)).filter(cls.contributor == c)
+            sql = db.session.query(cls.created_at, cls.error).filter(cls.contributor == c)
             if only_valid:
                 sql = sql.filter(cls.status == 'OK')
-            row = sql.one()
-            if row[0]:
-                result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+            sql = sql.order_by(desc(cls.created_at))
+            row = sql.first()
+            if row:
+                error_message = row[1]
+                if error_message:
+                    result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ') + ' Error: {}'.format(error_message)
+                else:
+                    result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
         return result
 
     @classmethod
@@ -344,3 +351,13 @@ class RealTimeUpdate(db.Model, TimestampMixin):
             filter(associate_realtimeupdate_tripupdate.c.real_time_update_id == None)
         cls.query.filter(cls.id.in_(sub_query)).delete(synchronize_session=False)
         db.session.commit()
+
+    @classmethod
+    def get_last_error(cls, connector, status, error):
+
+        rt_error = cls.query.filter_by(
+            connector=connector,
+            status=status,
+            error=error
+        ).order_by(desc(cls.created_at))
+        return rt_error.first()

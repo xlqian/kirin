@@ -32,7 +32,7 @@ import requests
 from kirin import gtfs_realtime_pb2
 import navitia_wrapper
 from kirin.tasks import celery
-from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, save_gtfs_rt_with_error
+from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, manage_gtfs_rt_with_error
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app, redis
@@ -101,7 +101,14 @@ def gtfs_poller(self, config):
             return
 
         response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+
+        except Exception as e:
+            manage_gtfs_rt_with_error(data='', connector='gtfs-rt', contributor=contributor,
+                                      status='KO', error='Http Error')
+            logger.debug(str(e))
+            return
 
         nav = navitia_wrapper.Navitia(url=config['navitia_url'],
                                       token=config['token'],
@@ -115,7 +122,7 @@ def gtfs_poller(self, config):
         try:
             proto.ParseFromString(response.content)
         except DecodeError:
-            save_gtfs_rt_with_error(proto, 'gtfs-rt', contributor=contributor, status='KO', error='Decode Error')
+            manage_gtfs_rt_with_error(proto, 'gtfs-rt', contributor=contributor, status='KO', error='Decode Error')
             logger.debug('invalid protobuf')
         else:
             model_maker.handle(proto, nav, contributor)
