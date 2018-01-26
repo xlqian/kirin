@@ -44,7 +44,6 @@ if 'threading' in sys.modules:
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging.config
-import sys
 from flask_script import Manager
 import utils
 from kirin.helper import KirinRequest

@@ -170,7 +170,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'purge_gtfs_trip_update': {
         'task': 'kirin.tasks.purge_gtfs_trip_update',
-        'schedule': schedules.crontab(hour='3', minute= '0'),
+        'schedule': schedules.crontab(hour='3', minute='0'),
         'options': {'expires': 3600}
     },
     'purge_gtfs_rt_update': {
@@ -184,8 +184,8 @@ CELERYBEAT_SCHEDULE = {
         'options': {'expires': 3600}
     },
     'purge_ire_rt_update': {
-       'task': 'kirin.tasks.purge_ire_rt_update',
-       'schedule': schedules.crontab(hour='3', minute='45'),
-       'options': {'expires': 3600}
+        'task': 'kirin.tasks.purge_ire_rt_update',
+        'schedule': schedules.crontab(hour='3', minute='45'),
+        'options': {'expires': 3600}
     }
 }
