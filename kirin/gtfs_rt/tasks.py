@@ -32,7 +32,8 @@ import requests
 from kirin import gtfs_realtime_pb2
 import navitia_wrapper
 from kirin.tasks import celery
-from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, manage_gtfs_rt_with_error
+from kirin.utils import should_retry_exception, make_kirin_lock_name, get_lock, manage_db_error, \
+    manage_db_no_new
 from kirin.gtfs_rt import model_maker
 from retrying import retry
 from kirin import app, redis
@@ -98,14 +99,15 @@ def gtfs_poller(self, config):
         # If the HEAD request or Redis get/set fail, we just ignore this part and do the polling anyway
         if not _is_newer(config):
             new_relic.ignore_transaction()
+            manage_db_no_new(connector='gtfs-rt', contributor=contributor)
             return
 
-        response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
         try:
+            response = requests.get(config['feed_url'], timeout=config.get('timeout', 1))
             response.raise_for_status()
 
         except Exception as e:
-            manage_gtfs_rt_with_error(data='', connector='gtfs-rt', contributor=contributor,
+            manage_db_error(data='', connector='gtfs-rt', contributor=contributor,
                                       status='KO', error='Http Error')
             logger.debug(str(e))
             return
@@ -122,7 +124,7 @@ def gtfs_poller(self, config):
         try:
             proto.ParseFromString(response.content)
         except DecodeError:
-            manage_gtfs_rt_with_error(proto, 'gtfs-rt', contributor=contributor, status='KO', error='Decode Error')
+            manage_db_error(proto, 'gtfs-rt', contributor=contributor, status='KO', error='Decode Error')
             logger.debug('invalid protobuf')
         else:
             model_maker.handle(proto, nav, contributor)

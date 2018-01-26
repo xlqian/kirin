@@ -26,6 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from copy import deepcopy
 from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
@@ -324,22 +325,33 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
 
     @classmethod
-    def get_last_update_by_contributor(cls, only_valid=False):
+    def get_probes_by_contributor(cls, only_valid=False):
+        """
+        create a dict of probes
+        """
         from kirin import app
-        result = {}
+        result = {'last_update': {},
+                  'last_valid_update': {},
+                  'last_update_error': {}}
         contributor = [app.config['CONTRIBUTOR'], app.config['GTFS_RT_CONTRIBUTOR']]
         for c in contributor:
-            sql = db.session.query(cls.created_at, cls.error).filter(cls.contributor == c)
-            if only_valid:
-                sql = sql.filter(cls.status == 'OK')
+            sql = db.session.query(cls.created_at, cls.status, cls.updated_at, cls.error)
+            sql = sql.filter(cls.contributor == c)
             sql = sql.order_by(desc(cls.created_at))
             row = sql.first()
             if row:
-                error_message = row[1]
-                if error_message:
-                    result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ') + ' Error: {}'.format(error_message)
+                date = row[2] if row[2] else row[0] #update if exist, otherwise created
+                result['last_update'][c] = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+                if row[1] == 'OK':
+                    result['last_valid_update'][c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+                    # no error to populate
                 else:
-                    result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+                    result['last_update_error'][c] = row[3]
+                    sql_ok = sql.filter(cls.status == 'OK')
+                    row_ok = sql_ok.first()
+                    if row_ok:
+                        result['last_valid_update'][c] = row_ok[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+
         return result
 
     @classmethod
@@ -353,11 +365,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         db.session.commit()
 
     @classmethod
-    def get_last_error(cls, connector, status, error):
-
-        rt_error = cls.query.filter_by(
-            connector=connector,
-            status=status,
-            error=error
-        ).order_by(desc(cls.created_at))
-        return rt_error.first()
+    def get_last_rtu(cls, connector, contributor):
+        q = cls.query.filter_by(connector=connector, contributor=contributor)
+        q = q.order_by(desc(cls.created_at))
+        return q.first()

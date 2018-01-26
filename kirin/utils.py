@@ -135,23 +135,37 @@ def save_gtfs_rt_with_error(data, connector, contributor, status, error=None):
     model.db.session.commit()
 
 
-def manage_gtfs_rt_with_error(data, connector, contributor, status, error=None):
+def poke_updated_at(rtu):
     """
-    If error='Http Error' and last gtfs rt with the same error is inserted before 5 second then
-    insert in the table real_time_update with error message (5 seconds is fixed value)
+    just update the updated_at of the RealTimeUpdate object provided
+    """
+    if rtu:
+        status = rtu.status
+        rtu.status = 'pending' if status != 'pending' else 'OK' # just to poke updated_at
+        model.db.session.commit()
+        rtu.status = status
+        model.db.session.commit()
 
-    For other error messages, insert gtfs-rt in the table real_time_update with status and error.
+
+def manage_db_error(data, connector, contributor, status, error=None):
+    """
+    If the last RTUpdate contains the same error (and data, status) we just change updated_at:
+    This way, we know we had this error between created_at and updated_at, but we don't get extra rows in db
+
+    Otherwise, we create a new one, as we want to track error changes
 
     parameters: data, connector, contributor, status, error
     """
-    if error == 'Http Error':
-        rt_update_error = model.RealTimeUpdate.get_last_error(connector, status, error)
-        if rt_update_error is None:
-            save_gtfs_rt_with_error('', connector, contributor, status, error)
-        elif rt_update_error.created_at + datetime.timedelta(0, 5) < datetime.datetime.utcnow():
-            save_gtfs_rt_with_error('', connector, contributor, status, error)
+    last = model.RealTimeUpdate.get_last_rtu(connector, contributor)
+    if last and last.status == status and last.error == error and last.raw_data == str(data):
+        poke_updated_at(last)
     else:
         save_gtfs_rt_with_error(data, connector, contributor, status, error)
+
+
+def manage_db_no_new(connector, contributor):
+    last = model.RealTimeUpdate.get_last_rtu(connector, contributor)
+    poke_updated_at(last)
 
 
 @contextmanager
