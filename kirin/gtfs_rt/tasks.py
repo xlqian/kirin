@@ -108,7 +108,7 @@ def gtfs_poller(self, config):
 
         except Exception as e:
             manage_db_error(data='', connector='gtfs-rt', contributor=contributor,
-                                      status='KO', error='Http Error')
+                            status='KO', error='Http Error')
             logger.debug(str(e))
             return
 

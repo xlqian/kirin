@@ -127,8 +127,8 @@ def make_kirin_lock_name(*args):
 
 
 def save_gtfs_rt_with_error(data, connector, contributor, status, error=None):
-    data = str(data)
-    rt_update = make_rt_update(data, connector=connector, contributor=contributor, status=status)
+    raw_data = str(data)
+    rt_update = make_rt_update(raw_data, connector=connector, contributor=contributor, status=status)
     rt_update.status = status
     rt_update.error = error
     model.db.session.add(rt_update)
