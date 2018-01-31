@@ -36,6 +36,8 @@ from kirin.exceptions import InvalidArguments
 import navitia_wrapper
 from kirin.gtfs_rt import model_maker
 from kirin import redis
+from kirin.utils import manage_db_error
+
 
 def _get_gtfs_rt(req):
     if not req.data:
@@ -69,6 +71,8 @@ class GtfsRT(Resource):
         try:
             proto.ParseFromString(raw_proto)
         except DecodeError:
+            #We save the non-decodable flux gtfs-rt
+            manage_db_error(proto, 'gtfs-rt', contributor=self.contributor, status='KO', error='Decode Error')
             raise InvalidArguments('invalid protobuf')
         else:
             model_maker.handle(proto, self.navitia_wrapper, self.contributor)

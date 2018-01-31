@@ -35,6 +35,9 @@ from kirin import gtfs_rt
 from tests import mock_navitia
 from tests.check_utils import dumb_nav_wrapper, api_post
 from kirin import gtfs_realtime_pb2, app
+from kirin.utils import save_gtfs_rt_with_error, manage_db_error
+import time
+from sqlalchemy import desc
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -295,6 +298,7 @@ def test_gtfs_pass_midnight_model_builder(pass_midnight_gtfs_rt_data):
 
         assert len(trip_updates) == 1
         assert len(trip_updates[0].stop_time_updates) == 5
+        assert RealTimeUpdate.query.first().status == 'OK'
 
         first_stop = trip_updates[0].stop_time_updates[0]
         assert first_stop.stop_id == 'StopR1'
@@ -356,6 +360,7 @@ def test_gtfs_rt_pass_midnight(pass_midnight_gtfs_rt_data, mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 5
+        assert RealTimeUpdate.query.first().status == 'OK'
 
         trip_update = TripUpdate.find_by_dated_vj('R:vj1', datetime.datetime(2012, 6, 16, 3, 30))
 
@@ -866,6 +871,9 @@ def test_gtfs_bad_order_model_builder(bad_ordered_gtfs_rt_data):
         db.session.commit()
 
         assert len(trip_updates) == 0
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'No information for this gtfs-rt with timestamp: 1339772400'
 
 
 def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
@@ -885,6 +893,8 @@ def test_gtfs_bad_order_model_builder_with_post(bad_ordered_gtfs_rt_data):
         with app.app_context():
             assert len(RealTimeUpdate.query.all()) == nb_rt_update
             assert len(TripUpdate.query.all()) == 0
+            assert RealTimeUpdate.query.first().status == 'KO'
+            assert RealTimeUpdate.query.first().error == 'No information for this gtfs-rt with timestamp: 1339772400'
 
     check(nb_rt_update=1)
 
@@ -910,6 +920,7 @@ def test_gtfs_lollipop_model_builder_with_post(lollipop_gtfs_rt_data):
     def check(nb_rt_update):
         with app.app_context():
             assert len(RealTimeUpdate.query.all()) == nb_rt_update
+            assert RealTimeUpdate.query.first().status == 'OK'
             assert len(TripUpdate.query.all()) == 1
             assert len(StopTimeUpdate.query.all()) == 5
 
@@ -1330,3 +1341,92 @@ def test_gtfs_midnight_model_builder_with_post(gtfs_rt_data_with_vj_starting_at_
             assert third_stop.message is None
 
     check(nb_rt_update=1)
+
+
+def test_gtfs_rt_api_with_decode_error(basic_gtfs_rt_data):
+    tester = app.test_client()
+    resp = tester.post('/gtfs_rt', data=basic_gtfs_rt_data.SerializeToString() + 'toto')
+    assert resp.status_code == 400
+
+    def check(nb_rt_update):
+        with app.app_context():
+            assert len(RealTimeUpdate.query.all()) == nb_rt_update
+            assert len(TripUpdate.query.all()) == 0
+            assert RealTimeUpdate.query.first().status == 'KO'
+            assert RealTimeUpdate.query.first().error == 'Decode Error'
+
+    check(nb_rt_update=1)
+
+
+def test_save_gtfs_rt_with_error():
+    """
+    test the function "save_gtfs_rt_with_error"
+    """
+    with app.app_context():
+        save_gtfs_rt_with_error('toto', 'gtfs-rt', contributor='realtime.gtfs',
+                                status='KO', error='Decode Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Decode Error'
+
+def test_manage_db_with_http_error_without_insert():
+    """
+    test the function "manage_db_error" without any insert of a new gtfs-rt
+    """
+    with app.app_context():
+        manage_db_error('toto', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == 'toto'
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+
+        created_at = RealTimeUpdate.query.first().created_at
+        updated_at = RealTimeUpdate.query.first().updated_at
+        assert updated_at > created_at
+
+        manage_db_error('toto', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == 'toto'
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+        assert RealTimeUpdate.query.first().created_at == created_at
+        assert RealTimeUpdate.query.first().updated_at > updated_at
+
+        updated_at = RealTimeUpdate.query.first().updated_at
+
+        time.sleep(6)
+
+        manage_db_error('toto', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == 'toto'
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+        assert RealTimeUpdate.query.first().created_at == created_at
+        assert RealTimeUpdate.query.first().updated_at > updated_at
+
+def test_manage_db_with_http_error_with_insert():
+    """
+    test the function "manage_db_error" with 'Http Error' since
+    no gtfs-rt with 'Http Error' inserted since more than 5 seconds
+    """
+    with app.app_context():
+        manage_db_error('toto', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().raw_data == 'toto'
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == 'Http Error'
+
+        created_at = RealTimeUpdate.query.first().created_at
+
+        manage_db_error('', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Decode Error')
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().status == 'KO'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().error == 'Decode Error'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().created_at > created_at
+
+        manage_db_error('toto', 'gtfs-rt', contributor='realtime.gtfs', status='KO', error='Http Error')
+        assert len(RealTimeUpdate.query.all()) == 3
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().raw_data == 'toto'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().status == 'KO'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().error == 'Http Error'
+        assert RealTimeUpdate.query.order_by(desc(RealTimeUpdate.created_at)).first().created_at != created_at

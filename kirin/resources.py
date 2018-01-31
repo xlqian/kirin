@@ -42,11 +42,10 @@ class Index(Resource):
 
 class Status(Resource):
     def get(self):
-        return {
-                   'version': version,
-                   'db_pool_status': kirin.db.engine.pool.status(),
-                   'db_version': kirin.db.engine.scalar('select version_num from alembic_version;'),
-                   'navitia_url': current_app.config['NAVITIA_URL'],
-                   'rabbitmq_info': kirin.rabbitmq_handler.info(),
-                   'last_update': model.RealTimeUpdate.get_last_update_by_contributor(),
-               }, 200
+        res = model.RealTimeUpdate.get_probes_by_contributor()
+        res['version'] = version
+        res['db_pool_status'] = kirin.db.engine.pool.status()
+        res['db_version'] = kirin.db.engine.scalar('select version_num from alembic_version;')
+        res['navitia_url'] = current_app.config['NAVITIA_URL']
+        res['rabbitmq_info'] = kirin.rabbitmq_handler.info()
+        return res, 200

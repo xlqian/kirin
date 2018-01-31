@@ -100,11 +100,18 @@ class KirinModelBuilder(object):
                        .format(data.header.timestamp, data_time))
 
         trip_updates = []
+
         for entity in data.entity:
             if not entity.trip_update:
                 continue
             tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
             trip_updates.extend(tu)
+
+        if not trip_updates:
+            rt_update.status = 'KO'
+            rt_update.error = 'No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp)
+            self.log.error('No information for this gtfs-rt with timestamp: {}'.format(data.header.timestamp))
+
         return trip_updates
 
     def _get_stop_code(self, nav_stop):

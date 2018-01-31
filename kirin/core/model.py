@@ -26,6 +26,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from copy import deepcopy
 from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
@@ -33,6 +34,8 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
+from sqlalchemy import desc
+
 
 db = SQLAlchemy()
 
@@ -312,7 +315,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     __table_args__ = (db.Index('realtime_update_created_at', 'created_at'),
                       db.Index('realtime_update_contributor_and_created_at', 'created_at', 'contributor'))
 
-    def __init__(self, raw_data, connector, contributor, status=None, error=None, received_at=None):
+    def __init__(self, raw_data, connector, contributor, status='OK', error=None, received_at=None):
         self.id = gen_uuid()
         self.raw_data = raw_data
         self.connector = connector
@@ -322,15 +325,33 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
 
     @classmethod
-    def get_last_update_by_contributor(cls):
+    def get_probes_by_contributor(cls, only_valid=False):
+        """
+        create a dict of probes
+        """
         from kirin import app
-        result = {}
+        result = {'last_update': {},
+                  'last_valid_update': {},
+                  'last_update_error': {}}
         contributor = [app.config['CONTRIBUTOR'], app.config['GTFS_RT_CONTRIBUTOR']]
         for c in contributor:
-            row = db.session.query(db.func.max(cls.created_at)) \
-                              .filter(cls.contributor == c).one()
-            if row[0]:
-                result[c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+            sql = db.session.query(cls.created_at, cls.status, cls.updated_at, cls.error)
+            sql = sql.filter(cls.contributor == c)
+            sql = sql.order_by(desc(cls.created_at))
+            row = sql.first()
+            if row:
+                date = row[2] if row[2] else row[0] #update if exist, otherwise created
+                result['last_update'][c] = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+                if row[1] == 'OK':
+                    result['last_valid_update'][c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+                    # no error to populate
+                else:
+                    result['last_update_error'][c] = row[3]
+                    sql_ok = sql.filter(cls.status == 'OK')
+                    row_ok = sql_ok.first()
+                    if row_ok:
+                        result['last_valid_update'][c] = row_ok[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+
         return result
 
     @classmethod
@@ -342,3 +363,9 @@ class RealTimeUpdate(db.Model, TimestampMixin):
             filter(associate_realtimeupdate_tripupdate.c.real_time_update_id == None)
         cls.query.filter(cls.id.in_(sub_query)).delete(synchronize_session=False)
         db.session.commit()
+
+    @classmethod
+    def get_last_rtu(cls, connector, contributor):
+        q = cls.query.filter_by(connector=connector, contributor=contributor)
+        q = q.order_by(desc(cls.created_at))
+        return q.first()

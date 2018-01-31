@@ -118,8 +118,7 @@ def poller(self):
               'navitia_url': app.config.get('NAVITIA_URL'),
               'token': app.config.get('NAVITIA_GTFS_RT_TOKEN'),
               'coverage': app.config.get('NAVITIA_GTFS_RT_INSTANCE'),
-              'feed_url': app.config.get('GTFS_RT_FEED_URL'),
-              }
+              'feed_url': app.config.get('GTFS_RT_FEED_URL')}
     gtfs_poller.delay(config)
 
 
@@ -130,8 +129,7 @@ def purge_gtfs_trip_update(self):
     RealTimeUpdate are kept so that we can replay it for debug purpose. RealTimeUpdate will be remove by another task
     """
     config = {'contributor': app.config.get('GTFS_RT_CONTRIBUTOR'),
-              'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_TRIP_UPDATE'),
-              }
+              'nb_days_to_keep': app.config.get('NB_DAYS_TO_KEEP_TRIP_UPDATE')}
     purge_trip_update.delay(config)
 
 
@@ -152,8 +150,7 @@ def purge_ire_trip_update(self):
     RealTimeUpdate are kept so that we can replay it for debug purpose. RealTimeUpdate will be remove by another task
     """
     config = {'contributor': app.config.get('CONTRIBUTOR'),
-              'nb_days_to_keep': 10,
-              }
+              'nb_days_to_keep': 10}
     purge_trip_update.delay(config)
 
 

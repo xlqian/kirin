@@ -78,11 +78,11 @@ def make_navitia_wrapper():
     return navitia_wrapper.Navitia(url=url, token=token).instance(instance)
 
 
-def make_rt_update(data, connector, contributor):
+def make_rt_update(data, connector, contributor, status='OK'):
     """
     Create an RealTimeUpdate object for the query and persist it
     """
-    rt_update = model.RealTimeUpdate(data, connector=connector, contributor=contributor)
+    rt_update = model.RealTimeUpdate(data, connector=connector, contributor=contributor, status=status)
 
     model.db.session.add(rt_update)
     model.db.session.commit()
@@ -124,6 +124,48 @@ def should_retry_exception(exception):
 def make_kirin_lock_name(*args):
     from kirin import app
     return '|'.join([app.config['TASK_LOCK_PREFIX']] + [str(a) for a in args])
+
+
+def save_gtfs_rt_with_error(data, connector, contributor, status, error=None):
+    raw_data = str(data)
+    rt_update = make_rt_update(raw_data, connector=connector, contributor=contributor, status=status)
+    rt_update.status = status
+    rt_update.error = error
+    model.db.session.add(rt_update)
+    model.db.session.commit()
+
+
+def poke_updated_at(rtu):
+    """
+    just update the updated_at of the RealTimeUpdate object provided
+    """
+    if rtu:
+        status = rtu.status
+        rtu.status = 'pending' if status != 'pending' else 'OK' # just to poke updated_at
+        model.db.session.commit()
+        rtu.status = status
+        model.db.session.commit()
+
+
+def manage_db_error(data, connector, contributor, status, error=None):
+    """
+    If the last RTUpdate contains the same error (and data, status) we just change updated_at:
+    This way, we know we had this error between created_at and updated_at, but we don't get extra rows in db
+
+    Otherwise, we create a new one, as we want to track error changes
+
+    parameters: data, connector, contributor, status, error
+    """
+    last = model.RealTimeUpdate.get_last_rtu(connector, contributor)
+    if last and last.status == status and last.error == error and last.raw_data == str(data):
+        poke_updated_at(last)
+    else:
+        save_gtfs_rt_with_error(data, connector, contributor, status, error)
+
+
+def manage_db_no_new(connector, contributor):
+    last = model.RealTimeUpdate.get_last_rtu(connector, contributor)
+    poke_updated_at(last)
 
 
 @contextmanager
