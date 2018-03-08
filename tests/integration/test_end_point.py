@@ -51,7 +51,11 @@ def test_status(setup_database):
     assert 'realtime.sherbrooke' in resp['last_update']
 
     assert '2015-11-04T07:32:00Z' in resp['last_update']['realtime.ire']
-    assert '2015-11-04T07:42:00Z' in resp['last_update']['realtime.sherbrooke']
+    assert '2015-11-04T07:52:00Z' in resp['last_update']['realtime.sherbrooke']
+
+    assert 'realtime.sherbrooke' in resp['last_update_error']
+    assert '2015-11-04T07:32:00Z' in resp['last_valid_update']['realtime.ire']
+    assert '2015-11-04T07:42:00Z' in resp['last_valid_update']['realtime.sherbrooke']
 
 
 @pytest.fixture()
@@ -96,5 +100,10 @@ def setup_database():
         rtu3.trip_updates.append(tu3)
         model.db.session.add(rtu3)
 
+        rtu4 = model.RealTimeUpdate(None, connector='gtfs-rt', contributor='realtime.sherbrooke', status='KO',
+                                    error='No new information destinated to navitia for this gtfs-rt with '
+                                          'timestamp: 1520351246')
+        rtu4.created_at = datetime(2015, 11, 4, 7, 52)
+        model.db.session.add(rtu4)
         model.db.session.commit()
 

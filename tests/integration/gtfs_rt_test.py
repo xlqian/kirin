@@ -574,12 +574,20 @@ def test_gtfs_rt_partial_update_same_feed(partial_update_gtfs_rt_data_1):
             # so the length is 1
             assert len(trip_update.real_time_updates) == 1
 
+            if nb_rt_update == 2:
+                last_real_time_update = RealTimeUpdate.query.order_by(RealTimeUpdate.created_at.desc()).first()
+                assert last_real_time_update.status == 'KO'
+                assert last_real_time_update.error == \
+                       'No new information destinated to navitia for this gtfs-rt with timestamp: 1339772400'
     check(nb_rt_update=1)
 
     # Now we apply exactly the same gtfs-rt, the new gtfs-rt will be save into the db,
-    # which increment the nb of RealTimeUpdate, but the rest remains the same
+    # which increment the nb of RealTimeUpdate, but the rest remains the same that means....
+    # 1. There will not be any trip_updates in the data base related to the last real_time_update
+    # 2. with real_time_update.status = 'KO' and real_time_update.error = 'No new Information...'
     resp = tester.post('/gtfs_rt', data=partial_update_gtfs_rt_data_1.SerializeToString())
     assert resp.status_code == 200
+
     check(nb_rt_update=2)
 
 
