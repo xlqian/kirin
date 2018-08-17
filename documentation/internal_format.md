@@ -1,7 +1,7 @@
 # Kirin internal format
 
 ## Overview
-Kirin's internal model is derived from GTFS-realtime `ServiceAlert` specifications.
+Kirin's internal model is derived from GTFS-realtime `Trip updates` (specifications)[http://gtfs.org/realtime/#message-tripupdate].
 It is composed of several objects : 
 - VehicleJourney
 - RealTimeUpdate
@@ -9,13 +9,6 @@ It is composed of several objects :
 - StopTimeUpdate
 
 ## Model details
-### VehicleJourney
-Property | TYpe | Description
---- | --- | ---
-id | UUID | Unique identifier
-navitia_trip_id | String, Required | Identifier of Navitia's trip_id
-start_timestamp | DateTime, Required | Identification of the start date of the VehicleJourney (UTC)
-
 ### RealTimeUpdate
 Received raw data from a Real Time Update.
 
@@ -27,7 +20,7 @@ connector | Enum, Required | Source of the data. See below for an available sour
 status | Enum, Required | Processing status of the received data (Possible values are `OK`, `KO` or `pending`)
 error | String, Optionnal | Description of the error (if any)
 raw_data | String, Optionnal | Content of the received raw data
-contributor | String, Optionnal | Identifier of the realtime connector. It must be known by Kraken.
+contributor | String, Optionnal | Identifier of the realtime connector. It must be known by Kraken (internal component of (navitia)[https://github.com/CanalTP/navitia].
 trip_updates | List | List of `TripUpdate` provided by this bloc of data
 
 **Connector field possible values**
@@ -35,12 +28,19 @@ The `connector` field is restricted to the following values:
 - `ire`: realtime informations of the SNCF long distance trains 
 - `gtfs-rt`: realtime informations from the `TripUpdate` format of GTFS-realtime
 
+### VehicleJourney
+Property | TYpe | Description
+--- | --- | ---
+id | UUID | Unique identifier
+navitia_trip_id | String, Required | Identifier of Navitia's trip_id
+start_timestamp | DateTime, Required | Identification of the start date of the VehicleJourney (UTC)
+
 ### TripUpdate
 Update information about a VehicleJourney. 
 
 Property | TYpe | Description
 --- | --- | ---
-id | UUID | => est-ce que ça existe ?
+id | UUID | 
 vj_id | UUID | id of the VehicleJourney beeing updated
 status | Enum, Required | Modification type for this trip (Possible values are `add`, `delete`, `update` or `none`)
 message | String, Optionnal | Text to be displayed in Navitia for the `VehicleJourney`
