@@ -22,7 +22,7 @@ psycopg2==2.7.3.2
 pytz==2015.4
 six==1.10.0
 wsgiref==0.1.2
-protobuf==2.6.1
+protobuf==3.6.1
 python-dateutil==2.4.2
 -e git+https://github.com//CanalTP/navitia_python_wrapper#egg=navitia_wrapper
 requests==2.4.3

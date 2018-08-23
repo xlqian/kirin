@@ -1353,7 +1353,7 @@ def test_gtfs_midnight_model_builder_with_post(gtfs_rt_data_with_vj_starting_at_
 
 def test_gtfs_rt_api_with_decode_error(basic_gtfs_rt_data):
     tester = app.test_client()
-    resp = tester.post('/gtfs_rt', data=basic_gtfs_rt_data.SerializeToString() + 'toto')
+    resp = tester.post('/gtfs_rt', data=basic_gtfs_rt_data.SerializeToString() + '>toto')
     assert resp.status_code == 400
 
     def check(nb_rt_update):
