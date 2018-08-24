@@ -34,6 +34,7 @@ from werkzeug.exceptions import HTTPException
 from kirin import resources
 from kirin.gtfs_rt import gtfs_rt
 from kirin.ire import ire
+from kirin.cots import cots
 from kirin import app
 from kirin.new_relic import record_custom_parameter, record_exception
 
@@ -54,6 +55,10 @@ api.add_resource(resources.Status,
 api.add_resource(ire.Ire,
                  '/ire',
                  endpoint='ire')
+
+api.add_resource(cots.Cots,
+                 '/cots',
+                 endpoint='cots')
 
 api.add_resource(gtfs_rt.GtfsRT,
                  '/gtfs_rt',
