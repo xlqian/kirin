@@ -32,11 +32,10 @@ from datetime import timedelta
 import pytest
 from pytz import utc
 
-from tests.check_utils import api_post
 import datetime
 from kirin import app
 from tests import mock_navitia
-from tests.check_utils import get_fixture_data
+from tests.check_utils import get_fixture_data, api_post
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 
 
