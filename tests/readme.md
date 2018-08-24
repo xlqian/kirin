@@ -1,10 +1,12 @@
 # Run
-to run the tests, just run py.test in the kirin dir, using appropriate python virtualenv
+
+To run the tests, just run py.test in the kirin root dir, using appropriate python virtualenv:
 ```bash
 py.test --doctest-modules
 ```
  
 # Test with a database
+
 To be able to correctly test kirin, a database is needed.
 To have a brand new database, a docker with a db is set up once for each test session.
 
