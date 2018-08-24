@@ -36,7 +36,7 @@ from tests.check_utils import api_post
 import datetime
 from kirin import app
 from tests import mock_navitia
-from tests.check_utils import get_ire_data
+from tests.check_utils import get_fixture_data
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 
 
@@ -295,7 +295,7 @@ def test_ire_delayed_simple_post(mock_rabbitmq):
     """
     simple delayed stops post
     """
-    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231 = get_fixture_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231)
     assert res == 'OK'
 
@@ -311,7 +311,7 @@ def test_ire_trip_removal_simple_post(mock_rabbitmq):
     """
     simple trip removal post
     """
-    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113 = get_fixture_data('train_6113_trip_removal.xml')
     res = api_post('/ire', data=ire_6113)
     assert res == 'OK'
 
@@ -327,11 +327,11 @@ def test_ire_delayed_and_trip_removal_post(mock_rabbitmq):
     """
     post delayed stops on one trip than trip removal on another
     """
-    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231 = get_fixture_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231)
     assert res == 'OK'
 
-    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113 = get_fixture_data('train_6113_trip_removal.xml')
     res = api_post('/ire', data=ire_6113)
     assert res == 'OK'
 
@@ -349,7 +349,7 @@ def test_ire_trip_removal_post_twice(mock_rabbitmq):
     """
     double trip removal post
     """
-    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113 = get_fixture_data('train_6113_trip_removal.xml')
     res = api_post('/ire', data=ire_6113)
     assert res == 'OK'
     res = api_post('/ire', data=ire_6113)
@@ -368,7 +368,7 @@ def test_ire_delayed_post_twice(mock_rabbitmq):
     """
     double delayed stops post
     """
-    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231 = get_fixture_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231)
     assert res == 'OK'
     res = api_post('/ire', data=ire_96231)
@@ -387,10 +387,10 @@ def test_ire_trip_delayed_then_removal(mock_rabbitmq):
     """
     post delayed stops then trip removal on the same trip
     """
-    ire_96231_delayed = get_ire_data('train_96231_delayed.xml')
+    ire_96231_delayed = get_fixture_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231_delayed)
     assert res == 'OK'
-    ire_96231_trip_removal = get_ire_data('train_96231_trip_removal.xml')
+    ire_96231_trip_removal = get_fixture_data('train_96231_trip_removal.xml')
     res = api_post('/ire', data=ire_96231_trip_removal)
     assert res == 'OK'
 
@@ -408,7 +408,7 @@ def test_ire_two_trip_removal_one_post(mock_rabbitmq):
     post one ire trip removal on two trips
     (navitia mock returns 2 vj for 'JOHN' headsign)
     """
-    ire_JOHN_trip_removal = get_ire_data('train_JOHN_trip_removal.xml')
+    ire_JOHN_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
     res = api_post('/ire', data=ire_JOHN_trip_removal)
     assert res == 'OK'
 
@@ -425,7 +425,7 @@ def test_ire_two_trip_removal_post_twice(mock_rabbitmq):
     """
     post twice ire trip removal on two trips
     """
-    ire_JOHN_trip_removal = get_ire_data('train_JOHN_trip_removal.xml')
+    ire_JOHN_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
     res = api_post('/ire', data=ire_JOHN_trip_removal)
     assert res == 'OK'
     res = api_post('/ire', data=ire_JOHN_trip_removal)
@@ -444,7 +444,7 @@ def test_ire_trip_with_parity(mock_rabbitmq):
     """
     a trip with a parity has been impacted, there should be 2 VJ impacted
     """
-    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113 = get_fixture_data('train_6113_trip_removal.xml')
     ire_6113_14 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
                                    '<NumeroTrain>006113/4</NumeroTrain>')
     res = api_post('/ire', data=ire_6113_14)
@@ -471,7 +471,7 @@ def test_ire_trip_with_parity_one_unknown_vj(mock_rabbitmq):
     a trip with a parity has been impacted, but the train 6112 is not known by navitia
     there should be only the train 6113 impacted
     """
-    ire_6113 = get_ire_data('train_6113_trip_removal.xml')
+    ire_6113 = get_fixture_data('train_6113_trip_removal.xml')
     ire_6112_13 = ire_6113.replace('<NumeroTrain>006113</NumeroTrain>',
                                    '<NumeroTrain>006112/3</NumeroTrain>')
     res = api_post('/ire', data=ire_6112_13)
@@ -491,7 +491,7 @@ def test_save_bad_raw_ire():
     """
     send a bad formatted ire, the bad raw ire should be saved in db
     """
-    bad_ire = get_ire_data('bad_ire.xml')
+    bad_ire = get_fixture_data('bad_ire.xml')
     res = api_post('/ire', data=bad_ire, check=False)
     assert res[1] == 400
     assert res[0]['message'] == 'Invalid arguments'
@@ -507,7 +507,7 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
     """
     We delay a stop, then the vj is back on time
     """
-    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231 = get_fixture_data('train_96231_delayed.xml')
     res = api_post('/ire', data=ire_96231)
     assert res == 'OK'
 
@@ -519,7 +519,7 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
     check_db_ire_96231_delayed()
     assert mock_rabbitmq.call_count == 1
 
-    ire_96231 = get_ire_data('train_96231_normal.xml')
+    ire_96231 = get_fixture_data('train_96231_normal.xml')
     res = api_post('/ire', data=ire_96231)
     assert res == 'OK'
 
@@ -536,7 +536,7 @@ def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
     a trip with a parity has been impacted, but the ExternModif is missing,
     the IRE should still be acceptable
     """
-    ire_96231 = get_ire_data('train_96231_delayed.xml')
+    ire_96231 = get_fixture_data('train_96231_delayed.xml')
     # Removing MotifExterne
     ire_96231_without_MotifExterne = ire_96231.replace('<MotifExterne>Affluence exceptionnelle de voyageurs</MotifExterne>',
                                                        '')
@@ -558,7 +558,7 @@ def test_ire_partial_removal(mock_rabbitmq):
 
     Normally there are 7 stops in this VJ, but 2 (Bar-sur-Aube and Vendeuvre) have been removed
     """
-    ire_080427 = get_ire_data('train_840427_partial_removal.xml')
+    ire_080427 = get_fixture_data('train_840427_partial_removal.xml')
     res = api_post('/ire', data=ire_080427)
     assert res == 'OK'
 

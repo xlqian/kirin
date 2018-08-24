@@ -32,7 +32,7 @@ import pytest
 from kirin import db, app
 from kirin.core import model
 from kirin.ire import KirinModelBuilder
-from tests.check_utils import get_ire_data, _dt, dumb_nav_wrapper
+from tests.check_utils import get_fixture_data, _dt, dumb_nav_wrapper
 
 
 def test_train_delayed(mock_navitia_fixture):
@@ -40,7 +40,7 @@ def test_train_delayed(mock_navitia_fixture):
     test the import of train_96231_delayed.xml
     """
 
-    input_train_delayed = get_ire_data('train_96231_delayed.xml')
+    input_train_delayed = get_fixture_data('train_96231_delayed.xml')
 
     with app.app_context():
         rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire', contributor='realtime.ire')
@@ -104,7 +104,7 @@ def test_train_trip_removal(mock_navitia_fixture):
     test the import of train_6113_trip_removal.xml
     """
 
-    input_train_trip_removed = get_ire_data('train_6113_trip_removal.xml')
+    input_train_trip_removed = get_fixture_data('train_6113_trip_removal.xml')
 
     with app.app_context():
         rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='ire', contributor='realtime.ire')
