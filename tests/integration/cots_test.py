@@ -32,8 +32,17 @@ import pytest
 
 from tests.check_utils import api_post
 from kirin import app
+from tests import mock_navitia
 from tests.check_utils import get_fixture_data
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
+
+
+@pytest.fixture(scope='function', autouse=True)
+def navitia(monkeypatch):
+    """
+    Mock all calls to navitia for this fixture
+    """
+    monkeypatch.setattr('navitia_wrapper._NavitiaWrapper.query', mock_navitia.mock_navitia_query)
 
 
 @pytest.fixture(scope='function')
