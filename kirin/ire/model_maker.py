@@ -37,7 +37,7 @@ from kirin.core import model
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
 from kirin.exceptions import InvalidArguments, ObjectNotFound
-from kirin.utils import record_internal_failure
+from kirin.utils import record_internal_failure, headsigns, to_navitia_str
 
 
 def get_node(elt, xpath, nullabe=False):
@@ -80,38 +80,6 @@ def as_duration(s):
     return d - datetime.strptime('00:00', '%H:%M')
 
 
-def to_str(date):
-    return date.strftime("%Y%m%dT%H%M%S")
-
-
-def headsigns(str):
-    """
-    we remove leading 0 for the headsigns and handle the train's parity
-
-    the parity is the number after the '/'. it gives an alternative train number
-
-    >>> headsigns('2038')
-    ['2038']
-    >>> headsigns('002038')
-    ['2038']
-    >>> headsigns('002038/12')
-    ['2038', '2012']
-    >>> headsigns('2038/3')
-    ['2038', '2033']
-    >>> headsigns('2038/123')
-    ['2038', '2123']
-    >>> headsigns('2038/12345')
-    ['2038', '12345']
-
-    """
-    h = str.lstrip('0')
-    if '/' not in h:
-        return [h]
-    signs = h.split('/', 1)
-    alternative_headsign = signs[0][:-len(signs[1])] + signs[1]
-    return [signs[0], alternative_headsign]
-
-
 def as_bool(s):
     return s == 'true'
 
@@ -122,7 +90,7 @@ def get_navitia_stop_time(navitia_vj, stop_id):
                        .get('stop_point', {})
                        .get('id') == stop_id), None)
 
-    # if a VJ pass several times at the same stop, we cannot know
+    # if a VJ passes several times at the same stop, we cannot know
     # perfectly which stop time to impact
     # as a first version, we only impact the first
 
@@ -176,8 +144,8 @@ class KirinModelBuilder(object):
 
             navitia_vjs = self.navitia.vehicle_journeys(q={
                 'headsign': train_number,
-                'since': to_str(since),
-                'until': to_str(until),
+                'since': to_navitia_str(since),
+                'until': to_navitia_str(until),
                 'depth': '2',  # we need this depth to get the stoptime's stop_area
                 'show_codes': 'true'  # we need the stop_points CRCICH codes
             })

@@ -53,6 +53,41 @@ def str_to_date(value):
         return None
 
 
+def to_navitia_str(dt):
+    """
+    format a datetime to a navitia-readable str
+    """
+    return dt.strftime("%Y%m%dT%H%M%S")
+
+
+def headsigns(str):
+    """
+    we remove leading 0 for the headsigns and handle the train's parity
+
+    the parity is the number after the '/'. it gives an alternative train number
+
+    >>> headsigns('2038')
+    ['2038']
+    >>> headsigns('002038')
+    ['2038']
+    >>> headsigns('002038/12')
+    ['2038', '2012']
+    >>> headsigns('2038/3')
+    ['2038', '2033']
+    >>> headsigns('2038/123')
+    ['2038', '2123']
+    >>> headsigns('2038/12345')
+    ['2038', '12345']
+
+    """
+    h = str.lstrip('0')
+    if '/' not in h:
+        return [h]
+    signs = h.split('/', 1)
+    alternative_headsign = signs[0][:-len(signs[1])] + signs[1]
+    return [signs[0], alternative_headsign]
+
+
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """
     jsonformatter with extra params

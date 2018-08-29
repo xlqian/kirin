@@ -26,4 +26,4 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-# from model_maker import KirinModelBuilder #TODO create and use model_maker.py
+from model_maker import KirinModelBuilder
