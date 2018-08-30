@@ -4,32 +4,28 @@
 Realtime information for long distance trains of the SNCF network is received in a COTS stream. This document describes how a COTS realtime stream is modeled in Kirin.
 
 ## Input data description
-A realtime COTS stream [link to provide] is obtained as a JSON file via a message queue mechanism. Each feed message represents a `notification` object that contains the information about the train (its status, the associated delay, etc.).
+A realtime COTS stream (link to provide) is obtained as a JSON file via a message queue mechanism. Each feed message represents an update on the information about a train (its status, the associated delay, causes, etc.).
 
-The information concerning the displayed messages related to train modifications is referenced in a separate stream. This stream is provided as another JSON file by an external web service called *paramatreLIV* [link to provide]. Each such message representes a `Motif` object.
-<br/>-- Validation of parametreLIV ??
+The information concerning the displayed messages related to train modifications is referenced in a separate stream provided by an external web service. The latter returns a text message for all available situations associated with an id referenced in the COTS stream.
 
 ## Connector description
+This document doesn't describe all the fields of the Kirin model. Only COTS relevant fields are described below. For example, the RealTimeUpdate.id field is managed by Kirin and is not detailed in the present specification.
+
 ### RealTimeUpdate
 
-Kirin object | COTS object/value | Description
+Kirin property | COTS object/value | Comment/Mapping rule
 --- | --- | ---
-id |  | Unique id of the received stream
-received_at | `YYYY-MM-DD` | System date and time at data reception (UTC)
-connector | `cots` | Name of the realtime data source
-status | ??? | Processing status of the received data (ok, ko, pending)
-error | ??? | Description of the error
-raw_data | `notification` | Content of the received raw data
-contributor | `COTS_CONTRIBUTOR` | Kirin contributor
-trip_updates | [`TripUpdates`] | A list of `TripUpdates`
+connector |  | Fixed value `cots`
+raw_data | _Complete received feed_ | 
+contributor |  | Fixed value specified in the configuration of Kirin
+trip_updates |  | List of trip updates information, see `TripUpdates` below
 
 ### TripUpdate
-Kirin object | COTS object/value | Description
+Kirin property | COTS object/value | Comment/Mapping rule
 --- | --- | ---
-id |  | Unique id of the `TripUpdate`
-vj_id | *VehicleJourney/id* | Id of the `VehicleJourney` found in Navitia
-status | If *nouvelleVersion/statutOperationnel* = "AJOUTEE", then status = `add` <br/>If *nouvelleVersion/statutOperationnel* = "SUPPRIMEE", then status = `delete` <br/>If *nouvelleVersion/statutOperationnel* = "PERTURBEE", then status = `update` <br/>Otherwise, status = `update` | Modification type of the trip
-message | This field value is resolved with respect to the `Motif` object. <br/>It contains the value of *Motif/LabelExt*, if it is specified, where *nouvelleVersion/idMotifInterneReference* = *Motif/Id* | Text to be displayed in Navitia for this `VehicleJourney`
-contibutor | `COTS_CONTRIBUTOR` | Kirin contributor
-stop_time_updates | [`StopTimeUpdates`] | A list of `StopTimeUpdates`
+vj_id | | Refers to the trip found in Navitia that the update applies to, see `VehicleJourney` below
+status | *nouvelleVersion/statutOperationnel* | If *nouvelleVersion/statutOperationnel* = "AJOUTEE", then status = `add` <br/>If *nouvelleVersion/statutOperationnel* = "SUPPRIMEE", then status = `delete` <br/>If *nouvelleVersion/statutOperationnel* = "PERTURBEE", then status = `update` <br/>Otherwise, status = `update`
+message | *nouvelleVersion/idMotifInterneReference* | The label of the message referenced by the value of *nouvelleVersion/idMotifInterneReference*
+contibutor |  | Fixed value specified in the configuration of Kirin
+stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below
 
