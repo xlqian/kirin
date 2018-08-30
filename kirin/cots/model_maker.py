@@ -27,27 +27,27 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import logging
-from datetime import timedelta, datetime
+
+from __future__ import absolute_import, print_function, unicode_literals, division
+from datetime import datetime
 from dateutil import parser
 from flask.globals import current_app
-from kirin.core import model
+from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder
 # For perf benches:
 # https://artem.krylysov.com/blog/2015/09/29/benchmark-python-json-libraries/
 import ujson
 from kirin.exceptions import InvalidArguments, ObjectNotFound
-from kirin.utils import record_internal_failure, headsigns, to_navitia_str
 
 
-def get_value(dict, key, nullabe=False):
+def get_value(sub_json, key, nullabe=False):
     """
-    get a unique element in an xml node
+    get a unique element in an json dict
     raise an exception if the element does not exists
     """
-    res = dict.get(key)
+    res = sub_json.get(key)
     if res is None and not nullabe:
-        raise InvalidArguments('invalid json, impossible to find "{key}" in json elt {elt}'.format(
-            key=key, elt=ujson.dump(dict)))
+        raise InvalidArguments('invalid json, impossible to find "{key}" in json dict {elt}'.format(
+            key=key, elt=ujson.dump(sub_json)))
     return res
 
 
@@ -63,7 +63,9 @@ def is_station(pdp):
 
 def _interesting_pdp_generator(list_pdp):
     """
-    filter "Points de Parcours" (corresponding to stop_times)
+    Filter "Points de Parcours" (corresponding to stop_times) to get only the relevant ones from
+    a Navitia's perspective (stations, where travelers can hop-in or drop-off)
+    Context: COTS may contain operating informations, useless for traveler
     :param list_pdp: an array of "Point de Parcours" (typically the one from the feed)
     :return: Filtered array
     Nota: written in a yield-fashion to switch implem if possible, but we need random access for now
@@ -79,11 +81,9 @@ def _interesting_pdp_generator(list_pdp):
             continue
         # stop consuming once all following stop_times are missing arrival time
         if picked_one and not pdp.get('horaireVoyageurArrivee'):
-            has_following_arrival = False
-            for follow_pdp in list_pdp[idx:]:
-                if follow_pdp.get('horaireVoyageurArrivee') and is_station(follow_pdp):
-                    has_following_arrival = True
-                    break
+            has_following_arrival = any(
+                follow_pdp.get('horaireVoyageurArrivee') and is_station(follow_pdp)
+                for follow_pdp in list_pdp[idx:])
             if not has_following_arrival:
                 break
 
@@ -111,11 +111,10 @@ def get_navitia_stop_time(navitia_vj, stop_id):
     return nav_st
 
 
-class KirinModelBuilder(object):
+class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
-        self.navitia = nav
-        self.contributor = contributor
+        super(KirinModelBuilder, self).__init__(nav, contributor)
 
     def build(self, rt_update):
         """
@@ -136,8 +135,7 @@ class KirinModelBuilder(object):
         return []
 
     def _get_vjs(self, json_train):
-        log = logging.getLogger(__name__)
-        train_numbers = headsigns(get_value(json_train, 'numeroCourse'))
+        train_numbers = get_value(json_train, 'numeroCourse')
         pdps = _interesting_pdp_generator(get_value(json_train, 'listePointDeParcours'))
         if not pdps:
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
@@ -150,39 +148,9 @@ class KirinModelBuilder(object):
         str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'heureLocale')
         time_start = datetime.strptime(str_time_start, '%H:%M:%S').time()
         vj_start = datetime.combine(date, time_start)
-        since = vj_start - timedelta(hours=1)
         str_time_end = get_value(get_value(pdps[-1], 'horaireVoyageurArrivee'), 'heureLocale')
         time_end = datetime.strptime(str_time_end, '%H:%M:%S').time()
         vj_end = datetime.combine(date, time_end)
-        until = vj_end + timedelta(hours=1)
 
-        vjs = {}
+        return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
-        for train_number in train_numbers:
-
-            log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
-
-            navitia_vjs = self.navitia.vehicle_journeys(q={
-                'headsign': train_number,
-                'since': to_navitia_str(since),
-                'until': to_navitia_str(until),
-                'depth': '2',  # we need this depth to get the stoptime's stop_area
-                'show_codes': 'true'  # we need the stop_points CRCICH codes
-            })
-
-            if not navitia_vjs:
-                logging.getLogger(__name__).info('impossible to find train {t} on [{s}, {u}['
-                                                 .format(t=train_number,
-                                                         s=since,
-                                                         u=until))
-                record_internal_failure('missing train', contributor=self.contributor)
-
-
-            for nav_vj in navitia_vjs:
-                vj = model.VehicleJourney(nav_vj, vj_start.date())
-                vjs[nav_vj['id']] = vj
-
-        if not vjs:
-            raise ObjectNotFound('no train found for headsigns {}'.format(train_numbers))
-
-        return vjs.values()

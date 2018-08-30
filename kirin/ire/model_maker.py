@@ -29,15 +29,17 @@
 # www.navitia.io
 import itertools
 import logging
-from datetime import timedelta, datetime
+from datetime import datetime
 from dateutil import parser
 from flask.globals import current_app
+
+from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder
 from kirin.core import model
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
 import xml.etree.cElementTree as ElementTree
-from kirin.exceptions import InvalidArguments, ObjectNotFound
-from kirin.utils import record_internal_failure, headsigns, to_navitia_str
+from kirin.exceptions import InvalidArguments
+from kirin.utils import record_internal_failure
 
 
 def get_node(elt, xpath, nullabe=False):
@@ -97,11 +99,10 @@ def get_navitia_stop_time(navitia_vj, stop_id):
     return nav_st
 
 
-class KirinModelBuilder(object):
+class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
-        self.navitia = nav
-        self.contributor = contributor
+        super(KirinModelBuilder, self).__init__(nav, contributor)
 
     def build(self, rt_update):
         """
@@ -126,46 +127,14 @@ class KirinModelBuilder(object):
         return trip_updates
 
     def _get_vjs(self, xml_train):
-        log = logging.getLogger(__name__)
-        train_numbers = headsigns(get_value(xml_train, 'NumeroTrain'))
+        train_numbers = get_value(xml_train, 'NumeroTrain')
 
         # to get the date of the vj we use the start/end of the vj + some tolerance
         # since the ire data and navitia data might not be synchronized
         vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
-        since = vj_start - timedelta(hours=1)
         vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
-        until = vj_end + timedelta(hours=1)
 
-        vjs = {}
-
-        for train_number in train_numbers:
-
-            log.debug('searching for vj {} on {} in navitia'.format(train_number, vj_start))
-
-            navitia_vjs = self.navitia.vehicle_journeys(q={
-                'headsign': train_number,
-                'since': to_navitia_str(since),
-                'until': to_navitia_str(until),
-                'depth': '2',  # we need this depth to get the stoptime's stop_area
-                'show_codes': 'true'  # we need the stop_points CRCICH codes
-            })
-
-            if not navitia_vjs:
-                logging.getLogger(__name__).info('impossible to find train {t} on [{s}, {u}['
-                                                 .format(t=train_number,
-                                                         s=since,
-                                                         u=until))
-                record_internal_failure('missing train', contributor=self.contributor)
-
-
-            for nav_vj in navitia_vjs:
-                vj = model.VehicleJourney(nav_vj, vj_start.date())
-                vjs[nav_vj['id']] = vj
-
-        if not vjs:
-            raise ObjectNotFound('no train found for headsigns {}'.format(train_numbers))
-
-        return vjs.values()
+        return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
     def _make_trip_update(self, vj, xml_modification):
         """
