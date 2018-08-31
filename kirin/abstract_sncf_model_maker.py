@@ -73,6 +73,27 @@ def headsigns(str):
     return [signs[0], alternative_headsign]
 
 
+def get_navitia_stop_time_sncf(cr, ci, ch, nav_vj):
+    nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
+
+    nav_stop_times = []
+    log_dict = None
+    for s in nav_vj.get('stop_times', []):
+        for c in s.get('stop_point', {}).get('stop_area', {}).get('codes', []):
+            if c['value'] == nav_external_code and c['type'] == 'CR-CI-CH':
+                nav_stop_times.append(s)
+                break
+
+    if not nav_stop_times:
+        log_dict = {'log': 'missing stop point', 'stop_point_code': nav_external_code}
+        return None, log_dict
+
+    if len(nav_stop_times) > 1:
+        log_dict = {'log': 'duplicate stops', 'stop_point_code': nav_external_code}
+
+    return nav_stop_times[0], log_dict
+
+
 class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
 
     def __init__(self, nav, contributor=None):

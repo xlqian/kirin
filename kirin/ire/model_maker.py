@@ -33,7 +33,7 @@ from datetime import datetime
 from dateutil import parser
 from flask.globals import current_app
 
-from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder
+from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 from kirin.core import model
 # For perf benches:
 # http://effbot.org/zone/celementtree.htm
@@ -224,28 +224,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         CR-CI-CH
         we also return error messages as 'missing stop point', 'duplicate stops'
         """
-        cr = get_value(downstream_point, 'CRPR')
-        ci = get_value(downstream_point, 'CIPR')
-        ch = get_value(downstream_point, 'CHPR')
-
-        nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
-
-        nav_stop_times = []
-        log_dict = None
-        for s in nav_vj.get('stop_times', []):
-            for c in s.get('stop_point', {}).get('stop_area', {}).get('codes', []):
-                if c['value'] == nav_external_code and c['type'] == 'CR-CI-CH':
-                    nav_stop_times.append(s)
-                    break
-
-        if not nav_stop_times:
-            log_dict = {'log': 'missing stop point', 'stop_point_code': nav_external_code}
-            return None, log_dict
-
-        if len(nav_stop_times) > 1:
-            log_dict = {'log': 'duplicate stops', 'stop_point_code': nav_external_code}
-
-        return nav_stop_times[0], log_dict
+        return get_navitia_stop_time_sncf(cr=get_value(downstream_point, 'CRPR'),
+                                          ci=get_value(downstream_point, 'CIPR'),
+                                          ch=get_value(downstream_point, 'CHPR'),
+                                          nav_vj=nav_vj)
 
     @staticmethod
     def _get_delay(xml):
