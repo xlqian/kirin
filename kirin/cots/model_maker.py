@@ -98,19 +98,6 @@ def as_date(s):
     return parser.parse(s, dayfirst=False, yearfirst=True)
 
 
-def get_navitia_stop_time(navitia_vj, stop_id):
-    nav_st = next((st for st in navitia_vj['stop_times']
-                  if st.get('journey_pattern_point', {})
-                       .get('stop_point', {})
-                       .get('id') == stop_id), None)
-
-    # if a VJ passes several times at the same stop, we cannot know
-    # perfectly which stop time to impact
-    # as a first version, we only impact the first
-
-    return nav_st
-
-
 class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
