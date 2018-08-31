@@ -24,7 +24,7 @@ trip_updates |  | List of trip updates information, see `TripUpdates` below
 Kirin property | COTS object/value | Comment/Mapping rule
 --- | --- | ---
 vj_id | | Id of the `VehicleJourney` in Navitia updated by this `TripUpdate`. A COTS feed can udpate more than one `VehicleJourney`, see below for the mapping method
-status | *nouvelleVersion/statutOperationnel* | If the value of *nouvelleVersion/statutOperationnel* is "AJOUTEE", this field value is `add`.<br/>If the value of *nouvelleVersion/statutOperationnel* is "SUPPRIMEE", then this field value is `delete`.<br/>If *nouvelleVersion/statutOperationnel* is empty or has the value "PERTURBEE", then this field value is `update`.
+status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is "AJOUTEE", `delete`when value is this "SUPPRIMEE", and `update` in every other cases.
 message | *nouvelleVersion/idMotifInterneReference* | The label of the message is referenced in the separate feed returned by the SNCF web service by the id that matches the value of *nouvelleVersion/idMotifInterneReference*
 contibutor |  | Fixed value specified in the configuration of Kirin
 stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below
