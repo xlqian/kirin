@@ -160,8 +160,19 @@ For the IRE to be taken into account by navitia, some parameters need to be set 
 
 If the IRE was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
 
+
 Tests
 -----
 
-Most tests are implemented in `/tests` directory.
+Most tests are implemented in `/tests` directory.  
 Please read [tests readme](https://github.com/CanalTP/kirin/blob/master/tests/readme.md) for more information.
+
+
+Development
+-----------
+
+To generate a new migration script for database (after an upgrade of the model.py file):
+```
+honcho run ./manage.py db migrate
+```
+This will generate a new migration file, that you can amend to your will.

@@ -64,14 +64,14 @@ def _to_json(data, display):
     return json_response
 
 
-def get_ire_data(name):
+def get_fixture_data(name):
     """
-    return an IRE input as string
+    return a fixture input (IRE, COTS) as string
     the name must be the name of a file in kirin/tests/fixtures
     """
     file = os.path.join(os.path.dirname(__file__), 'fixtures', name)
-    with open(file, "r") as ire:
-        return ire.read()
+    with open(file, "r") as fixture:
+        return fixture.read()
 
 
 def _dt(dt_to_parse, year=2015, month=9, day=8):
