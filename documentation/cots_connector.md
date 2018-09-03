@@ -29,7 +29,7 @@ vj_id | | Id of the `VehicleJourney` in Navitia updated by this `TripUpdate`. Se
 status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is "AJOUTEE", `delete`when value is this "SUPPRIMEE", and `update` in every other cases.
 message | *nouvelleVersion/idMotifInterneReference* | The label of the message is referenced in the separate feed returned by the SNCF web service by the id that matches the value of *nouvelleVersion/idMotifInterneReference*
 contibutor |  | Fixed value specified in the configuration of Kirin
-stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below
+stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below.
 
 ### VehicleJourney
 #### Searching for corresponding VehicleJourneys in Navitia
@@ -52,7 +52,7 @@ When base_schedule information is modified with adapted data (when a strike is s
 
 *nouvelleVersion/indicateurFer* should be used to narrow the research to rail or road trips. All the physical_modes in Navitia are listed in [NTFS specifications](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md#physical_modestxt-requis).
 
-When *nouvelleVersion/indicateurFer* is set to `FERRE`, use only corresponding physical_modes : LocalTrain, LongDistanceTrain, Metro, RapidTransit, RailShuttle, Train, Tramway
+When *nouvelleVersion/indicateurFer* is set to `FERRE`, use only corresponding physical_modes : LocalTrain, LongDistanceTrain, Metro, RapidTransit, RailShuttle, Train, Tramway.
 Otherwise, the previously listed modes should be removed.
 
 **Use of *nouvelleVersion/codeCompagnieTransporteur***
@@ -65,4 +65,15 @@ Each `VehicleJourney` found in Navitia corresponding to the COTS stream is recor
 Kirin property | Comment/Mapping rule
 --- | --- | ---
 navitia_trip_id | `trip_id` of the VehicleJourney in Navitia. See above for the mapping rule.
-start_timestamp | Start datetime of the `VehicleJourney` in Navitia
+start_timestamp | Start datetime of the `VehicleJourney` in Navitia.
+
+### StopTimeUpdate
+Kirin property | COTS object/value | Comment/Mapping rule
+--- | --- | ---
+message | *idMotifInterneDepartReference* | If present, it points to the message label having the same id in the separate feed returned by the SNCF web service. Otherwise, the value of *idMotifInterneArriveeReference* is considered as reference.
+departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia.
+departure_delay | *listeHoraireProjeteDepart/pronosticIV* | The first item of the list is taken into account.
+departure_status |  | To be defined.
+arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia.
+arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | The first item of the list is taken into account.
+arrival_status |  | To be defined.
