@@ -127,7 +127,7 @@ In the response received:
 - last_update: last time Kirin received a file (or pulled it, depending the client) in order to update navitia data.
 - last_valid_update: last time Kirin received a file that was valid and managed to update navitia data properly.
 - last_update_error: information about error from the last time Kirin processed a file and a problem occurred. It can either be a problem about the file or the data update. The field will be empty if last_update = last_valid_update.
-- navitia_url: root url of the navitia server used to consolidate real-time information received by Kirin.
+- navitia_url: root url of the navitia server used to consolidate real-time information received by Kirin.  
 Other info are available about Kirin ("version"), the database ("db_version", "db_pool_status") and the rabbitmq ("rabbitmq_info").
 
 ##### Ire (POST)
