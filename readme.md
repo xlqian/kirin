@@ -103,8 +103,10 @@ Setup
     This command runs several processes :
     - a server to listen to incoming requests
     - a scheduler and its worker to perform tasks scheduled in KIRIN_CONFIG_FILE
+      Note: one of the tasks scheduled is a poller to retrieve GTFS-RT files, only useful when there's a feed provider URL defined.
+      If not needed, this specific task can be disabled in KIRIN_CONFIG_FILE by removing the 'poller' task in the 'CELERYBEAT_SCHEDULE' section. This will avoid having logs and errors about GTFS-RT.
     - a job to read the info already available in Kirin database. Note that this step of data reloading at boot is mandatory for Kirin to be able to process future real-time feeds.
- - Enjoy: you can now request the kirin API
+ - Enjoy: you can now request the Kirin API
 
 
 API
