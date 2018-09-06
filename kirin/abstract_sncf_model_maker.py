@@ -80,6 +80,10 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         self.contributor = contributor
 
     def _get_navitia_vjs(self, headsign_str, since_dt, until_dt):
+        """
+        Search for navitia's vehicle journeys with given headsigns, in the period provided
+        Note: we use a 1h-margin to insure we will catch the concerned VJ
+        """
         log = logging.getLogger(__name__)
 
         vjs = {}
@@ -87,6 +91,11 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         extended_since_dt = since_dt - timedelta(hours=1)
         extended_until_dt = until_dt + timedelta(hours=1)
 
+        # using a set to deduplicate
+        # one headsign_str (ex: "96320/1") can lead to multiple headsigns (ex: ["96320", "96321"])
+        # but most of the time (if not always) they refer to the same VJ
+        # (the VJ switches headsign along the way).
+        # So we do one VJ search for each headsign to ensure we get it, then deduplicate VJs
         for train_number in headsigns(headsign_str):
 
             log.debug('searching for vj {} on {} in navitia'.format(train_number, since_dt))

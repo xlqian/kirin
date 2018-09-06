@@ -39,13 +39,13 @@ import ujson
 from kirin.exceptions import InvalidArguments, ObjectNotFound
 
 
-def get_value(sub_json, key, nullabe=False):
+def get_value(sub_json, key, nullable=False):
     """
     get a unique element in an json dict
     raise an exception if the element does not exists
     """
     res = sub_json.get(key)
-    if res is None and not nullabe:
+    if res is None and not nullable:
         raise InvalidArguments('invalid json, impossible to find "{key}" in json dict {elt}'.format(
             key=key, elt=ujson.dump(sub_json)))
     return res
@@ -57,32 +57,36 @@ def is_station(pdp):
     :param pdp: stop_time to be checked
     :return: True if pdp is a station, False otherwise
     """
-    t = pdp.get('typeArret')
+    t = get_value(pdp, 'typeArret', nullable=True)
     return (t is None) or (t in ['', 'CD', 'CH', 'FD', 'FH'])
 
 
 def _interesting_pdp_generator(list_pdp):
     """
     Filter "Points de Parcours" (corresponding to stop_times) to get only the relevant ones from
-    a Navitia's perspective (stations, where travelers can hop-in or drop-off)
+    a Navitia's perspective (stations, where travelers can hop on or hop off)
     Context: COTS may contain operating informations, useless for traveler
     :param list_pdp: an array of "Point de Parcours" (typically the one from the feed)
     :return: Filtered array
-    Nota: written in a yield-fashion to switch implem if possible, but we need random access for now
+    Note: written in a yield-fashion to switch implem if possible, but we need random access for now
     """
     res = []
     picked_one = False
     for idx, pdp in enumerate(list_pdp):
         # start consuming stop_time only at first one having a departure time
-        if not picked_one and not pdp.get('horaireVoyageurDepart'):
+        if not picked_one and not get_value(pdp, 'horaireVoyageurDepart', nullable=True):
             continue
         # exclude pdp that are not legit stations
         if not is_station(pdp):
             continue
+        # exclude pdp that have no departure nor arrival time
+        if not get_value(pdp, 'horaireVoyageurDepart', nullable=True) and \
+                not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
+            continue
         # stop consuming once all following stop_times are missing arrival time
-        if picked_one and not pdp.get('horaireVoyageurArrivee'):
+        if picked_one and not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
             has_following_arrival = any(
-                follow_pdp.get('horaireVoyageurArrivee') and is_station(follow_pdp)
+                get_value(follow_pdp, 'horaireVoyageurArrivee', nullable=True) and is_station(follow_pdp)
                 for follow_pdp in list_pdp[idx:])
             if not has_following_arrival:
                 break
@@ -109,6 +113,9 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         and return a list of trip updates
 
         The TripUpdates are not yet associated with the RealTimeUpdate
+
+        Most of the realtime information we parse is contained in 'nouvelleVersion' sub-object
+        (see fixtures and documentation)
         """
         try:
             json = ujson.loads(rt_update.raw_data)

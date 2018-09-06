@@ -42,20 +42,20 @@ from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
 
 
-def get_node(elt, xpath, nullabe=False):
+def get_node(elt, xpath, nullable=False):
     """
     get a unique element in an xml node
     raise an exception if the element does not exists
     """
     res = elt.find(xpath)
-    if res is None and not nullabe:
+    if res is None and not nullable:
         raise InvalidArguments('invalid xml, impossible to find "{node}" in xml elt {elt}'.format(
             node=xpath, elt=elt.tag))
     return res
 
 
-def get_value(elt, xpath, nullabe=False):
-    node = get_node(elt, xpath, nullabe)
+def get_value(elt, xpath, nullable=False):
+    node = get_node(elt, xpath, nullable)
     return node.text if node is not None else None
 
 
@@ -164,7 +164,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 dep_delay, dep_status = self._get_delay(downstream_point.find('TypeHoraire/Depart'))
                 arr_delay, arr_status = self._get_delay(downstream_point.find('TypeHoraire/Arrivee'))
 
-                message = get_value(downstream_point, 'MotifExterne', nullabe=True)
+                message = get_value(downstream_point, 'MotifExterne', nullable=True)
                 st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
                                                  dep_status=dep_status, arr_status=arr_status, message=message)
                 trip_update.stop_time_updates.append(st_update)
@@ -204,13 +204,13 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     dep_status = 'delete' if dep_deleted else 'none'
                     arr_status = 'delete' if arr_deleted else 'none'
 
-                    message = get_value(deleted_point, 'MotifExterne', nullabe=True)
+                    message = get_value(deleted_point, 'MotifExterne', nullable=True)
                     st_update = model.StopTimeUpdate(nav_stop, dep_status=dep_status, arr_status=arr_status,
                                                      message=message)
                     trip_update.stop_time_updates.append(st_update)
 
             if xml_prdebut:
-                trip_update.message = get_value(xml_prdebut, 'MotifExterne', nullabe=True)
+                trip_update.message = get_value(xml_prdebut, 'MotifExterne', nullable=True)
 
         return trip_update
 
