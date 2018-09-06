@@ -82,12 +82,12 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
     def _get_navitia_vjs(self, headsign_str, since_dt, until_dt):
         """
         Search for navitia's vehicle journeys with given headsigns, in the period provided
-        Note: we use a 1h-margin to insure we will catch the concerned VJ
         """
         log = logging.getLogger(__name__)
 
         vjs = {}
-        # we search with a 1-hour margin
+        # to get the date of the vj we use the start/end of the vj + some tolerance
+        # since the SNCF data and navitia data might not be synchronized
         extended_since_dt = since_dt - timedelta(hours=1)
         extended_until_dt = until_dt + timedelta(hours=1)
 

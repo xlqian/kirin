@@ -137,8 +137,6 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
         dates_str = [get_value(d, 'date') for d in get_value(json_train, 'listeJourRegimeDApplication')]
         date = min([as_date(d) for d in dates_str]).date()
-        # to get the date of the vj we use the start/end of the vj + some tolerance
-        # since the ire data and navitia data might not be synchronized
         str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'heureLocale')
         time_start = datetime.strptime(str_time_start, '%H:%M:%S').time()
         vj_start = datetime.combine(date, time_start)

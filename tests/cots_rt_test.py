@@ -63,14 +63,4 @@ def test_interesting_pdp_generator():
         {'@id': '8th', 'typeArret': None,
          'horaireVoyageurDepart': {'dateHeure':'2018-09-01T12:08:00+0000'}},
         {'@id': '9th', 'typeArret': ''}]
-    list_interesting_pdp = [
-        {'@id': '2nd', 'typeArret': 'CH',
-         'horaireVoyageurDepart': {'dateHeure':'2018-09-01T12:02:00+0000'}},
-        {'@id': '4th',
-         'horaireVoyageurDepart': {'dateHeure':'2018-09-01T12:04:30+0000'},
-         'horaireVoyageurArrivee': {'dateHeure':'2018-09-01T12:04:00+0000'}},
-        {'@id': '5th', 'typeArret': 'FH',
-         'horaireVoyageurDepart': {'dateHeure':'2018-09-01T12:05:00+0000'}},
-        {'@id': '7th', 'typeArret': 'CD',
-         'horaireVoyageurArrivee': {'dateHeure':'2018-09-01T12:07:00+0000'}}]
-    assert _interesting_pdp_generator(list_pdp) == list_interesting_pdp
+    assert _interesting_pdp_generator(list_pdp) == [list_pdp[1], list_pdp[3], list_pdp[4], list_pdp[6]]
