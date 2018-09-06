@@ -12,23 +12,22 @@ The information concerning the displayed messages related to train modifications
 This document doesn't describe all the fields of the Kirin model. Only COTS relevant fields are described below. For example, the RealTimeUpdate.id field is managed by Kirin and is not detailed in the present specification.
 
 ### RealTimeUpdate
-
-Kirin property | COTS object/value | Comment/Mapping rule
+Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
-connector |  | Fixed value `cots`
+connector |  | Fixed value `cots`.
 raw_data | _Complete received feed_ | 
-contributor |  | Fixed value specified in the configuration of Kirin
-trip_updates |  | List of trip updates information, see `TripUpdates` below
+contributor |  | Fixed value specified in the configuration of Kirin?
+trip_updates |  | List of trip updates information, see `TripUpdates` below.
 
 ### TripUpdate
 A COTS feed can udpate more than one `VehicleJourney`, see below for the mapping method.
 
-Kirin property | COTS object/value | Comment/Mapping rule
+Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
 vj_id | | Id of the `VehicleJourney` in Navitia updated by this `TripUpdate`. See below for the mapping method.
-status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is "AJOUTEE", `delete`when value is this "SUPPRIMEE", and `update` in every other cases.
-message | *nouvelleVersion/idMotifInterneReference* | The label of the message is referenced in the separate feed returned by the SNCF web service by the id that matches the value of *nouvelleVersion/idMotifInterneReference*
-contibutor |  | Fixed value specified in the configuration of Kirin
+status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is `AJOUTEE`, `delete` when value is this `SUPPRIMEE`, and `update` in every other case.
+message | *nouvelleVersion/idMotifInterneReference* | The label of the message is referenced in the separate feed returned by the SNCF web service by the id that matches the value of *nouvelleVersion/idMotifInterneReference*.
+contibutor |  | Fixed value specified in the configuration of Kirin.
 stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below.
 
 ### VehicleJourney
@@ -50,9 +49,9 @@ When base_schedule information is modified with adapted data (when a strike is s
 
 **Use of *nouvelleVersion/indicateurFer***
 
-*nouvelleVersion/indicateurFer* should be used to narrow the research to rail or road trips. All the physical_modes in Navitia are listed in [NTFS specifications](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md#physical_modestxt-requis).
+*nouvelleVersion/indicateurFer* should be used to narrow the research to rail or road trips. All the physical modes in Navitia are listed in [NTFS specifications](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md#physical_modestxt-requis).
 
-When *nouvelleVersion/indicateurFer* is set to `FERRE`, use only corresponding physical_modes : LocalTrain, LongDistanceTrain, Metro, RapidTransit, RailShuttle, Train, Tramway.
+When *nouvelleVersion/indicateurFer* is set to `FERRE`, use only corresponding physical modes : LocalTrain, LongDistanceTrain, Metro, RapidTransit, RailShuttle, Train, Tramway.
 Otherwise, the previously listed modes should be removed.
 
 **Use of *nouvelleVersion/codeCompagnieTransporteur***
@@ -63,17 +62,32 @@ To be defined.
 Each `VehicleJourney` found in Navitia corresponding to the COTS stream is recorded, so that they are all impacted.
 
 Kirin property | Comment/Mapping rule
---- | --- | ---
+--- | ---
 navitia_trip_id | `trip_id` of the VehicleJourney in Navitia. See above for the mapping rule.
 start_timestamp | Start datetime of the `VehicleJourney` in Navitia.
 
 ### StopTimeUpdate
-Kirin property | COTS object/value | Comment/Mapping rule
+Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
-message | *idMotifInterneDepartReference* | If present, it points to the message label having the same id in the separate feed returned by the SNCF web service. Otherwise, the value of *idMotifInterneArriveeReference* is considered as reference.
+order |  | `stop_time` order of this stop in the `VehicleJourney`
+stop_id |  | Id of this stop in Navitia
+message | *idMotifInterneDepartReference* | If present, it points to the message label having the same id in the separate feed returned by the SNCF web service. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference.
 departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia.
 departure_delay | *listeHoraireProjeteDepart/pronosticIV* | The first item of the list is taken into account.
-departure_status |  | To be defined.
+departure_status | *horaireVoyageurDepart/statutCirculationOPE* | See the mapping method below.
 arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia.
 arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | The first item of the list is taken into account.
-arrival_status |  | To be defined.
+arrival_status | *horaireVoyageurArrivee/statutCirculationOPE* | See the mapping method below.
+
+**Setting the arrival/departure status**
+
+The departure/arrival status at a stop of the `VehicleJourney` follows the trip status when the latter is set to `add` or `delete`. Otherwise, the status may vary depending on the departure/arrival time updates or delays provided at the level of the station.
+
+The departure status is resolved with regard to the field *horaireVoyageurDepart/statutCirculationOPE*:
+* status is set to `add` when the field value is `CREATION`, `delete` when the field value is `SUPPRESSION` or `SUPPRESSION_DETOURNEMENT` and `update` otherwise.
+* status is set to `none` when the departure delay is set to 0 or when this is the last stop of the `VehicleJourney`.
+
+The arrival status is resolved with regard to the field *horaireVoyageurArrivee/statutCirculationOPE*:
+* status is set to `add` when the field value is `CREATION`, `delete` when the field value is `SUPPRESSION` or `SUPPRESSION_DETOURNEMENT` and `update` otherwise.
+* status is set to `none` when the arrival delay is set to 0 or when this is the first stop of the `VehicleJourney`.
+
