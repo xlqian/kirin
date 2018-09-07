@@ -28,15 +28,11 @@
 # www.navitia.io
 import flask
 from flask.globals import current_app
-from flask_restful import Resource
 
-from kirin import core
-from kirin.core import model
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.utils import make_navitia_wrapper, make_rt_update, record_call
+from kirin.abstract_sncf_resource import AbstractSNCFResource
+from kirin.exceptions import InvalidArguments
+from kirin.utils import make_navitia_wrapper
 from model_maker import KirinModelBuilder
-from datetime import datetime
-import logging
 
 
 def get_ire(req):
@@ -48,45 +44,14 @@ def get_ire(req):
     return req.data
 
 
-class Ire(Resource):
+class Ire(AbstractSNCFResource):
 
     def __init__(self):
-        self.navitia_wrapper = make_navitia_wrapper()
-        self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
-        self.contributor = current_app.config['CONTRIBUTOR']
+        super(Ire, self).__init__(make_navitia_wrapper(),
+                                  current_app.config.get('NAVITIA_TIMEOUT', 5),
+                                  current_app.config['CONTRIBUTOR'])
 
     def post(self):
         raw_xml = get_ire(flask.globals.request)
 
-        # create a raw ire obj, save the raw_xml into the db
-        rt_update = make_rt_update(raw_xml, 'ire', contributor=self.contributor)
-        start_datetime = datetime.utcnow()
-        try:
-            # assuming UTF-8 encoding for all ire input
-            rt_update.raw_data = rt_update.raw_data.encode('utf-8')
-
-            # raw_xml is interpreted
-            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
-            record_call('OK', contributor=self.contributor)
-        except KirinException as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.data['error']
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            record_call('failure', reason=str(e), contributor=self.contributor)
-            raise
-        except Exception as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.message
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            record_call('failure', reason=str(e), contributor=self.contributor)
-            raise
-
-        _, log_dict = core.handle(rt_update, trip_updates, current_app.config['CONTRIBUTOR'])
-        duration = (datetime.utcnow() - start_datetime).total_seconds()
-        log_dict.update({'duration': duration})
-        record_call('Simple feed publication', **log_dict)
-        logging.getLogger(__name__).info('Simple feed publication', extra=log_dict)
-
-        return 'OK', 200
+        return self.process_post(raw_xml, KirinModelBuilder, 'ire')
