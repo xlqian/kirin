@@ -325,7 +325,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
 
     @classmethod
-    def get_probes_by_contributor(cls, only_valid=False):
+    def get_probes_by_contributor(cls):
         """
         create a dict of probes
         """
