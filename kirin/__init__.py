@@ -68,7 +68,7 @@ if app.config['USE_GEVENT']:
     from gevent import monkey
     monkey.patch_all()
 
-from flask.ext.cache import Cache
+from flask_cache import Cache
 # register the cache instance and binds it on to your app
 app.cache = Cache(app)
 

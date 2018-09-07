@@ -116,6 +116,7 @@ def get_timezone(stop_time):
         raise Exception("impossible to find timezone: '{}'".format(str_tz))
     return tz
 
+
 def should_retry_exception(exception):
     return isinstance(exception, ConnectionError)
 
