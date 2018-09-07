@@ -73,7 +73,7 @@ def _interesting_pdp_generator(list_pdp):
     res = []
     picked_one = False
     for idx, pdp in enumerate(list_pdp):
-        # start consuming stop_time only at first one having a departure time
+        # start consuming stop_time only at the first one with a departure time
         if not picked_one and not get_value(pdp, 'horaireVoyageurDepart', nullable=True):
             continue
         # exclude pdp that are not legit stations
@@ -84,6 +84,12 @@ def _interesting_pdp_generator(list_pdp):
                 not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
             continue
         # stop consuming once all following stop_times are missing arrival time
+        # * if a stop only has departure time, travelers can only hop in, but if they are be able to
+        #   hop off later because some stop_time has arrival time then the current stop_time is useful,
+        #   so we keep current stop_time.
+        # * if no stop_time has arrival time anymore, then stop_times are useless as traveler cannot
+        #   hop off, so no point hopping in anymore, so we remove all the stop_times until the end
+        #   (should not happen in practice).
         if picked_one and not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
             has_following_arrival = any(
                 get_value(follow_pdp, 'horaireVoyageurArrivee', nullable=True) and is_station(follow_pdp)
