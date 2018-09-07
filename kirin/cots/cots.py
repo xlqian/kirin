@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -34,7 +34,7 @@ from kirin import core
 from kirin.core import model
 from kirin.exceptions import KirinException, InvalidArguments
 from kirin.utils import make_navitia_wrapper, make_rt_update, record_call
-#from model_maker import KirinModelBuilder #TODO create and use model_maker.py
+from model_maker import KirinModelBuilder
 from datetime import datetime
 import logging
 
@@ -66,8 +66,7 @@ class Cots(Resource):
             rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
             # raw_json is interpreted
-            trip_updates = [] #TODO create and use model_maker.py
-            #trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
+            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
             record_call('OK', contributor=self.contributor)
         except KirinException as e:
             rt_update.status = 'KO'

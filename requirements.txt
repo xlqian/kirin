@@ -12,6 +12,7 @@ alembic==0.7.7
 amqp==2.2.1
 aniso8601==1.0.0
 anyjson==0.3.3
+ujson==1.35
 argparse==1.2.1
 gevent==1.0.2
 greenlet==0.4.7
@@ -21,6 +22,7 @@ retrying==1.3.3
 psycopg2==2.7.3.2
 pytz==2015.4
 six==1.10.0
+future==0.16.0
 wsgiref==0.1.2
 protobuf==3.6.1
 python-dateutil==2.4.2
