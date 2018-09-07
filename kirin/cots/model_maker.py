@@ -61,7 +61,7 @@ def is_station(pdp):
     return (t is None) or (t in ['', 'CD', 'CH', 'FD', 'FH'])
 
 
-def _interesting_pdp_generator(list_pdp):
+def _retrieve_interesting_pdp(list_pdp):
     """
     Filter "Points de Parcours" (corresponding to stop_times) to get only the relevant ones from
     a Navitia's perspective (stations, where travelers can hop on or hop off)
@@ -136,7 +136,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def _get_vjs(self, json_train):
         train_numbers = get_value(json_train, 'numeroCourse')
-        pdps = _interesting_pdp_generator(get_value(json_train, 'listePointDeParcours'))
+        pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         if not pdps:
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
                                    'json elt {elt}'.format(elt=ujson.dump(json_train)))

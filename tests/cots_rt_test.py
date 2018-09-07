@@ -29,10 +29,10 @@
 # www.navitia.io
 
 from __future__ import absolute_import, print_function, unicode_literals, division
-from kirin.cots.model_maker import _interesting_pdp_generator
+from kirin.cots.model_maker import _retrieve_interesting_pdp
 
 
-def test_interesting_pdp_generator():
+def test_retrieve_interesting_pdp():
     """
     In the example below:
     1st stop is probably just the garage (no time info) although it's a real station > NOT interesting
@@ -63,4 +63,4 @@ def test_interesting_pdp_generator():
         {'@id': '8th', 'typeArret': None,
          'horaireVoyageurDepart': {'dateHeure':'2018-09-01T12:08:00+0000'}},
         {'@id': '9th', 'typeArret': ''}]
-    assert _interesting_pdp_generator(list_pdp) == [list_pdp[1], list_pdp[3], list_pdp[4], list_pdp[6]]
+    assert _retrieve_interesting_pdp(list_pdp) == [list_pdp[1], list_pdp[3], list_pdp[4], list_pdp[6]]
