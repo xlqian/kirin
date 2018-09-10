@@ -52,6 +52,6 @@ class Cots(AbstractSNCFResource):
                                   current_app.config['COTS_CONTRIBUTOR'])
 
     def post(self):
-        raw_xml = get_cots(flask.globals.request)
+        raw_json = get_cots(flask.globals.request)
 
-        return self.process_post(raw_xml, KirinModelBuilder, 'cots')
+        return self.process_post(raw_json, KirinModelBuilder, 'cots')
