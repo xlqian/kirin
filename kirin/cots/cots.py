@@ -30,9 +30,9 @@ import flask
 from flask.globals import current_app
 
 from kirin.abstract_sncf_resource import AbstractSNCFResource
+from kirin.cots import KirinModelBuilder
 from kirin.exceptions import InvalidArguments
 from kirin.utils import make_navitia_wrapper
-from model_maker import KirinModelBuilder
 
 
 def get_cots(req):
@@ -48,10 +48,11 @@ class Cots(AbstractSNCFResource):
 
     def __init__(self):
         super(Cots, self).__init__(make_navitia_wrapper(),
-                                  current_app.config.get('NAVITIA_TIMEOUT', 5),
-                                  current_app.config['COTS_CONTRIBUTOR'])
+                                   current_app.config.get('NAVITIA_TIMEOUT', 5),
+                                   current_app.config['COTS_CONTRIBUTOR'],
+                                   KirinModelBuilder)
 
     def post(self):
         raw_json = get_cots(flask.globals.request)
 
-        return self.process_post(raw_json, KirinModelBuilder, 'cots')
+        return self.process_post(raw_json, 'cots')

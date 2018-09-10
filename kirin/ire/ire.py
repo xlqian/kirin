@@ -32,7 +32,7 @@ from flask.globals import current_app
 from kirin.abstract_sncf_resource import AbstractSNCFResource
 from kirin.exceptions import InvalidArguments
 from kirin.utils import make_navitia_wrapper
-from model_maker import KirinModelBuilder
+from kirin.ire import KirinModelBuilder
 
 
 def get_ire(req):
@@ -49,9 +49,10 @@ class Ire(AbstractSNCFResource):
     def __init__(self):
         super(Ire, self).__init__(make_navitia_wrapper(),
                                   current_app.config.get('NAVITIA_TIMEOUT', 5),
-                                  current_app.config['CONTRIBUTOR'])
+                                  current_app.config['CONTRIBUTOR'],
+                                  KirinModelBuilder)
 
     def post(self):
         raw_xml = get_ire(flask.globals.request)
 
-        return self.process_post(raw_xml, KirinModelBuilder, 'ire')
+        return self.process_post(raw_xml, 'ire')

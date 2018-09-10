@@ -38,12 +38,13 @@ from kirin.core import model
 
 class AbstractSNCFResource(Resource):
 
-    def __init__(self, nav_wrapper, timeout, contributor):
+    def __init__(self, nav_wrapper, timeout, contributor, builder):
         self.navitia_wrapper = nav_wrapper
         self.navitia_wrapper.timeout = timeout
         self.contributor = contributor
+        self.builder = builder
 
-    def process_post(self, raw_input, builder, contributor_type):
+    def process_post(self, raw_input, contributor_type):
 
         # create a raw ire obj, save the raw_input into the db
         rt_update = make_rt_update(raw_input, contributor_type, contributor=self.contributor)
@@ -53,7 +54,7 @@ class AbstractSNCFResource(Resource):
             rt_update.raw_data = rt_update.raw_data.encode('utf-8')
 
             # raw_input is interpreted
-            trip_updates = builder(self.navitia_wrapper, self.contributor).build(rt_update)
+            trip_updates = self.builder(self.navitia_wrapper, self.contributor).build(rt_update)
             record_call('OK', contributor=self.contributor)
         except KirinException as e:
             rt_update.status = 'KO'
