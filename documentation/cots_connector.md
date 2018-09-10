@@ -4,19 +4,19 @@
 Realtime information for long distance trains of the SNCF network is received in a COTS stream. This document describes how a COTS realtime stream is modeled in Kirin.
 
 ## Input data description
-A realtime COTS stream (link to provide) is obtained as a JSON file via a message queue mechanism. Each feed message represents an update on the information about a train (its status, the associated delay, causes, etc.).
+A realtime COTS stream is obtained as a JSON file via a message queue mechanism. Each feed message represents an update on the information about a train (its status, the associated delay, causes, etc.). An example of a delayed train is provided [here](../tests/fixtures/cots_train_96231_delayed.json).
 
-The information concerning the displayed messages related to train modifications is referenced in a separate stream provided by an external web service. The latter returns a text message for all available situations associated with an id referenced in the COTS stream.
+The information concerning the displayed messages related to train modifications is referenced in a separate stream provided by an external web service called *paramatreLIV*. The latter returns a [text message](../tests/fixtures/motif-retard.json) for all available situations associated with an id referenced in the COTS stream.
 
 ## Connector description
-This document doesn't describe all the fields of the Kirin model. Only COTS relevant fields are described below. For example, the RealTimeUpdate.id field is managed by Kirin and is not detailed in the present specification.
+This document doesn't describe all the fields of the Kirin model. Only COTS relevant fields are described below. For example, the id field of a `RealTimeUpdate` is managed by Kirin and is not detailed in the present specification.
 
 ### RealTimeUpdate
 Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
 connector |  | Fixed value `cots`.
 raw_data | _Complete received feed_ | 
-contributor |  | Fixed value specified in the configuration of Kirin?
+contributor |  | Fixed value specified in the configuration of Kirin.
 trip_updates |  | List of trip updates information, see `TripUpdates` below.
 
 ### TripUpdate
@@ -26,7 +26,7 @@ Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
 vj_id | | Id of the `VehicleJourney` in Navitia updated by this `TripUpdate`. See below for the mapping method.
 status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is `AJOUTEE`, `delete` when value is `SUPPRIMEE`, and `update` in every other case.
-message | *nouvelleVersion/idMotifInterneReference* | Reference to the message label having the same id in the separate feed returned by the SNCF web service.
+message | *nouvelleVersion/idMotifInterneReference* | Reference to the field `labelExt` of the *paramatreLIV* feed having the same `id`.
 contibutor |  | Fixed value specified in the configuration of Kirin.
 stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below.
 
@@ -71,7 +71,7 @@ Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
 order |  | `stop_time` order of this stop in the `VehicleJourney`
 stop_id |  | Id of this stop in Navitia
-message | *idMotifInterneDepartReference* | If present, it points to the message label having the same id in the separate feed returned by the SNCF web service. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference.
+message | *idMotifInterneDepartReference* | If present, it points to the field `labelExt` of the *parameterLIV* feed having the same `id`. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference.
 departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia.
 departure_delay | *listeHoraireProjeteDepart/pronosticIV* | The first item of the list is taken into account.
 departure_status | *horaireVoyageurDepart/statutCirculationOPE* | See the mapping method below.

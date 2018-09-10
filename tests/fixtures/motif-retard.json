@@ -1,0 +1,601 @@
+[
+    {
+        "validityDates": {
+            "end": 1546214400000,
+            "start": 86400000
+        },
+        "labelExt": "Accident à un passage à niveau",
+        "label": "Accident à un passage à niveau",
+        "id": 1,
+        "idExt": 2
+    },
+    {
+        "validityDates": {
+            "end": 1546210800000,
+            "start": 82800000
+        },
+        "labelExt": "Accident de personne",
+        "idExt": 1,
+        "label": "Accident de personnes (y compris à un PN)",
+        "id": 2
+    },
+    {
+        "id": 13,
+        "label": "Pas d'incident origine",
+        "idExt": 12,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Manque d'adhérence aux rails",
+        "idExt": 42,
+        "label": "Patinage/enrayage",
+        "id": 18,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Régulation du trafic",
+        "idExt": 16,
+        "label": "Croisement de train/matériel/personnel",
+        "id": 21,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Saturation des voies en gare",
+        "idExt": 51,
+        "label": "Diffic de récept° en gare/Saturation de la gare",
+        "id": 22,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Régulation du trafic",
+        "idExt": 16,
+        "id": 24,
+        "label": "Espacement/rétention",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Affluence de voyageurs/arrêt prolongé",
+        "idExt": 4,
+        "label": "Affluence de voyageurs/arrêt prolongé",
+        "id": 4,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Heurt d'un animal",
+        "idExt": 18,
+        "id": 32,
+        "label": "Heurt d'un animal",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Présence d'un bagage abandonné",
+        "idExt": 7,
+        "label": "Alerte à la bombe,   colis suspect,   bagage abandonné",
+        "id": 8,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 16,
+        "label": "Attente correspondance/report",
+        "idExt": 15,
+        "labelExt": "Prise en charge de clients en correspondance",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 3,
+        "label": "Jet de pierres,   tir de projectiles",
+        "idExt": 33,
+        "labelExt": "Jet de pierres sur un train",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 9,
+        "label": "Arrêt exceptionnel en gare",
+        "idExt": 8,
+        "labelExt": "Arrêt exceptionnel en gare",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Modification d'itinéraire",
+        "idExt": 52,
+        "id": 23,
+        "label": "Erreur de direction,   reprise de voie",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 19,
+        "label": "Sortie du rémisage tardive/Mise à quai tradive/Formation tardive/Manoeuvre (Voy)",
+        "idExt": 58,
+        "labelExt": "Sortie tardive du dépôt",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Difficultés lors de la préparation du train en gare",
+        "idExt": 17,
+        "id": 29,
+        "label": "Difficultés lors de la préparation du train en gare",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 7,
+        "label": "Choc anormal",
+        "idExt": 6,
+        "labelExt": "Choc nécessitant une vérification technique sur le train",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Incendie aux abords de la voie",
+        "idExt": 19,
+        "id": 33,
+        "label": "Incendie aux abords de la voie",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Réutilisation d'un train",
+        "idExt": 10,
+        "label": "Attente matériel retardé en ligne",
+        "id": 10,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 99,
+        "idExt": 9,
+        "label": "Absence agent d'escale",
+        "labelExt": "Absence inopinée d'un agent",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 98,
+        "idExt": 9,
+        "label": "Absence ADC",
+        "labelExt": "Absence inopinée d'un agent",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 97,
+        "idExt": 9,
+        "label": "Absence ASCT",
+        "labelExt": "Absence inopinée d'un agent",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Prise en charge d'une PMR / PSH",
+        "id": 96,
+        "idExt": 60,
+        "labelExt": "Assistance à un voyageur",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 95,
+        "idExt": 59,
+        "label": "Compo non conforme",
+        "labelExt": "Modification de matériel",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 94,
+        "idExt": 57,
+        "labelExt": "Indisponibilité d'un matériel",
+        "label": "Absence matériel roulant",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 93,
+        "idExt": 55,
+        "label": "Panne de signalisation",
+        "labelExt": "Panne de signalisation",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "idExt": 54,
+        "labelExt": "Panne d'un aiguillage",
+        "id": 92,
+        "label": "Panne d'un aiguillage",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Raté d'ouverture ou de fermeture d'un PN",
+        "id": 91,
+        "idExt": 53,
+        "labelExt": "Panne d'un passage à niveau",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Incident sur un train d'une autre compagnie",
+        "id": 90,
+        "idExt": 50,
+        "labelExt": "Incident sur un train d'une autre compagnie",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Individus sur les voies",
+        "id": 89,
+        "idExt": 49,
+        "labelExt": "Présence d'individus sur les voies",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Manifestant sur les voies hors agents SNCF",
+        "id": 88,
+        "idExt": 48,
+        "labelExt": "Manifestant sur les voies",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Vol de câble",
+        "labelExt": "Vol de câble",
+        "id": 87,
+        "idExt": 47,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Présence d'animaux sur la voie",
+        "id": 86,
+        "idExt": 46,
+        "labelExt": "Présence d'animaux sur la voie",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Absence agent circulation",
+        "id": 85,
+        "idExt": 9,
+        "labelExt": "Absence inopinée d'un agent",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Acte de vandalisme/dégradation d'installation",
+        "labelExt": "Acte de vandalisme",
+        "idExt": 3,
+        "id": 83,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Voyageur récalcitrant / intervention forces de l'ordre",
+        "id": 82,
+        "idExt": 40,
+        "labelExt": "Intervention des forces de l'ordre",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Signal d'alarme",
+        "id": 80,
+        "idExt": 38,
+        "labelExt": "Déclenchement du signal d'alarme",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Travaux Restitution tardive",
+        "id": 79,
+        "idExt": 37,
+        "labelExt": "Travaux sur les voies",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Travaux programmés,  ralentissement forfaitaire",
+        "id": 78,
+        "idExt": 37,
+        "labelExt": "Travaux sur les voies",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Travaux sur les voies",
+        "label": "Travaux inopinés,  relève de dérangement",
+        "idExt": 37,
+        "id": 77,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 76,
+        "idExt": 31,
+        "label": "Assistance à un voyageur malade à bord",
+        "labelExt": "Assistance à un voyageur malade à bord",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Panne d'un autre train",
+        "id": 70,
+        "idExt": 22,
+        "labelExt": "Train en panne",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Dérangement radio sol-train",
+        "labelExt": "Train en panne",
+        "idExt": 22,
+        "id": 69,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Obstacle sur la voie",
+        "labelExt": "Obstacle sur la voie",
+        "id": 65,
+        "idExt": 56,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Engagement de gabarit sf bâche flottante",
+        "id": 64,
+        "idExt": 66,
+        "labelExt": "Incident sur un train de marchandises",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Grève SNCF",
+        "id": 63,
+        "idExt": 24,
+        "labelExt": "Grève SNCF",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Grève extérieure à SNCF",
+        "id": 62,
+        "idExt": 25,
+        "labelExt": "Grève extérieure à SNCF",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Incident sur un autre réseau",
+        "labelExt": "Incident sur un réseau étranger",
+        "id": 61,
+        "idExt": 23,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Agression d'un agent SNCF",
+        "id": 59,
+        "idExt": 65,
+        "labelExt": "Agression d'un agent SNCF",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 58,
+        "idExt": 64,
+        "label": "Incident/accident ferroviaire",
+        "labelExt": "Incident ferroviaire",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 57,
+        "idExt": 63,
+        "label": "Attente du conducteur",
+        "labelExt": "Attente du conducteur",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "id": 56,
+        "idExt": 62,
+        "label": "Incident technique sur le car",
+        "labelExt": "Incident technique sur le car",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Encombrement du réseau routier",
+        "id": 55,
+        "idExt": 61,
+        "labelExt": "Embouteillage",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Franchit signal arrêt fermé avec engagt point prot",
+        "id": 52,
+        "idExt": 39,
+        "labelExt": "Incident de circulation",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Fuite de matière dangereuse",
+        "id": 49,
+        "idExt": 66,
+        "labelExt": "Incident sur un train de marchandises",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Chargement déplacé (avec ou ss engagement gabarit)",
+        "id": 48,
+        "idExt": 66,
+        "labelExt": "Incident sur un train de marchandises",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "labelExt": "Incident sur un train de marchandises",
+        "label": "Bâche flottante",
+        "id": 47,
+        "idExt": 66,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Défaillance de matériel",
+        "id": 37,
+        "idExt": 22,
+        "labelExt": "Train en panne",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Défaut d'alimentation électrique",
+        "labelExt": "Défaut d'alimentation électrique",
+        "id": 36,
+        "idExt": 21,
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    },
+    {
+        "label": "Rail cassé,  rupture de pièces d'appareil de voie,  défaut de voie",
+        "id": 35,
+        "idExt": 20,
+        "labelExt": "Incident affectant la voie",
+        "validityDates": {
+            "start": 82800000,
+            "end": 1546210800000
+        }
+    }
+]
