@@ -56,7 +56,7 @@ Otherwise, the previously listed modes should be removed.
 
 **Use of *nouvelleVersion/codeCompagnieTransporteur***
 
-To be defined.
+The operator code is not currently used in the research of Navitia trips. It is expected to be handled in a later version of the connector.
 
 #### Recording the VehicleJourneys 
 Each `VehicleJourney` found in Navitia corresponding to the COTS stream is recorded, so that they are all impacted.
