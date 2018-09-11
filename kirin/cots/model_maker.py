@@ -52,7 +52,7 @@ def get_value(sub_json, key, nullable=False):
     res = sub_json.get(key)
     if res is None and not nullable:
         raise InvalidArguments('invalid json, impossible to find "{key}" in json dict {elt}'.format(
-            key=key, elt=ujson.dump(sub_json)))
+            key=key, elt=ujson.dumps(sub_json)))
     return res
 
 
@@ -185,7 +185,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         if not pdps:
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
-                                   'json elt {elt}'.format(elt=ujson.dump(json_train)))
+                                   'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
         dates_str = [get_value(d, 'date') for d in get_value(json_train, 'listeJourRegimeDApplication')]
         date = min([as_date(d) for d in dates_str]).date()
