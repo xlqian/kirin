@@ -28,15 +28,11 @@
 # www.navitia.io
 import flask
 from flask.globals import current_app
-from flask_restful import Resource
 
-from kirin import core
-from kirin.core import model
-from kirin.exceptions import KirinException, InvalidArguments
-from kirin.utils import make_navitia_wrapper, make_rt_update, record_call
-from model_maker import KirinModelBuilder
-from datetime import datetime
-import logging
+from kirin.abstract_sncf_resource import AbstractSNCFResource
+from kirin.cots import KirinModelBuilder
+from kirin.exceptions import InvalidArguments
+from kirin.utils import make_navitia_wrapper
 
 
 def get_cots(req):
@@ -48,45 +44,15 @@ def get_cots(req):
     return req.data
 
 
-class Cots(Resource):
+class Cots(AbstractSNCFResource):
 
     def __init__(self):
-        self.navitia_wrapper = make_navitia_wrapper()
-        self.navitia_wrapper.timeout = current_app.config.get('NAVITIA_TIMEOUT', 5)
-        self.contributor = current_app.config['COTS_CONTRIBUTOR']
+        super(Cots, self).__init__(make_navitia_wrapper(),
+                                   current_app.config.get('NAVITIA_TIMEOUT', 5),
+                                   current_app.config['COTS_CONTRIBUTOR'],
+                                   KirinModelBuilder)
 
     def post(self):
         raw_json = get_cots(flask.globals.request)
 
-        # create a raw cots obj, save the raw_json into the db
-        rt_update = make_rt_update(raw_json, 'cots', contributor=self.contributor)
-        start_datetime = datetime.utcnow()
-        try:
-            # assuming UTF-8 encoding for all cots input
-            rt_update.raw_data = rt_update.raw_data.encode('utf-8')
-
-            # raw_json is interpreted
-            trip_updates = KirinModelBuilder(self.navitia_wrapper, self.contributor).build(rt_update)
-            record_call('OK', contributor=self.contributor)
-        except KirinException as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.data['error']
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            record_call('failure', reason=str(e), contributor=self.contributor)
-            raise
-        except Exception as e:
-            rt_update.status = 'KO'
-            rt_update.error = e.message
-            model.db.session.add(rt_update)
-            model.db.session.commit()
-            record_call('failure', reason=str(e), contributor=self.contributor)
-            raise
-
-        _, log_dict = core.handle(rt_update, trip_updates, current_app.config['COTS_CONTRIBUTOR'])
-        duration = (datetime.utcnow() - start_datetime).total_seconds()
-        log_dict.update({'duration': duration})
-        record_call('Simple feed publication', **log_dict)
-        logging.getLogger(__name__).info('Simple feed publication', extra=log_dict)
-
-        return 'OK', 200
+        return self.process_post(raw_json, 'cots')
