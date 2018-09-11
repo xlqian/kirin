@@ -3,6 +3,7 @@
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
 #
+# Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
 #     a non ending quest to the responsive locomotion way of traveling!
@@ -25,7 +26,6 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import os
 
 import docker
 import psycopg2
@@ -58,44 +58,57 @@ class PostgresDocker(object):
     """
     def __init__(self, user=USER, pwd=PWD, dbname=DBNAME):
         log = logging.getLogger(__name__)
-        self.docker = docker.Client(base_url='unix://var/run/docker.sock')
+        base_url = 'unix://var/run/docker.sock'
+        self.docker_client = docker.DockerClient(base_url=base_url)
+        self.docker_api_client = docker.APIClient(base_url=base_url)
 
-        log.info('building docker image')
-        for build_output in self.docker.build(fileobj=_get_docker_file(),
-                                              tag=POSTGRES_IMAGE, rm=True):
-            log.debug(build_output)
+        log.info('Trying to build/update the docker image')
+        try:
+            for build_output in self.docker_client.images.build(fileobj=_get_docker_file(), tag=POSTGRES_IMAGE, rm=True):
+                log.debug(build_output)
+        except docker.errors.APIError as e:
+            if e.is_server_error():
+                log.warn("[docker server error] A server error occcured, maybe "
+                                                "missing internet connection?")
+                log.warn("[docker server error] Details: {}".format(e))
+                log.warn("[docker server error] Checking if '{}' docker image "
+                                               "is already built".format(POSTGRES_IMAGE))
+                self.docker_client.images.get(POSTGRES_IMAGE)
+                log.warn("[docker server error] Going on, as '{}' docker image "
+                                               "is already built".format(POSTGRES_IMAGE))
+            else:
+                raise
 
-        self.container_id = self.docker.create_container(POSTGRES_IMAGE, name=POSTGRES_CONTAINER_NAME).get('Id')
-
-        log.info("docker id is {}".format(self.container_id))
+        self.container = self.docker_client.containers.create(POSTGRES_IMAGE, name=POSTGRES_CONTAINER_NAME)
+        log.info("docker id is {}".format(self.container.id))
 
         log.info("starting the temporary docker")
-        self.docker.start(self.container_id)
-        self.ip_addr = self.docker.inspect_container(self.container_id).get('NetworkSettings', {}).get('IPAddress')
+        self.container.start()
+        self.ip_addr = self.docker_api_client.inspect_container(self.container.id)\
+                                .get('NetworkSettings', {}).get('IPAddress')
 
         if not self.ip_addr:
-            log.error("temporary docker {} not started".format(self.container_id))
+            log.error("temporary docker {} not started".format(self.container.id))
             assert False
 
         # we create an empty database to prepare for the test
         self._create_db(user, pwd, dbname)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        logging.getLogger(__name__).info("stoping the temporary docker")
-        self.docker.stop(container=self.container_id)
+    def close(self):
+        logging.getLogger(__name__).info("stopping the temporary docker")
+        self.container.stop()
 
         logging.getLogger(__name__).info("removing the temporary docker")
-        self.docker.remove_container(container=self.container_id, v=True)
+        self.container.remove(v=True)
 
         # test to be sure the docker is removed at the end
-        for cont in self.docker.containers(all=True):
-            if cont['Image'].split(':')[0] == POSTGRES_IMAGE:
-                if self.container_id in (name[1:] for name in cont['Names']):
-                    logging.getLogger(__name__).error("something is strange, the container is still there ...")
-                    exit(1)
+        try:
+            self.docker_client.containers.get(self.container.id)
+        except docker.errors.NotFound:
+            logging.getLogger(__name__).info("the container is properly removed")
+        else:
+            logging.getLogger(__name__).error("something is strange, the container is still there ...")
+            exit(1)
 
     @retry(stop_max_delay=10000, wait_fixed=100,
            retry_on_exception=lambda e: isinstance(e, Exception))
@@ -106,4 +119,3 @@ class PostgresDocker(object):
         cur.execute('CREATE DATABASE ' + dbname)
         cur.close()
         connect.close()
-
