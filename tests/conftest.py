@@ -25,7 +25,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-import os
+from contextlib import closing
+
 from kirin import app, db
 import pytest
 
@@ -37,9 +38,8 @@ def docker():
     """
     a docker providing a database is started once for all tests
     """
-    with PostgresDocker() as database:
+    with closing(PostgresDocker()) as database:
         yield database
-
 
 
 @pytest.fixture(scope="session", autouse=True)
