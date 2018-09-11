@@ -75,7 +75,7 @@
         ],
         "listeJourRegimeDApplication":[
             {
-                "date":"2015-09-21"
+                "date":"2017-03-18"
             }
         ],
         "listeJourRegimeFacultatif":[
@@ -88,17 +88,29 @@
                 "arretFacultatif":false,
                 "categorieStatistiqueDepart":"LVK",
                 "cr":"0087",
-                "ci":"212027",
+                "ci":"713040",
                 "ch":"BV",
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"16:30:00",
+                    "heureLocale":"14:05:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T14:30:00+0000",
-                    "heureLocale":"16:30:00",
+                    "dateHeure":"2017-03-18T13:05:00+0000",
+                    "heureLocale":"14:05:00",
+                    "idFuseauHoraire":"Europe/Paris",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireProductionArrivee":{
+                    "idFuseauHoraire":"Europe/Paris",
+                    "heureIncertaine":false,
+                    "heureLocale":"14:05:00",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireVoyageurArrivee":{
+                    "dateHeure":"2017-03-18T13:05:00+0000",
+                    "heureLocale":"14:05:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
@@ -119,61 +131,46 @@
                 "categorieStatistiqueArrivee":"LVK",
                 "categorieStatistiqueDepart":"LVK",
                 "cr":"0087",
-                "ci":"214056",
-                "ch":"00",
+                "ci":"142125",
+                "ch":"BV",
                 "horaireObserveArrivee":{
-                    "dateHeure":"2015-09-21T15:39:00+0000",
+                    "dateHeure":"2017-03-18T15:39:00+0000",
                     "dateHeureEmission":"2018-04-19T15:44:53+0000",
                     "source":"ESCALE"
                 },
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"17:39:00",
+                    "heureLocale":"14:51:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"17:56:30",
+                    "heureLocale":"14:53:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T15:39:00+0000",
-                    "heureLocale":"17:39:00",
+                    "dateHeure":"2017-03-18T13:51:00+0000",
+                    "heureLocale":"14:51:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T15:40:30+0000",
-                    "heureLocale":"17:40:30",
+                    "dateHeure":"2017-03-18T13:53:00+0000",
+                    "heureLocale":"14:53:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
                 ],
                 "listeHoraireProjeteDepart":[
-                    {
-                        "dateHeure":"2015-09-21T15:55:30+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":910,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T17:54:30+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":830,
-                        "pronosticIV":840,
-                        "source":"TEST"
-                    }
                 ],
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
                 ],
                 "rang":2,
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -182,71 +179,41 @@
                 "categorieStatistiqueArrivee":"LVK",
                 "categorieStatistiqueDepart":"LVK",
                 "cr":"0087",
-                "ci":"182014",
+                "ci":"142091",
                 "ch":"BV",
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:06:00",
+                    "heureLocale":"15:02:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:08:00",
+                    "heureLocale":"15:03:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T15:51:00+0000",
-                    "heureLocale":"17:51:00",
+                    "dateHeure":"2017-03-18T14:02:00+0000",
+                    "heureLocale":"15:02:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T17:53:00+0000",
-                    "heureLocale":"17:53:00",
+                    "dateHeure":"2017-03-18T14:03:00+0000",
+                    "heureLocale":"15:03:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
-                    {
-                        "dateHeure":"2015-09-21T16:06:00+0000",
-                        "dateHeureEmission":"2018-04-19T18:06:00+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:06:00+0000",
-                        "dateHeureEmission":"2018-04-19T18:06:00+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeHoraireProjeteDepart":[
-                    {
-                        "dateHeure":"2015-09-21T16:08:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:08:00+0000",
-                        "dateHeureEmission":"2018-04-19T18:08:00+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
                 ],
                 "rang":3,
-                "sourceHoraireProjeteArriveeReference":"TEST",
-                "sourceHoraireProjeteDepartReference":"TEST",
                 "typeArret":"CH"
             },
             {
@@ -255,71 +222,48 @@
                 "categorieStatistiqueArrivee":"LVK",
                 "categorieStatistiqueDepart":"LVA",
                 "cr":"0087",
-                "ci":"182063",
+                "ci":"142000",
                 "ch":"BV",
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:29:00",
+                    "heureLocale":"15:22:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:31:00",
+                    "heureLocale":"15:24:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T16:14:00+0000",
-                    "heureLocale":"18:14:00",
+                    "dateHeure":"2017-03-18T14:22:00+0000",
+                    "heureLocale":"15:22:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0
+                    "nbJoursPasseMinuit":0,
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T16:16:00+0000",
-                    "heureLocale":"18:16:00",
+                    "dateHeure":"2017-03-18T14:24:00+0000",
+                    "heureLocale":"15:24:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
                 },
                 "listeHoraireProjeteArrivee":[
-                    {
-                        "dateHeure":"2015-09-21T16:29:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:29:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeHoraireProjeteDepart":[
-                    {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
-                "listeMotifArrivee":[
-                ],
-                "listeMotifDepart":[
-                ],
+                "listeMotifArrivee": [
+                {
+                    "idMotifInterne": 33,
+                    "source": "IRE-GOP"
+                }],
+                "listeMotifDepart": [
+                {
+                    "idMotifInterne": 33,
+                    "source": "IRE-GOP"
+                }],
                 "rang":4,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -328,71 +272,43 @@
                 "categorieStatistiqueArrivee":"LVK",
                 "categorieStatistiqueDepart":"LVA",
                 "cr":"0087",
-                "ci":"182139",
+                "ci":"118299",
                 "ch":"BV",
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:45:00",
+                    "heureLocale":"15:44:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:46:00",
+                    "heureLocale":"15:45:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T16:30:00+0000",
-                    "heureLocale":"18:30:00",
+                    "dateHeure":"2017-03-18T14:44:00+0000",
+                    "heureLocale":"15:44:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T16:31:00+0000",
-                    "heureLocale":"18:31:00",
+                    "dateHeure":"2017-03-18T14:45:00+0000",
+                    "heureLocale":"15:45:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
                 },
                 "listeHoraireProjeteArrivee":[
-                    {
-                        "dateHeure":"2015-09-21T16:45:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:45:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeHoraireProjeteDepart":[
-                    {
-                        "dateHeure":"2015-09-21T16:46:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:46:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
                 ],
                 "rang":5,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -401,35 +317,35 @@
                 "categorieStatistiqueArrivee":"LVK",
                 "categorieStatistiqueDepart":"LVA",
                 "cr":"0087",
-                "ci":"187914",
-                "ch":"WS",
+                "ci":"118257",
+                "ch":"BV",
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:54:00",
+                    "heureLocale":"15:58:00",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireProductionDepart":{
+                    "idFuseauHoraire":"Europe/Paris",
+                    "heureIncertaine":false,
+                    "heureLocale":"15:59:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T16:39:00+0000",
-                    "heureLocale":"18:39:00",
+                    "dateHeure":"2017-03-18T14:58:00+0000",
+                    "heureLocale":"15:58:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
+                },
+                "horaireVoyageurDepart":{
+                    "dateHeure":"2017-03-18T14:59:00+0000",
+                    "heureLocale":"15:59:00",
+                    "idFuseauHoraire":"Europe/Paris",
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
                 },
                 "listeHoraireProjeteArrivee":[
-                    {
-                        "dateHeure":"2015-09-21T16:54:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:54:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":900,
-                        "pronosticIV":900,
-                        "source":"TEST"
-                    }
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
@@ -438,7 +354,50 @@
                 "listeMotifDepart":[
                 ],
                 "rang":6,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
+                "typeArret":"CH"
+            },
+            {
+                "@id":"2ce15bf7-134d-4cd5-978f-d746d238e008",
+                "arretFacultatif":false,
+                "categorieStatistiqueArrivee":"LVK",
+                "categorieStatistiqueDepart":"LVA",
+                "cr":"0087",
+                "ci":"118000",
+                "ch":"BV",
+                "horaireProductionDepart":{
+                    "idFuseauHoraire":"Europe/Paris",
+                    "heureIncertaine":false,
+                    "heureLocale":"16:16:00",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireVoyageurDepart":{
+                    "dateHeure":"2017-03-18T15:16:00+0000",
+                    "heureLocale":"16:16:00",
+                    "idFuseauHoraire":"Europe/Paris",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireProductionArrivee":{
+                    "idFuseauHoraire":"Europe/Paris",
+                    "heureIncertaine":false,
+                    "heureLocale":"16:16:00",
+                    "nbJoursPasseMinuit":0
+                },
+                "horaireVoyageurArrivee":{
+                    "dateHeure":"2017-03-18T15:16:00+0000",
+                    "heureLocale":"16:16:00",
+                    "idFuseauHoraire":"Europe/Paris",
+                    "nbJoursPasseMinuit":0,
+                    "statutCirculationOPE": "SUPPRESSION"
+                },
+                "listeHoraireProjeteArrivee":[
+                ],
+                "listeHoraireProjeteDepart":[
+                ],
+                "listeMotifArrivee":[
+                ],
+                "listeMotifDepart":[
+                ],
+                "rang":7,
                 "typeArret":"CH"
             }
         ],
@@ -447,7 +406,7 @@
                 "code":"CS01",
                 "listeJourRegimeDApplication":[
                     {
-                        "date":"2015-09-21"
+                        "date":"2017-03-18"
                     }
                 ],
                 "listePropriete":[
@@ -482,12 +441,12 @@
         "listeUtilisationSillon":[
             {
                 "identifiantSillon":{
-                    "numeroOperationnelSillon":"096231",
+                    "numeroOperationnelSillon":"840427",
                     "sillonTTH":"042522760051"
                 },
                 "listeJourRegimeDApplication":[
                     {
-                        "date":"2015-09-21"
+                        "date":"2017-03-18"
                     }
                 ],
                 "listeJourRegimeFacultatif":[
@@ -507,7 +466,7 @@
                 },
                 "listeJourRegimeDApplication":[
                     {
-                        "date":"2015-09-21"
+                        "date":"2017-03-18"
                     }
                 ],
                 "listeJourRegimeFacultatif":[
@@ -521,7 +480,7 @@
                 "porteur":false
             }
         ],
-        "numeroCourse":"096231",
+        "numeroCourse":"840427",
         "statutSillonCourse":"NON_CONNU",
         "statutOperationnel":"PERTURBEE",
         "systemeCreateur":"2148",

@@ -35,6 +35,9 @@ from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_fixture_data
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
+from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_JOHN_trip_removal, \
+    check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
+    check_db_840427_partial_removal, check_db_96231_partial_removal
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -56,6 +59,17 @@ def mock_rabbitmq(monkeypatch):
     monkeypatch.setattr('kombu.messaging.Producer.publish', mock_amqp)
 
     return mock_amqp
+
+
+def test_wrong_cots_post():
+    """
+    simple json post on the api
+    """
+    res, status = api_post('/cots', check=False, data='{}')
+
+    assert status == 400
+
+    print res.get('error') == 'invalid'
 
 
 def test_cots_post_no_data():
@@ -91,4 +105,284 @@ def test_cots_simple_post(mock_rabbitmq):
         assert rtu.contributor == 'realtime.cots'
         assert rtu.connector == 'cots'
         assert 'listePointDeParcours' in rtu.raw_data
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_save_bad_raw_cots():
+    """
+    send a bad formatted COTS, the bad raw COTS should be saved in db
+    """
+    bad_cots = get_fixture_data('bad_cots.json')
+    res = api_post('/cots', data=bad_cots, check=False)
+    assert res[1] == 400
+    assert res[0]['message'] == 'Invalid arguments'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == \
+            'invalid json, impossible to find "numeroCourse" in json dict {"bad":"one","cots":"toto"}'
+        assert RealTimeUpdate.query.first().raw_data == bad_cots
+
+
+def test_cots_delayed_simple_post(mock_rabbitmq):
+    """
+    simple delayed stops post
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_delayed_then_OK(mock_rabbitmq):
+    """
+    We delay a stop, then the vj is back on time
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+        assert RealTimeUpdate.query.first().status == 'OK'
+    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 1
+
+    cots_96231 = get_fixture_data('cots_train_96231_normal.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_normal(contributor='realtime.cots', motif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_delayed_post_twice(mock_rabbitmq):
+    """
+    double delayed stops post
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_trip_delayed_then_removal(mock_rabbitmq):
+    """
+    post delayed stops then trip removal on the same trip
+    """
+    cots_96231_delayed = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231_delayed)
+    assert res == 'OK'
+    cots_96231_trip_removal = get_fixture_data('cots_train_96231_trip_removal.json')
+    res = api_post('/cots', data=cots_96231_trip_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_96231_trip_removal()
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_trip_delayed_then_partial_removal(mock_rabbitmq):
+    """
+    post delayed stops then trip removal on the same trip
+    """
+    cots_96231_delayed = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231_delayed)
+    assert res == 'OK'
+    cots_96231_partial_removal = get_fixture_data('cots_train_96231_partial_removal.json')
+    res = api_post('/cots', data=cots_96231_partial_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+        assert RealTimeUpdate.query.first().status == 'OK'
+    check_db_96231_partial_removal(contributor='realtime.cots')
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_trip_removal_simple_post(mock_rabbitmq):
+    """
+    simple trip removal post
+    """
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    res = api_post('/cots', data=cots_6113)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_6113_trip_removal(motif_externe_is_null=True)
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_delayed_and_trip_removal_post(mock_rabbitmq):
+    """
+    post delayed stops on one trip then trip removal on another
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    res = api_post('/cots', data=cots_6113)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    check_db_6113_trip_removal(motif_externe_is_null=True)
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_trip_removal_post_twice(mock_rabbitmq):
+    """
+    double trip removal post
+    """
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    res = api_post('/cots', data=cots_6113)
+    assert res == 'OK'
+    res = api_post('/cots', data=cots_6113)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_6113_trip_removal(motif_externe_is_null=True)
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_trip_with_parity(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, there should be 2 VJ impacted
+    """
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    cots_6113_14 = cots_6113.replace('"numeroCourse": "006113",',
+                                     '"numeroCourse": "006113/4",')
+    res = api_post('/cots', data=cots_6113_14)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+
+        # there should be 2 trip updated,
+        # - trip:OCETGV-87686006-87751008-2:25768-2 for the headsign 6114
+        # - trip:OCETGV-87686006-87751008-2:25768 for the headsign 6113
+
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+
+    check_db_6113_trip_removal(motif_externe_is_null=True)
+    check_db_6114_trip_removal(motif_externe_is_null=True)
+
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_trip_with_parity_one_unknown_vj(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, but the train 6112 is not known by navitia
+    there should be only the train 6113 impacted
+    """
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    cots_6112_13 = cots_6113.replace('"numeroCourse": "006113",',
+                                     '"numeroCourse": "006112/3",')
+    res = api_post('/cots', data=cots_6112_13)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+
+    check_db_6113_trip_removal(motif_externe_is_null=True)
+
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_two_trip_removal_one_post(mock_rabbitmq):
+    """
+    post one COTS trip removal on two trips
+    (navitia mock returns 2 vj for 'JOHN' headsign)
+    """
+    cots_JOHN_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
+    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_JOHN_trip_removal()
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_two_trip_removal_post_twice(mock_rabbitmq):
+    """
+    post twice COTS trip removal on two trips
+    """
+    cots_JOHN_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
+    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    assert res == 'OK'
+    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(TripUpdate.query.all()) == 2
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_JOHN_trip_removal()
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_partial_removal(mock_rabbitmq):
+    """
+    the trip 840427 has been partialy deleted
+
+    Normally there are 7 stops in this VJ, but 4 (Chaumont, Bar-sur-Aube, Vendeuvre and Troyes) have been removed
+    """
+    cots_080427 = get_fixture_data('cots_train_840427_partial_removal.json')
+    res = api_post('/cots', data=cots_080427)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert RealTimeUpdate.query.first().status == 'OK'
+    check_db_840427_partial_removal(contributor='realtime.cots', motif_externe_is_null=True)
     assert mock_rabbitmq.call_count == 1
