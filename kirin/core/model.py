@@ -68,6 +68,7 @@ class TimestampMixin(object):
     created_at = db.Column(db.DateTime(), default=datetime.datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(), default=None, onupdate=datetime.datetime.utcnow)
 
+
 ModificationType = db.Enum('add', 'delete', 'update', 'none', name='modification_type')
 
 
@@ -95,9 +96,10 @@ class VehicleJourney(db.Model):
     # ! DO NOT USE attribute directly !
     # timestamp of VJ's start
     start_timestamp = db.Column(db.DateTime, nullable=False) # ! USE get_start_timestamp() !
+    db.Index('start_timestamp_idx', start_timestamp)
 
-    __table_args__ = (db.UniqueConstraint('navitia_trip_id', 'start_timestamp',
-                                          name='vehicle_journey_navitia_trip_id_start_timestamp_idx'),)
+    db.UniqueConstraint(navitia_trip_id, start_timestamp,
+                        name='vehicle_journey_navitia_trip_id_start_timestamp_idx')
 
     def __init__(self, navitia_vj, local_circulation_date):
         from kirin.utils import get_timezone
@@ -141,6 +143,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     trip_update_id = db.Column(postgresql.UUID,
                                db.ForeignKey('trip_update.vj_id', ondelete='CASCADE'),
                                nullable=False)
+    db.Index('trip_update_id_idx', trip_update_id)
 
     # stop time's order in the vj
     order = db.Column(db.Integer, nullable=False)
@@ -230,12 +233,14 @@ class TripUpdate(db.Model, TimestampMixin):
                       db.ForeignKey('vehicle_journey.id', ondelete='CASCADE'),
                       nullable=False,
                       primary_key=True)
+    db.Index('vj_id_idx', vj_id)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
                          backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True),
                          cascade='all, delete-orphan', single_parent=True)
     message = db.Column(db.Text, nullable=True)
     contributor = db.Column(db.Text, nullable=True)
+    db.Index('contributor_idx', contributor)
     stop_time_updates = db.relationship('StopTimeUpdate', backref='trip_update', lazy='joined',
                                         order_by="StopTimeUpdate.order",
                                         collection_class=ordering_list('order'),
@@ -316,6 +321,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
     received_at = db.Column(db.DateTime, nullable=False)
     connector = db.Column(db.Enum('ire', 'cots', 'gtfs-rt', name='connector_type'), nullable=False)
     status = db.Column(db.Enum('OK', 'KO', 'pending', name='rt_status'), nullable=False)
+    db.Index('status_idx', status)
     error = db.Column(db.Text, nullable=True)
     raw_data = deferred(db.Column(db.Text, nullable=True))
     contributor = db.Column(db.Text, nullable=True)
