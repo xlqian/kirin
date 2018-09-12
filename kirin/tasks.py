@@ -162,3 +162,24 @@ def purge_ire_rt_update(self):
     config = {'nb_days_to_keep': 100,
               'connector': 'ire'}
     purge_rt_update.delay(config)
+
+
+@celery.task(bind=True)
+def purge_cots_trip_update(self):
+    """
+    This task will remove ONLY TripUpdate, StopTimeUpdate and VehicleJourney that are created by COTS but the
+    RealTimeUpdate are kept so that we can replay it for debug purpose. RealTimeUpdate will be remove by another task
+    """
+    config = {'contributor': app.config.get('COTS_CONTRIBUTOR'),
+              'nb_days_to_keep': 10}
+    purge_trip_update.delay(config)
+
+
+@celery.task(bind=True)
+def purge_cots_rt_update(self):
+    """
+    This task will remove realtime update
+    """
+    config = {'nb_days_to_keep': 100,
+              'connector': 'cots'}
+    purge_rt_update.delay(config)
