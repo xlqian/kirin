@@ -178,3 +178,13 @@ To generate a new migration script for database (after an upgrade of the model.p
 honcho run ./manage.py db migrate
 ```
 This will generate a new migration file, that you can amend to your will.
+
+
+Docker
+------
+
+A docker image of Kirin can be built using the Dockerfile:
+`docker build -t kirin .`
+When running this image, the Kirin web server is launched and can be requested to *port* exposed by using the API .
+`docker run -p <port>:9090 kirin`
+Note: a Kirin database is needed on localhost for the requests to be done successfully.
