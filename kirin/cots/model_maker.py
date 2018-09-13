@@ -131,25 +131,6 @@ def as_duration(seconds):
     return datetime.utcfromtimestamp(seconds) - datetime.utcfromtimestamp(0)
 
 
-def _retrieve_projected_time(source_ref, list_proj_time):
-    """
-    pick the good projected arrival/departure objects from the list provided,
-    using the source-reference if existing
-    """
-    if list_proj_time:
-        # if a source-reference is defined
-        if source_ref is not None:
-            # retrieve the one mentioned only if it exists
-            for p in list_proj_time:
-                s = get_value(p, 'source', nullable=True)
-                if s is not None and s == source_ref:
-                    return p
-        # if no source-reference exists, but only one element in the list, we take it
-        elif len(list_proj_time) == 1:
-            return list_proj_time[0]
-    return None
-
-
 class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
@@ -255,11 +236,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 if ad_status is None:
                     # delay or normal case
 
-                    ref_ad = get_value(pdp, 'sourceHoraireProjete{}Reference'.format(ad_str), nullable=True)
                     list_hor_proj_ad = get_value(pdp, 'listeHoraireProjete{}'.format(ad_str), nullable=True)
-                    proj_ad = _retrieve_projected_time(ref_ad, list_hor_proj_ad)
-                    if proj_ad is None:
+                    if not list_hor_proj_ad or not isinstance(list_hor_proj_ad, list):
                         continue
+                    proj_ad = list_hor_proj_ad[0]
 
                     delay_ad = get_value(proj_ad, 'pronosticIV', nullable=True)
                     if delay_ad is None:
