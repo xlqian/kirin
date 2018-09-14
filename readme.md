@@ -185,6 +185,8 @@ Docker
 
 A docker image of Kirin can be built using the Dockerfile:
 `docker build -t kirin .`
-When running this image, the Kirin web server is launched and can be requested to *port* exposed by using the API .
+When running this image, the Kirin web server is launched and an optional *port* can be given to expose the API.
 `docker run -p <port>:9090 kirin`
+
+
 Note: a Kirin database is needed on localhost for the requests to be done successfully.
