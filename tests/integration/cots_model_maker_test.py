@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+# Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -32,19 +32,19 @@ import pytest
 
 from kirin import db, app
 from kirin.core import model
-from kirin.ire import KirinModelBuilder
+from kirin.cots import KirinModelBuilder
 from tests.check_utils import get_fixture_data, dumb_nav_wrapper
 
 
-def test_ire_train_delayed(mock_navitia_fixture):
+def test_cots_train_delayed(mock_navitia_fixture):
     """
-    test the import of train_96231_delayed.xml
+    test the import of cots_train_96231_delayed.json
     """
 
-    input_train_delayed = get_fixture_data('train_96231_delayed.xml')
+    input_train_delayed = get_fixture_data('cots_train_96231_delayed.json')
 
     with app.app_context():
-        rt_update = model.RealTimeUpdate(input_train_delayed, connector='ire', contributor='realtime.ire')
+        rt_update = model.RealTimeUpdate(input_train_delayed, connector='cots', contributor='realtime.cots')
         trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
 
         # we associate the trip_update manually for sqlalchemy to make the links
@@ -59,10 +59,10 @@ def test_ire_train_delayed(mock_navitia_fixture):
         assert trip_up.status == 'update'
 
         # 5 stop times must have been created
-        assert len(trip_up.stop_time_updates) == 5
+        assert len(trip_up.stop_time_updates) == 6
 
-        # first stop time should be 'gare de Sélestat'
-        st = trip_up.stop_time_updates[0]
+        # first impacted stop time should be 'gare de Sélestat'
+        st = trip_up.stop_time_updates[1]
         assert st.id
         assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
         # the arrival has no EcartExterne in the IRE data, so the status is 'none'
@@ -72,10 +72,11 @@ def test_ire_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
-        assert st.message == 'Affluence exceptionnelle de voyageurs'
+        # TODO: activate this once message are managed
+        # assert st.message == 'Affluence exceptionnelle de voyageurs'
 
-        # second should be 'gare de Colmar'
-        st = trip_up.stop_time_updates[1]
+        # second impacted should be 'gare de Colmar'
+        st = trip_up.stop_time_updates[2]
         assert st.id
         assert st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
         assert st.arrival is None
@@ -84,7 +85,8 @@ def test_ire_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay == timedelta(minutes=15)
         assert st.departure_status == 'update'
-        assert st.message == 'Affluence exceptionnelle de voyageurs'
+        # TODO: activate this once message are managed
+        # assert st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last should be 'gare de Basel-SBB'
         st = trip_up.stop_time_updates[-1]
@@ -97,18 +99,19 @@ def test_ire_train_delayed(mock_navitia_fixture):
         assert st.departure is None
         assert st.departure_delay is None
         assert st.departure_status == 'none'
-        assert st.message == 'Affluence exceptionnelle de voyageurs'
+        # TODO: activate this once message are managed
+        # assert st.message == 'Affluence exceptionnelle de voyageurs'
 
 
-def test_ire_train_trip_removal(mock_navitia_fixture):
+def test_cots_train_trip_removal(mock_navitia_fixture):
     """
-    test the import of train_6113_trip_removal.xml
+    test the import of cots_train_6113_trip_removal.json
     """
 
-    input_train_trip_removed = get_fixture_data('train_6113_trip_removal.xml')
+    input_train_trip_removed = get_fixture_data('cots_train_6113_trip_removal.json')
 
     with app.app_context():
-        rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='ire', contributor='realtime.ire')
+        rt_update = model.RealTimeUpdate(input_train_trip_removed, connector='cots', contributor='realtime.cots')
         trip_updates = KirinModelBuilder(dumb_nav_wrapper()).build(rt_update)
         rt_update.trip_updates = trip_updates
         db.session.add(rt_update)

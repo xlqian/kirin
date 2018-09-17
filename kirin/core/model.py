@@ -138,7 +138,9 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     Stop time
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
-    trip_update_id = db.Column(postgresql.UUID, db.ForeignKey('trip_update.vj_id'), nullable=False)
+    trip_update_id = db.Column(postgresql.UUID,
+                               db.ForeignKey('trip_update.vj_id', ondelete='CASCADE'),
+                               nullable=False)
 
     # stop time's order in the vj
     order = db.Column(db.Integer, nullable=False)
@@ -208,9 +210,15 @@ class StopTimeUpdate(db.Model, TimestampMixin):
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
-                                    db.Column('real_time_update_id', postgresql.UUID, db.ForeignKey('real_time_update.id')),
-                                    db.Column('trip_update_id', postgresql.UUID, db.ForeignKey('trip_update.vj_id')),
-                                    db.PrimaryKeyConstraint('real_time_update_id', 'trip_update_id', name='associate_realtimeupdate_tripupdate_pkey')
+                                    db.Column('real_time_update_id',
+                                              postgresql.UUID,
+                                              db.ForeignKey('real_time_update.id', ondelete='CASCADE')),
+                                    db.Column('trip_update_id',
+                                              postgresql.UUID,
+                                              db.ForeignKey('trip_update.vj_id', ondelete='CASCADE')),
+                                    db.PrimaryKeyConstraint('real_time_update_id',
+                                                            'trip_update_id',
+                                                            name='associate_realtimeupdate_tripupdate_pkey')
 )
 
 
@@ -218,7 +226,10 @@ class TripUpdate(db.Model, TimestampMixin):
     """
     Update information for Vehicule Journey
     """
-    vj_id = db.Column(postgresql.UUID, db.ForeignKey('vehicle_journey.id'), nullable=False, primary_key=True)
+    vj_id = db.Column(postgresql.UUID,
+                      db.ForeignKey('vehicle_journey.id', ondelete='CASCADE'),
+                      nullable=False,
+                      primary_key=True)
     status = db.Column(ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
                          backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True),
@@ -325,7 +336,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
         self.received_at = received_at if received_at else datetime.datetime.utcnow()
 
     @classmethod
-    def get_probes_by_contributor(cls, only_valid=False):
+    def get_probes_by_contributor(cls):
         """
         create a dict of probes
         """

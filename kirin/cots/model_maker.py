@@ -29,14 +29,19 @@
 # www.navitia.io
 
 from __future__ import absolute_import, print_function, unicode_literals, division
+
+import logging
 from datetime import datetime
 from dateutil import parser
 from flask.globals import current_app
-from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder
+from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 # For perf benches:
 # https://artem.krylysov.com/blog/2015/09/29/benchmark-python-json-libraries/
 import ujson
-from kirin.exceptions import InvalidArguments, ObjectNotFound
+
+from kirin.core import model
+from kirin.exceptions import InvalidArguments
+from kirin.utils import record_internal_failure
 
 
 def get_value(sub_json, key, nullable=False):
@@ -47,7 +52,7 @@ def get_value(sub_json, key, nullable=False):
     res = sub_json.get(key)
     if res is None and not nullable:
         raise InvalidArguments('invalid json, impossible to find "{key}" in json dict {elt}'.format(
-            key=key, elt=ujson.dump(sub_json)))
+            key=key, elt=ujson.dumps(sub_json)))
     return res
 
 
@@ -108,6 +113,24 @@ def as_date(s):
     return parser.parse(s, dayfirst=False, yearfirst=True)
 
 
+def as_duration(seconds):
+    """
+    return a string formated like 'HH:MM' to a timedelta
+    >>> as_duration(None)
+
+    >>> as_duration(900)
+    datetime.timedelta(0, 900)
+    >>> as_duration(-400)
+    datetime.timedelta(-1, 86000)
+    >>> as_duration("bob")
+    Traceback (most recent call last):
+    TypeError: a float is required
+    """
+    if seconds is None:
+        return None
+    return datetime.utcfromtimestamp(seconds) - datetime.utcfromtimestamp(0)
+
+
 class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
@@ -131,15 +154,19 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         if 'nouvelleVersion' not in json:
             raise InvalidArguments('No object "nouvelleVersion" available in feed provided')
 
-        vjs = self._get_vjs(get_value(json, 'nouvelleVersion'))
-        return []
+        dict_version = get_value(json, 'nouvelleVersion')
+        vjs = self._get_vjs(dict_version)
+
+        trip_updates = [self._make_trip_update(vj, dict_version) for vj in vjs]
+
+        return trip_updates
 
     def _get_vjs(self, json_train):
         train_numbers = get_value(json_train, 'numeroCourse')
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         if not pdps:
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
-                                   'json elt {elt}'.format(elt=ujson.dump(json_train)))
+                                   'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
         dates_str = [get_value(d, 'date') for d in get_value(json_train, 'listeJourRegimeDApplication')]
         date = min([as_date(d) for d in dates_str]).date()
@@ -152,3 +179,123 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
         return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
+    def _record_and_log(self, logger, log_str):
+        log_dict = {'log': log_str}
+        record_internal_failure(log_dict['log'], contributor=self.contributor)
+        log_dict.update({'contributor': self.contributor})
+        logger.info('metrology', extra=log_dict)
+
+    def _make_trip_update(self, vj, json_train):
+        """
+        create the TripUpdate object
+        """
+        logger = logging.getLogger(__name__)
+        trip_update = model.TripUpdate(vj=vj)
+        trip_update.contributor = self.contributor
+
+        trip_status = get_value(json_train, 'statutOperationnel')
+
+        if trip_status == 'SUPPRIMEE':
+            # the whole trip is deleted
+            trip_update.status = 'delete'
+            trip_update.stop_time_updates = []
+            return trip_update
+
+        elif trip_status == 'AJOUTEE':
+            # the trip is created from scratch
+            # not handled yet
+            self._record_and_log(logger, 'nouvelleVersion/statutOperationnel == "AJOUTEE" is not handled (yet)')
+            return trip_update
+
+        # all other status is an 'update' of the trip
+        trip_update.status = 'update'
+        pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
+
+        # manage realtime information stop_time by stop_time
+        for pdp in pdps:
+            # retrieve navitia's stop_time information
+            nav_st, log_dict = self._get_navitia_stop_time(pdp, vj.navitia_vj)
+            if log_dict:
+                record_internal_failure(log_dict['log'], contributor=self.contributor)
+                log_dict.update({'contributor': self.contributor})
+                logging.getLogger(__name__).info('metrology', extra=log_dict)
+
+            if nav_st is None:
+                continue
+
+            nav_stop = nav_st.get('stop_point', {})
+            st_update = model.StopTimeUpdate(nav_stop)
+            trip_update.stop_time_updates.append(st_update)
+
+            # compute realtime information and fill st_update for arrival and departure
+            for ad_str in ['Arrivee', 'Depart']:
+                hv_ad = get_value(pdp, 'horaireVoyageur{}'.format(ad_str), nullable=True)
+                if hv_ad is None:
+                    continue
+                ad_status = get_value(hv_ad, 'statutCirculationOPE', nullable=True)
+                if ad_status is None:
+                    # delay or normal case
+
+                    list_hor_proj_ad = get_value(pdp, 'listeHoraireProjete{}'.format(ad_str), nullable=True)
+                    if not list_hor_proj_ad or not isinstance(list_hor_proj_ad, list):
+                        continue
+                    proj_ad = list_hor_proj_ad[0]
+
+                    delay_ad = get_value(proj_ad, 'pronosticIV', nullable=True)
+                    if delay_ad is None:
+                        continue
+
+                    if ad_str == 'Arrivee':
+                        st_update.arrival_status = 'update'
+                        st_update.arrival_delay = as_duration(delay_ad)
+                    elif ad_str == 'Depart':
+                        st_update.departure_status = 'update'
+                        st_update.departure_delay = as_duration(delay_ad)
+
+                elif ad_status == 'SUPPRESSION':
+                    # partial delete
+                    if ad_str == 'Arrivee':
+                        st_update.arrival_status = 'delete'
+                    elif ad_str == 'Depart':
+                        st_update.departure_status = 'delete'
+
+                elif ad_status == 'SUPPRESSION_DETOURNEMENT':
+                    # stop_time is replaced by another one
+                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
+                                                 '"{}" is not handled completely (yet), only removal'
+                                                 .format(ad_status))
+                    if ad_str == 'Arrivee':
+                        st_update.arrival_status = 'delete'
+                    elif ad_str == 'Depart':
+                        st_update.departure_status = 'delete'
+
+                elif ad_status == 'CREATION':
+                    # new stop_time added
+                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
+                                                 '"{}" is not handled (yet)'.format(ad_status))
+
+                elif ad_status == 'DETOURNEMENT':
+                    # new stop_time added also?
+                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
+                                                 '"{}" is not handled (yet)'.format(ad_status))
+
+                else:
+                    raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
+                                           format(ad_status, ad_str))
+
+        return trip_update
+
+    @staticmethod
+    def _get_navitia_stop_time(pdp, nav_vj):
+        """
+        get a navitia stop from a Point de Parcours dict
+        the dict MUST contain cr, ci, ch tags
+
+        it searches in the vj's stops for a stop_area with the external code
+        cr-ci-ch
+        we also return error messages as 'missing stop point', 'duplicate stops'
+        """
+        return get_navitia_stop_time_sncf(cr=get_value(pdp, 'cr'),
+                                          ci=get_value(pdp, 'ci'),
+                                          ch=get_value(pdp, 'ch'),
+                                          nav_vj=nav_vj)
