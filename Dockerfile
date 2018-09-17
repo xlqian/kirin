@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-#we remove protobuf from the dependancy since it's already installed with c++ extension built in
+#we remove protobuf from the dependency since it's already installed with c++ extension built in
 
 RUN apk --update --no-cache add \
         g++ \
@@ -25,9 +25,7 @@ RUN apk --update --no-cache add \
         g++ \
         build-base \
         python-dev \
-        zlib-dev \
         musl \
-        musl-dev \
         postgresql-dev \
         git
 
