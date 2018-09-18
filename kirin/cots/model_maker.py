@@ -68,34 +68,35 @@ def is_station(pdp):
 
 def _retrieve_interesting_pdp(list_pdp):
     """
-    Filter "Points de Parcours" (corresponding to stop_times) to get only the relevant ones from
+    Filter "Points de Parcours" (corresponding to stop_times in Navitia) to get only the relevant ones from
     a Navitia's perspective (stations, where travelers can hop on or hop off)
     Context: COTS may contain operating informations, useless for traveler
     :param list_pdp: an array of "Point de Parcours" (typically the one from the feed)
     :return: Filtered array
-    Note: written in a yield-fashion to switch implem if possible, but we need random access for now
+    Notes:  - written in a yield-fashion to switch implementation if possible, but we need random access for now
+            - see 'test_retrieve_interesting_pdp' for a functional example
     """
     res = []
     picked_one = False
     for idx, pdp in enumerate(list_pdp):
-        # start consuming stop_time only at the first one with a departure time
+        # At start, do not consume until there's a departure time (horaireVoyageurDepart)
         if not picked_one and not get_value(pdp, 'horaireVoyageurDepart', nullable=True):
             continue
-        # exclude pdp that are not legit stations
+        # exclude stop_times that are not legit stations
         if not is_station(pdp):
             continue
-        # exclude pdp that have no departure nor arrival time
+        # exclude stop_times that have no departure nor arrival time (empty stop_times)
         if not get_value(pdp, 'horaireVoyageurDepart', nullable=True) and \
                 not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
             continue
         # stop consuming once all following stop_times are missing arrival time
-        # * if a stop only has departure time, travelers can only hop in, but if they are be able to
+        # * if a stop_time only has departure time, travelers can only hop in, but if they are be able to
         #   hop off later because some stop_time has arrival time then the current stop_time is useful,
         #   so we keep current stop_time.
         # * if no stop_time has arrival time anymore, then stop_times are useless as traveler cannot
         #   hop off, so no point hopping in anymore, so we remove all the stop_times until the end
         #   (should not happen in practice).
-        if picked_one and not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
+        if not get_value(pdp, 'horaireVoyageurArrivee', nullable=True):
             has_following_arrival = any(
                 get_value(follow_pdp, 'horaireVoyageurArrivee', nullable=True) and is_station(follow_pdp)
                 for follow_pdp in list_pdp[idx:])
@@ -115,7 +116,7 @@ def as_date(s):
 
 def as_duration(seconds):
     """
-    return a string formated like 'HH:MM' to a timedelta
+    transform a number of seconds into a timedelta
     >>> as_duration(None)
 
     >>> as_duration(900)
@@ -138,12 +139,12 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def build(self, rt_update):
         """
-        parse raw json in the rt_update object
+        parse the COTS raw json stored in the rt_update object (in Kirin db)
         and return a list of trip updates
 
         The TripUpdates are not yet associated with the RealTimeUpdate
 
-        Most of the realtime information we parse is contained in 'nouvelleVersion' sub-object
+        Most of the realtime information parsed is contained in the 'nouvelleVersion' sub-object
         (see fixtures and documentation)
         """
         try:
@@ -187,7 +188,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def _make_trip_update(self, vj, json_train):
         """
-        create the TripUpdate object
+        create the new TripUpdate object
+        Following the COTS spec: https://github.com/CanalTP/kirin/blob/master/documentation/cots_connector.md
         """
         logger = logging.getLogger(__name__)
         trip_update = model.TripUpdate(vj=vj)
@@ -207,13 +209,13 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             self._record_and_log(logger, 'nouvelleVersion/statutOperationnel == "AJOUTEE" is not handled (yet)')
             return trip_update
 
-        # all other status is an 'update' of the trip
+        # all other status is considered an 'update' of the trip
         trip_update.status = 'update'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
 
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
-            # retrieve navitia's stop_time information
+            # retrieve navitia's stop_time information corresponding to the current COTS pdp
             nav_st, log_dict = self._get_navitia_stop_time(pdp, vj.navitia_vj)
             if log_dict:
                 record_internal_failure(log_dict['log'], contributor=self.contributor)
@@ -228,60 +230,59 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             trip_update.stop_time_updates.append(st_update)
 
             # compute realtime information and fill st_update for arrival and departure
-            for ad_str in ['Arrivee', 'Depart']:
-                hv_ad = get_value(pdp, 'horaireVoyageur{}'.format(ad_str), nullable=True)
-                if hv_ad is None:
+            for arrival_departure_toggle in ['Arrivee', 'Depart']:
+                cots_traveler_time = get_value(pdp, 'horaireVoyageur{}'.format(arrival_departure_toggle), nullable=True)
+                if cots_traveler_time is None:
                     continue
-                ad_status = get_value(hv_ad, 'statutCirculationOPE', nullable=True)
-                if ad_status is None:
-                    # delay or normal case
-
-                    list_hor_proj_ad = get_value(pdp, 'listeHoraireProjete{}'.format(ad_str), nullable=True)
-                    if not list_hor_proj_ad or not isinstance(list_hor_proj_ad, list):
+                cots_stop_time_status = get_value(cots_traveler_time, 'statutCirculationOPE', nullable=True)
+                if cots_stop_time_status is None:
+                    # if no cots_stop_time_status, it is considered an 'update' of the stop_time
+                    cots_planned_stop_times = get_value(pdp, 'listeHoraireProjete{}'.format(arrival_departure_toggle), nullable=True)
+                    if not cots_planned_stop_times or not isinstance(cots_planned_stop_times, list):
                         continue
-                    proj_ad = list_hor_proj_ad[0]
+                    cots_planned_stop_time = cots_planned_stop_times[0]
 
-                    delay_ad = get_value(proj_ad, 'pronosticIV', nullable=True)
-                    if delay_ad is None:
+                    cots_delay = get_value(cots_planned_stop_time, 'pronosticIV', nullable=True)
+                    if cots_delay is None:
                         continue
 
-                    if ad_str == 'Arrivee':
+                    if arrival_departure_toggle == 'Arrivee':
                         st_update.arrival_status = 'update'
-                        st_update.arrival_delay = as_duration(delay_ad)
-                    elif ad_str == 'Depart':
+                        st_update.arrival_delay = as_duration(cots_delay)
+                    elif arrival_departure_toggle == 'Depart':
                         st_update.departure_status = 'update'
-                        st_update.departure_delay = as_duration(delay_ad)
+                        st_update.departure_delay = as_duration(cots_delay)
 
-                elif ad_status == 'SUPPRESSION':
+                elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
-                    if ad_str == 'Arrivee':
+                    if arrival_departure_toggle == 'Arrivee':
                         st_update.arrival_status = 'delete'
-                    elif ad_str == 'Depart':
+                    elif arrival_departure_toggle == 'Depart':
                         st_update.departure_status = 'delete'
 
-                elif ad_status == 'SUPPRESSION_DETOURNEMENT':
+                elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled completely (yet), only removal'
-                                                 .format(ad_status))
-                    if ad_str == 'Arrivee':
+                                                 .format(cots_stop_time_status))
+                    if arrival_departure_toggle == 'Arrivee':
                         st_update.arrival_status = 'delete'
-                    elif ad_str == 'Depart':
+                    elif arrival_departure_toggle == 'Depart':
                         st_update.departure_status = 'delete'
 
-                elif ad_status == 'CREATION':
+                elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
-                                                 '"{}" is not handled (yet)'.format(ad_status))
+                                                 '"{}" is not handled (yet)'.format(cots_stop_time_status))
 
-                elif ad_status == 'DETOURNEMENT':
+                elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
-                                                 '"{}" is not handled (yet)'.format(ad_status))
+                                                 '"{}" is not handled (yet)'.format(cots_stop_time_status))
 
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
-                                           format(ad_status, ad_str))
+                                           format(cots_stop_time_status, arrival_departure_toggle))
 
         return trip_update
 
