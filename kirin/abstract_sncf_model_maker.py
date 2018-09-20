@@ -141,6 +141,6 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
                 vjs[nav_vj['id']] = vj
 
         if not vjs:
-            raise ObjectNotFound('no train found for headsigns {}'.format(headsigns))
+            raise ObjectNotFound('no train found for headsign(s) {}'.format(headsign_str))
 
         return vjs.values()
