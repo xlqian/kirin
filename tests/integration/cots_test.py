@@ -30,7 +30,7 @@
 
 import pytest
 
-from tests.check_utils import api_post
+from tests.check_utils import api_post, api_get
 from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_fixture_data
@@ -330,6 +330,35 @@ def test_cots_trip_with_parity_one_unknown_vj(mock_rabbitmq):
     check_db_6113_trip_removal(motif_externe_is_null=True)
 
     assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_trip_unknown_vj(mock_rabbitmq):
+    """
+    a trip with a parity has been impacted, but the train 6112 is not known by navitia
+    there should be only the train 6113 impacted
+    """
+    cots_6113 = get_fixture_data('cots_train_6113_trip_removal.json')
+    cots_6112 = cots_6113.replace('"numeroCourse": "006113",',
+                                  '"numeroCourse": "006112",')
+
+    res = api_post('/cots', data=cots_6112, check=False)
+    assert res[1] == 404
+    assert res[0]['error'] == 'no train found for headsign(s) 006112'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 0
+        assert len(StopTimeUpdate.query.all()) == 0
+        assert RealTimeUpdate.query.first().status == 'KO'
+        assert RealTimeUpdate.query.first().error == \
+            'no train found for headsign(s) 006112'
+        assert RealTimeUpdate.query.first().raw_data == cots_6112
+
+    status = api_get('/status')
+    assert '-' in status['last_update']['realtime.cots']  # only check it's a date
+    assert status['last_valid_update'] == {}
+    assert status['last_update_error']['realtime.cots'] == 'no train found for headsign(s) 006112'
+
+    assert mock_rabbitmq.call_count == 0
 
 
 def test_cots_two_trip_removal_one_post(mock_rabbitmq):

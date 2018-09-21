@@ -231,13 +231,19 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
-                cots_traveler_time = get_value(pdp, 'horaireVoyageur{}'.format(arrival_departure_toggle), nullable=True)
+                cots_traveler_time = get_value(pdp,
+                                               'horaireVoyageur{}'.format(arrival_departure_toggle),
+                                               nullable=True)
                 if cots_traveler_time is None:
                     continue
-                cots_stop_time_status = get_value(cots_traveler_time, 'statutCirculationOPE', nullable=True)
+                cots_stop_time_status = get_value(cots_traveler_time,
+                                                  'statutCirculationOPE',
+                                                  nullable=True)
                 if cots_stop_time_status is None:
                     # if no cots_stop_time_status, it is considered an 'update' of the stop_time
-                    cots_planned_stop_times = get_value(pdp, 'listeHoraireProjete{}'.format(arrival_departure_toggle), nullable=True)
+                    cots_planned_stop_times = get_value(pdp,
+                                                        'listeHoraireProjete{}'.format(arrival_departure_toggle),
+                                                        nullable=True)
                     if not cots_planned_stop_times or not isinstance(cots_planned_stop_times, list):
                         continue
                     cots_planned_stop_time = cots_planned_stop_times[0]

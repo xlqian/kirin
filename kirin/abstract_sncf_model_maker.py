@@ -31,6 +31,9 @@
 from __future__ import absolute_import, print_function, division
 import logging
 from datetime import timedelta
+
+import jmespath
+
 from kirin.utils import record_internal_failure
 from kirin.exceptions import ObjectNotFound
 from abc import ABCMeta
@@ -76,14 +79,12 @@ def headsigns(str):
 def get_navitia_stop_time_sncf(cr, ci, ch, nav_vj):
     nav_external_code = "{cr}-{ci}-{ch}".format(cr=cr, ci=ci, ch=ch)
 
-    nav_stop_times = []
-    log_dict = None
-    for s in nav_vj.get('stop_times', []):
-        for c in s.get('stop_point', {}).get('stop_area', {}).get('codes', []):
-            if c['value'] == nav_external_code and c['type'] == 'CR-CI-CH':
-                nav_stop_times.append(s)
-                break
+    nav_stop_times = jmespath.search(
+        'stop_times[? stop_point.stop_area.codes[? value==`{nav_ext_code}` && type==`CR-CI-CH`]]'.format(
+            nav_ext_code=nav_external_code),
+        nav_vj)
 
+    log_dict = None
     if not nav_stop_times:
         log_dict = {'log': 'missing stop point', 'stop_point_code': nav_external_code}
         return None, log_dict
@@ -141,6 +142,6 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
                 vjs[nav_vj['id']] = vj
 
         if not vjs:
-            raise ObjectNotFound('no train found for headsigns {}'.format(headsigns))
+            raise ObjectNotFound('no train found for headsign(s) {}'.format(headsign_str))
 
         return vjs.values()
