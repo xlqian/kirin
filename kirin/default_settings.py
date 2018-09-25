@@ -191,5 +191,15 @@ CELERYBEAT_SCHEDULE = {
         'task': 'kirin.tasks.purge_ire_rt_update',
         'schedule': schedules.crontab(hour='3', minute='45'),
         'options': {'expires': 3600}
+    },
+    'purge_cots_trip_update': {
+        'task': 'kirin.tasks.purge_cots_trip_update',
+        'schedule': schedules.crontab(hour='4', minute='0'),
+        'options': {'expires': 3600}
+    },
+    'purge_cots_rt_update': {
+        'task': 'kirin.tasks.purge_cots_rt_update',
+        'schedule': schedules.crontab(hour='4', minute='15'),
+        'options': {'expires': 3600}
     }
 }
