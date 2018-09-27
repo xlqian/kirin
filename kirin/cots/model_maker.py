@@ -40,6 +40,7 @@ from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_n
 import ujson
 
 from kirin.core import model
+from kirin.cots.message_handler import MessageHandler
 from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
 
@@ -136,6 +137,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
         super(KirinModelBuilder, self).__init__(nav, contributor)
+        self.message_handler = MessageHandler(
+            api_key=current_app.config['COTS_PAR_IV_API_KEY'],
+            resource_server=current_app.config['COTS_PAR_IV_MOTIF_RESOURCE_SERVER'],
+            token_server=current_app.config['COTS_PAR_IV_TOKEN_SERVER'],
+            client_id=current_app.config['COTS_PAR_IV_CLIENT_ID'],
+            client_secret=current_app.config['COTS_PAR_IV_CLIENT_SECRET'],
+            grant_type=current_app.config['COTS_PAR_IV_GRANT_TYPE'],
+            timeout=current_app.config['COTS_PAR_IV_REQUEST_TIMEOUT'])
 
     def build(self, rt_update):
         """
@@ -194,6 +203,9 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         logger = logging.getLogger(__name__)
         trip_update = model.TripUpdate(vj=vj)
         trip_update.contributor = self.contributor
+        trip_message_id = get_value(json_train, 'idMotifInterneReference', nullable=True)
+        if trip_message_id:
+            trip_update.message = self.message_handler.get_message(index=trip_message_id)
 
         trip_status = get_value(json_train, 'statutOperationnel')
 
@@ -228,6 +240,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             nav_stop = nav_st.get('stop_point', {})
             st_update = model.StopTimeUpdate(nav_stop)
             trip_update.stop_time_updates.append(st_update)
+            st_message_id = get_value(pdp, 'idMotifInterneDepartReference', nullable=True)
+            if not st_message_id:
+                st_message_id = get_value(pdp, 'idMotifInterneArriveeReference', nullable=True)
+            if st_message_id:
+                st_update.message = self.message_handler.get_message(index=st_message_id)
 
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:

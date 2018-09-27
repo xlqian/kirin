@@ -26,7 +26,23 @@ CELERY_BROKER_URL = os.getenv('KIRIN_CELERY_BROKER_URL', 'pyamqp://guest:guest@l
 
 
 # COTS configuration
+# * external configuration
 COTS_CONTRIBUTOR = os.getenv('KIRIN_COTS_CONTRIBUTOR', 'realtime.cots')
+COTS_PAR_IV_API_KEY = os.getenv('KIRIN_COTS_PAR_IV_API_KEY', None)
+COTS_PAR_IV_MOTIF_RESOURCE_SERVER = os.getenv('KIRIN_COTS_PAR_IV_MOTIF_RESOURCE_SERVER', None)
+COTS_PAR_IV_TOKEN_SERVER = os.getenv('KIRIN_COTS_PAR_IV_TOKEN_SERVER', None)
+COTS_PAR_IV_CLIENT_ID = os.getenv('KIRIN_COTS_PAR_IV_CLIENT_ID', None)
+COTS_PAR_IV_CLIENT_SECRET = os.getenv('KIRIN_COTS_PAR_IV_CLIENT_SECRET', None)
+COTS_PAR_IV_GRANT_TYPE = os.getenv('KIRIN_COTS_PAR_IV_GRANT_TYPE', 'client_credentials')
+
+# * technical configuration
+# max instance call failures before stopping attempt
+COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL', 4)
+# the circuit breaker retries after this timeout (in seconds)
+COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S', 60)
+COTS_PAR_IV_TIMEOUT_TOKEN = os.getenv('KIRIN_COTS_COTS_PAR_IV_TIMEOUT_TOKEN', 30*60)
+COTS_PAR_IV_CACHE_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_CACHE_TIMEOUT', 60*60)
+COTS_PAR_IV_REQUEST_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_REQUEST_TIMEOUT', 2)
 
 
 # TODO better conf for multi GTFS-RT

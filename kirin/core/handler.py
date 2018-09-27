@@ -122,7 +122,7 @@ def manage_consistency(trip_update):
     return True
 
 
-def handle(real_time_update, trip_updates, contributor):
+def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
@@ -137,7 +137,7 @@ def handle(real_time_update, trip_updates, contributor):
         old = next((tu for tu in old_trip_updates if tu.vj.navitia_trip_id == trip_update.vj.navitia_trip_id
                     and tu.vj.get_start_timestamp() == trip_update.vj.get_start_timestamp()), None)
         # merge the base schedule, the current realtime, and the new realtime
-        current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
+        current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update, is_new_complete=is_new_complete)
 
         # manage and adjust consistency if possible
         if current_trip_update and manage_consistency(current_trip_update):
@@ -217,7 +217,7 @@ def _make_stop_time_update(base_arrival, base_departure, last_departure, input_s
                           order=order)
 
 
-def merge(navitia_vj, db_trip_update, new_trip_update):
+def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     """
     We need to merge the info from 3 sources:
         * the navitia base schedule
@@ -242,6 +242,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     Note that the results is either 'db_trip_update' or 'new_trip_update'. Side effects on this object are
     thus wanted because of database persistency (update or creation of new objects)
 
+    is_new_complete changes the way None is interpreted in the new_trip_update:
+        - if False, None means there is no new information, so we keep old ones
+        - if True, None means we are back to normal, so we keep the new None ones
+          (for now it only impacts messages to allow removal)
+
 
     ** Important Note **:
     we DO NOT HANDLE changes in navitia's schedule for the moment
@@ -251,7 +256,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     res_stoptime_updates = []
 
     res.status = new_trip_update.status
-    if new_trip_update.message:
+    if new_trip_update.message is not None or is_new_complete:
         res.message = new_trip_update.message
     res.contributor = new_trip_update.contributor
 

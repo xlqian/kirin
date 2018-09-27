@@ -55,3 +55,12 @@ class ObjectNotFound(KirinException):
 class MessageNotPublished(KirinException):
     code = 500
     message = 'impossible to publish message on network'
+
+
+class SubServiceError(KirinException):
+    code = 404
+    message = 'object not found (error on sub-service)'
+
+
+class UnauthorizedOnSubService(SubServiceError):
+    message = 'object not found (unauthorized on sub-service)'
