@@ -50,11 +50,12 @@ def persist(real_time_update):
 
 def log_stu_modif(trip_update, stu, string_additional_info):
     logger = logging.getLogger(__name__)
-    logger.debug("TripUpdate on navitia vj {nav_id} on {date}, StopTimeUpdate {order} modified: {add_info}".format(
-        nav_id=trip_update.vj.navitia_trip_id,
-        date=trip_update.vj.get_utc_circulation_date(),
-        order=stu.order,
-        add_info=string_additional_info))
+    logger.debug("TripUpdate on navitia vj {nav_id} on {date}, "
+                 "StopTimeUpdate {order} modified: {add_info}".format(
+                    nav_id=trip_update.vj.navitia_trip_id,
+                    date=trip_update.vj.get_utc_circulation_date(),
+                    order=stu.order,
+                    add_info=string_additional_info))
 
 
 def manage_consistency(trip_update):
@@ -69,8 +70,10 @@ def manage_consistency(trip_update):
         if stu.order != current_order:
             logger.warning("TripUpdate on navitia vj {nav_id} on {date} rejected: "
                            "order problem [STU index ({stu_index}) != kirin index ({kirin_index})]".format(
-                nav_id=trip_update.vj.navitia_trip_id,
-                date=trip_update.vj.get_utc_circulation_date(), stu_index=stu.order, kirin_index=current_order))
+                                nav_id=trip_update.vj.navitia_trip_id,
+                                date=trip_update.vj.get_utc_circulation_date(),
+                                stu_index=stu.order,
+                                kirin_index=current_order))
             return False
 
         # modifications
@@ -81,8 +84,8 @@ def manage_consistency(trip_update):
             if stu.arrival is None:
                 logger.warning("TripUpdate on navitia vj {nav_id} on {date} rejected: "
                                "StopTimeUpdate missing arrival time".format(
-                    nav_id=trip_update.vj.navitia_trip_id,
-                    date=trip_update.vj.get_utc_circulation_date()))
+                                    nav_id=trip_update.vj.navitia_trip_id,
+                                    date=trip_update.vj.get_utc_circulation_date()))
                 return False
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay and stu.departure_delay:

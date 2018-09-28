@@ -161,7 +161,7 @@ def check_db_96231_normal(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.contributor == contributor
 
 
-def check_db_JOHN_trip_removal():
+def check_db_john_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 2
