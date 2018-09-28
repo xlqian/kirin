@@ -291,6 +291,8 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 24,
+                "idMotifInterneArriveeReference": 24,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[

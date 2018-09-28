@@ -168,6 +168,8 @@
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneDepartReference": 3,
+                "idMotifInterneArriveeReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -433,6 +435,8 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 3,
+                "idMotifInterneArriveeReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[

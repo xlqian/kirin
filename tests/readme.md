@@ -2,7 +2,7 @@
 
 To run the tests, just run py.test in the kirin root dir, using appropriate python virtualenv:
 ```bash
-py.test --doctest-modules
+KIRIN_CONFIG_FILE=test_settings.py py.test --doctest-modules
 ```
  
 # Test with a database

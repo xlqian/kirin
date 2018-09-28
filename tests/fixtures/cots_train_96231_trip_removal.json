@@ -64,6 +64,7 @@
 			"date": "2015-09-21"
 		}],
 		"listeJourRegimeFacultatif": [],
+		"idMotifInterneReference": 5,
 		"listeMotif": [{
 			"dateHeureDeclaration": "2015-09-21T07:49:50+0000",
 			"idMotifInterne": 21,

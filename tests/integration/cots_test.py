@@ -28,6 +28,8 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from datetime import datetime
+from pytz import utc
 
 import pytest
 
@@ -36,7 +38,8 @@ from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_fixture_data
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
-from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_JOHN_trip_removal, \
+from tests.integration.utils_cots_test import requests_mock_message
+from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_john_trip_removal, \
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
     check_db_840427_partial_removal, check_db_96231_partial_removal
 
@@ -60,6 +63,14 @@ def mock_rabbitmq(monkeypatch):
     monkeypatch.setattr('kombu.messaging.Producer.publish', mock_amqp)
 
     return mock_amqp
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_message(requests_mock):
+    """
+    Mock all calls to message sub-service for this fixture
+    """
+    return requests_mock_message(requests_mock)
 
 
 def test_wrong_cots_post():
@@ -137,11 +148,14 @@ def test_cots_delayed_simple_post(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+        db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
+                                                      datetime(2015, 9, 21, 15, 21, tzinfo=utc))
+        assert db_trip_delayed.stop_time_updates[4].message is None
+    check_db_96231_delayed(contributor='realtime.cots')
     assert mock_rabbitmq.call_count == 1
 
 
-def test_cots_delayed_then_OK(mock_rabbitmq):
+def test_cots_delayed_then_ok(mock_rabbitmq):
     """
     We delay a stop, then the vj is back on time
     """
@@ -154,7 +168,7 @@ def test_cots_delayed_then_OK(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
         assert RealTimeUpdate.query.first().status == 'OK'
-    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    check_db_96231_delayed(contributor='realtime.cots')
     assert mock_rabbitmq.call_count == 1
 
     cots_96231 = get_fixture_data('cots_train_96231_normal.json')
@@ -165,7 +179,7 @@ def test_cots_delayed_then_OK(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_normal(contributor='realtime.cots', motif_externe_is_null=True)
+    check_db_96231_normal(contributor='realtime.cots')
     assert mock_rabbitmq.call_count == 2
 
 
@@ -183,7 +197,7 @@ def test_cots_delayed_post_twice(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
+    check_db_96231_delayed(contributor='realtime.cots')
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -241,7 +255,7 @@ def test_cots_trip_removal_simple_post(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_6113_trip_removal(motif_externe_is_null=True)
+    check_db_6113_trip_removal()
     assert mock_rabbitmq.call_count == 1
 
 
@@ -261,8 +275,8 @@ def test_cots_delayed_and_trip_removal_post(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_delayed(contributor='realtime.cots', motif_externe_is_null=True)
-    check_db_6113_trip_removal(motif_externe_is_null=True)
+    check_db_96231_delayed(contributor='realtime.cots')
+    check_db_6113_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -281,7 +295,7 @@ def test_cots_trip_removal_post_twice(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_6113_trip_removal(motif_externe_is_null=True)
+    check_db_6113_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -306,8 +320,8 @@ def test_cots_trip_with_parity(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 0
 
-    check_db_6113_trip_removal(motif_externe_is_null=True)
-    check_db_6114_trip_removal(motif_externe_is_null=True)
+    check_db_6113_trip_removal()
+    check_db_6114_trip_removal()
 
     assert mock_rabbitmq.call_count == 1
 
@@ -328,7 +342,7 @@ def test_cots_trip_with_parity_one_unknown_vj(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
 
-    check_db_6113_trip_removal(motif_externe_is_null=True)
+    check_db_6113_trip_removal()
 
     assert mock_rabbitmq.call_count == 1
 
@@ -367,15 +381,15 @@ def test_cots_two_trip_removal_one_post(mock_rabbitmq):
     post one COTS trip removal on two trips
     (navitia mock returns 2 vj for 'JOHN' headsign)
     """
-    cots_JOHN_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
-    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    cots_john_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
+    res = api_post('/cots', data=cots_john_trip_removal)
     assert res == 'OK'
 
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_JOHN_trip_removal()
+    check_db_john_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 1
 
@@ -384,17 +398,17 @@ def test_cots_two_trip_removal_post_twice(mock_rabbitmq):
     """
     post twice COTS trip removal on two trips
     """
-    cots_JOHN_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
-    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    cots_john_trip_removal = get_fixture_data('cots_train_JOHN_trip_removal.json')
+    res = api_post('/cots', data=cots_john_trip_removal)
     assert res == 'OK'
-    res = api_post('/cots', data=cots_JOHN_trip_removal)
+    res = api_post('/cots', data=cots_john_trip_removal)
     assert res == 'OK'
 
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_JOHN_trip_removal()
+    check_db_john_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -414,5 +428,5 @@ def test_cots_partial_removal(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 7
         assert RealTimeUpdate.query.first().status == 'OK'
-    check_db_840427_partial_removal(contributor='realtime.cots', motif_externe_is_null=True)
+    check_db_840427_partial_removal(contributor='realtime.cots')
     assert mock_rabbitmq.call_count == 1
