@@ -82,6 +82,12 @@ class MessageHandler:
             reset_timeout=current_app.config['COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S']
         )
 
+    def __repr__(self):
+        """
+        Allow this class to be cacheable
+        """
+        return '{}.{}.{}.{}'.format(self.__class__, self.resource_server, self.token_server, self.client_id)
+
     def _service_caller(self, method, url, headers, data=None, params=None):
         try:
             kwargs = {'timeout': self.timeout, 'headers': headers}
