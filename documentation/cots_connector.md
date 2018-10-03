@@ -8,7 +8,8 @@ A realtime COTS stream is obtained as a JSON file via a message queue mechanism.
 
 The information concerning the displayed messages related to train modifications is referenced in a separate stream provided by an external web service called *parametreLIV*. The latter returns a [text message](../tests/fixtures/motif-retard.json) for all available situations associated with an id referenced in the COTS stream.
 - In case of non availability of the web service, no message is registered.
-- In case of two messages referenced by the same id, the last one received is taken into account.
+- For each message object, only the attributes `id` and `labelExt` are used.
+- In case of two messages referenced by the same id, the last one in the list is taken into account.
 
 ## Connector description
 This document doesn't describe all the fields of the Kirin model. Only COTS relevant fields are described below. For example, the id field of a `RealTimeUpdate` is managed by Kirin and is not detailed in the present specification.
@@ -83,7 +84,7 @@ arrival_status | *horaireVoyageurArrivee/statutCirculationOPE* | See the mapping
 
 **Setting the arrival/departure status**
 
-The departure/arrival status at a stop of the `VehicleJourney` follows the trip status when the later is set to `add` or `delete`. Otherwise, the status may vary depending on the departure/arrival time updates or delays provided at the level of the station.
+The departure/arrival status at a stop of the `VehicleJourney` follows the trip status when the latter is set to `add` or `delete`. Otherwise, the status may vary depending on the departure/arrival time updates or delays provided at the level of the station.
 
 The departure status is resolved with regard to the field *horaireVoyageurDepart/statutCirculationOPE*:
 * status is set to `add` when the field value is `CREATION`, `delete` when the field value is `SUPPRESSION` or `SUPPRESSION_DETOURNEMENT` and `update` otherwise.
