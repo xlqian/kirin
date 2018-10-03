@@ -111,6 +111,8 @@ class MessageHandler:
         except requests.Timeout as t:
             logging.getLogger(__name__).error('COTS message sub-service timeout (error: {})'.format(t))
             raise SubServiceError('COTS message sub-service timeout')
+        except (UnauthorizedOnSubService, ObjectNotFound):
+            raise  # Do not change exceptions that were just raised
         except Exception as e:
             logging.getLogger(__name__).exception('COTS message sub-service handling error : {}'.format(str(e)))
             raise SubServiceError(str(e))
