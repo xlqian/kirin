@@ -277,14 +277,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
-                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled completely (yet), only removal'
                                                  .format(cots_stop_time_status))
-                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
