@@ -47,8 +47,16 @@ Kirin deals with real-time updates for navitia.
 When feeds are provided to Kirin by a client, it requests navitia to find the corresponding vehicle journey and apply the update, that is then posted in a queue for navitia to pick.
 
 The feeds can be of the following type:
-- IRE : A proprietary realtime information feed for SNCF. XML files are posted to the Kirin web service (example of such feed [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/train_96231_delayed.xml))
-- GTFS-RT : A realtime information format that comes with the GTFS format (base-schedule informations). Documentation is available [here](https://developers.google.com/transit/gtfs-realtime/?hl=en). Typically, a transport authority will provide a server where GTFS-RT protobuf files can be consumed and regularly polled.
+- IRE : A proprietary realtime information feed for SNCF. XML files are posted to the Kirin web service
+  (example of such feed [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/train_96231_delayed.xml)).
+- COTS : Also a proprietary realtime information feed for SNCF. JSON files are posted to the Kirin web service
+  (example of such feed
+  [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/cots_train_96231_delayed.json)).
+  A cause message subservice is also requested during the processing of this feed.
+- GTFS-RT : A realtime information format that comes with the GTFS format (base-schedule informations).
+  Documentation is available [here](https://developers.google.com/transit/gtfs-realtime/?hl=en).
+  Typically, a transport authority will provide a server where GTFS-RT protobuf files can be consumed and
+  regularly polled.
 
 Setup
 -----
@@ -145,7 +153,7 @@ For the IRE to be taken into account by navitia, some parameters need to be set 
     - KIRIN_CONFIG_FILE:
     ```
     NAVITIA_URL = '<url of the navitia server>' # ex: 'http://localhost:5000/'
-    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated'
+    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated>'
     DEBUG = True
     log_formatter = 'json'
     ```
@@ -166,6 +174,51 @@ For the IRE to be taken into account by navitia, some parameters need to be set 
     ```
 
 If the IRE was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
+
+##### Cots (POST)
+
+Post a COTS update file with modifications about a vehicle journey (delay, disruption, deletion, ...)
+that will be modified and posted in the rabbitmq queue.
+```
+curl -X POST 'http://localhost:5000/cots' -H 'Content-Type: application/json' -d @<PATH/TO/my_cots.json>
+```
+For the COTS to be taken into account by navitia, some parameters need to be set for both Kirin and Kraken (the navitia core calculator).
+- In Kirin:
+    - KIRIN_CONFIG_FILE:
+    ```
+    # Common with IRE
+    NAVITIA_URL = '<url of the navitia server>' # ex: 'http://localhost:5000/'
+    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated>'
+    DEBUG = True
+    log_formatter = 'json'
+
+    # Parameters for COTS cause message subservice (ParIV)
+    COTS_PAR_IV_API_KEY = '<COTS ParIV API key>'
+    COTS_PAR_IV_MOTIF_RESOURCE_SERVER = '<COTS ParIV-Motif cause endpoint's URL>'
+    COTS_PAR_IV_TOKEN_SERVER = '<COTS ParIV oauth2 token endpoint's URL>'
+    COTS_PAR_IV_CLIENT_ID = '<COTS ParIV username>'
+    COTS_PAR_IV_CLIENT_SECRET = '<COTS ParIV password>'
+    ```
+- In Kraken:
+    - kraken.ini:
+    ```
+    # Common with IRE
+    [GENERAL] # The following parameters need to be added to the already existing ones in the GENERAL section
+    is_realtime_enabled = true
+    kirin_timeout = 180000 # in ms (optional)
+
+    [BROKER] # It represents the rabbitmq-server, fill the following parameters according to your settings
+    host = localhost
+    port = 5672
+    username = guest
+    password = guest
+    exchange = navitia
+
+    # differs from IRE (it's possible to add the 2 lines simultaneously)
+    rt_topics = realtime.cots
+    ```
+
+If the COTS was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
 
 
 Tests
