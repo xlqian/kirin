@@ -240,6 +240,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             nav_stop = nav_st.get('stop_point', {})
             st_update = model.StopTimeUpdate(nav_stop)
             trip_update.stop_time_updates.append(st_update)
+            # using the message from departure-time in priority, if absent fallback on arrival-time's message
             st_message_id = get_value(pdp, 'idMotifInterneDepartReference', nullable=True)
             if not st_message_id:
                 st_message_id = get_value(pdp, 'idMotifInterneArriveeReference', nullable=True)

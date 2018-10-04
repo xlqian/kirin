@@ -245,9 +245,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     Note that the results is either 'db_trip_update' or 'new_trip_update'. Side effects on this object are
     thus wanted because of database persistency (update or creation of new objects)
 
-    is_new_complete changes the way None is interpreted in the new_trip_update:
-        - if False, None means there is no new information, so we keep old ones
-        - if True, None means we are back to normal, so we keep the new None ones
+    If is_new_complete==True, then new_trip_update is considered as a complete trip, so it will erase and
+    replace the (old) db_trip_update.
+    Detail: is_new_complete changes the way None is interpreted in the new_trip_update:
+        - if is_new_complete==False, None means there is no new information, so we keep old ones
+        - if is_new_complete==True, None means we are back to normal, so we keep the new None
           (for now it only impacts messages to allow removal)
 
 

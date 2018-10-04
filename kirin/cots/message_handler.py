@@ -88,13 +88,11 @@ class MessageHandler:
         """
         return '{}.{}.{}.{}'.format(self.__class__, self.resource_server, self.token_server, self.client_id)
 
-    def _service_caller(self, method, url, headers, data=None, params=None):
+    def _service_caller(self, method, url, headers, data=None):
         try:
             kwargs = {'timeout': self.timeout, 'headers': headers}
             if data:
                 kwargs.update({"data": data})
-            if params:
-                kwargs.update({'params': params})
             response = self.breaker.call(method, url, **kwargs)
             if not response or response.status_code != 200:
                 logging.getLogger(__name__).error(
@@ -139,6 +137,8 @@ class MessageHandler:
 
     def _call_webservice(self):
         access_token = self._get_access_token()
+        if access_token is None:
+            raise SubServiceError('Impossible to get a token for COTS message sub-service')
         headers = {'X-API-Key': self.api_key,
                    'Authorization': 'Bearer {}'.format(access_token)}
         resp = self._service_caller(method=requests.get, url=self.resource_server, headers=headers)
