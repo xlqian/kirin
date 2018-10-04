@@ -96,6 +96,10 @@ Setup
     pip install honcho
     honcho run ./manage.py db upgrade
     ```
+ - Ensure you have a dev_settings.py file for your local configuration:
+    ```
+    touch kirin/dev_settings.py
+    ```
  - Run the development server:
     ```
     honcho start
@@ -112,7 +116,8 @@ Setup
 API
 ---
 
-Kirin API provides several endpoints (that can be requested through port 5000 by default).
+Kirin API provides several endpoints (that can be requested through port 5000 by default, or
+port 54746 if using honcho).  
 To list all available endpoints:
 ```
 curl 'http://localhost:5000/'
