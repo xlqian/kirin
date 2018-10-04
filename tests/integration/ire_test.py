@@ -35,7 +35,7 @@ from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_fixture_data, api_post
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
-from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_JOHN_trip_removal, \
+from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_john_trip_removal, \
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
     check_db_840427_partial_removal
 
@@ -203,15 +203,15 @@ def test_ire_two_trip_removal_one_post(mock_rabbitmq):
     post one ire trip removal on two trips
     (navitia mock returns 2 vj for 'JOHN' headsign)
     """
-    ire_JOHN_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
-    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    ire_john_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
+    res = api_post('/ire', data=ire_john_trip_removal)
     assert res == 'OK'
 
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_JOHN_trip_removal()
+    check_db_john_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 1
 
@@ -220,17 +220,17 @@ def test_ire_two_trip_removal_post_twice(mock_rabbitmq):
     """
     post twice ire trip removal on two trips
     """
-    ire_JOHN_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
-    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    ire_john_trip_removal = get_fixture_data('train_JOHN_trip_removal.xml')
+    res = api_post('/ire', data=ire_john_trip_removal)
     assert res == 'OK'
-    res = api_post('/ire', data=ire_JOHN_trip_removal)
+    res = api_post('/ire', data=ire_john_trip_removal)
     assert res == 'OK'
 
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 0
-    check_db_JOHN_trip_removal()
+    check_db_john_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -298,7 +298,7 @@ def test_save_bad_raw_ire():
         assert RealTimeUpdate.query.first().raw_data == bad_ire
 
 
-def test_ire_delayed_then_OK(mock_rabbitmq):
+def test_ire_delayed_then_ok(mock_rabbitmq):
     """
     We delay a stop, then the vj is back on time
     """
@@ -328,7 +328,7 @@ def test_ire_delayed_then_OK(mock_rabbitmq):
 
 def test_ire_trip_without_any_motifexterne(mock_rabbitmq):
     """
-    a trip with a parity has been impacted, but the ExternModif is missing,
+    a trip with a parity has been impacted, but the Message is missing,
     the IRE should still be acceptable
     """
     ire_96231 = get_fixture_data('train_96231_delayed.xml')

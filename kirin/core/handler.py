@@ -50,11 +50,12 @@ def persist(real_time_update):
 
 def log_stu_modif(trip_update, stu, string_additional_info):
     logger = logging.getLogger(__name__)
-    logger.debug("TripUpdate on navitia vj {nav_id} on {date}, StopTimeUpdate {order} modified: {add_info}".format(
-        nav_id=trip_update.vj.navitia_trip_id,
-        date=trip_update.vj.get_utc_circulation_date(),
-        order=stu.order,
-        add_info=string_additional_info))
+    logger.debug("TripUpdate on navitia vj {nav_id} on {date}, "
+                 "StopTimeUpdate {order} modified: {add_info}".format(
+                    nav_id=trip_update.vj.navitia_trip_id,
+                    date=trip_update.vj.get_utc_circulation_date(),
+                    order=stu.order,
+                    add_info=string_additional_info))
 
 
 def manage_consistency(trip_update):
@@ -69,8 +70,10 @@ def manage_consistency(trip_update):
         if stu.order != current_order:
             logger.warning("TripUpdate on navitia vj {nav_id} on {date} rejected: "
                            "order problem [STU index ({stu_index}) != kirin index ({kirin_index})]".format(
-                nav_id=trip_update.vj.navitia_trip_id,
-                date=trip_update.vj.get_utc_circulation_date(), stu_index=stu.order, kirin_index=current_order))
+                                nav_id=trip_update.vj.navitia_trip_id,
+                                date=trip_update.vj.get_utc_circulation_date(),
+                                stu_index=stu.order,
+                                kirin_index=current_order))
             return False
 
         # modifications
@@ -81,8 +84,8 @@ def manage_consistency(trip_update):
             if stu.arrival is None:
                 logger.warning("TripUpdate on navitia vj {nav_id} on {date} rejected: "
                                "StopTimeUpdate missing arrival time".format(
-                    nav_id=trip_update.vj.navitia_trip_id,
-                    date=trip_update.vj.get_utc_circulation_date()))
+                                    nav_id=trip_update.vj.navitia_trip_id,
+                                    date=trip_update.vj.get_utc_circulation_date()))
                 return False
             log_stu_modif(trip_update, stu, "arrival = {v}".format(v=stu.arrival))
             if not stu.arrival_delay and stu.departure_delay:
@@ -122,7 +125,7 @@ def manage_consistency(trip_update):
     return True
 
 
-def handle(real_time_update, trip_updates, contributor):
+def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
     by the connector. each TripUpdate is associated with the VehicleJourney returned by jormugandr
@@ -137,7 +140,7 @@ def handle(real_time_update, trip_updates, contributor):
         old = next((tu for tu in old_trip_updates if tu.vj.navitia_trip_id == trip_update.vj.navitia_trip_id
                     and tu.vj.get_start_timestamp() == trip_update.vj.get_start_timestamp()), None)
         # merge the base schedule, the current realtime, and the new realtime
-        current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update)
+        current_trip_update = merge(trip_update.vj.navitia_vj, old, trip_update, is_new_complete=is_new_complete)
 
         # manage and adjust consistency if possible
         if current_trip_update and manage_consistency(current_trip_update):
@@ -217,7 +220,7 @@ def _make_stop_time_update(base_arrival, base_departure, last_departure, input_s
                           order=order)
 
 
-def merge(navitia_vj, db_trip_update, new_trip_update):
+def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     """
     We need to merge the info from 3 sources:
         * the navitia base schedule
@@ -242,6 +245,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     Note that the results is either 'db_trip_update' or 'new_trip_update'. Side effects on this object are
     thus wanted because of database persistency (update or creation of new objects)
 
+    If is_new_complete==True, then new_trip_update is considered as a complete trip, so it will erase and
+    replace the (old) db_trip_update.
+    Detail: is_new_complete changes the way None is interpreted in the new_trip_update:
+        - if is_new_complete==False, None means there is no new information, so we keep old ones
+        - if is_new_complete==True, None means we are back to normal, so we keep the new None
+          (for now it only impacts messages to allow removal)
+
 
     ** Important Note **:
     we DO NOT HANDLE changes in navitia's schedule for the moment
@@ -251,7 +261,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update):
     res_stoptime_updates = []
 
     res.status = new_trip_update.status
-    if new_trip_update.message:
+    if new_trip_update.message is not None or is_new_complete:
         res.message = new_trip_update.message
     res.contributor = new_trip_update.contributor
 

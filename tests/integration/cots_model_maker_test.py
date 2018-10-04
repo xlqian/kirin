@@ -34,6 +34,15 @@ from kirin import db, app
 from kirin.core import model
 from kirin.cots import KirinModelBuilder
 from tests.check_utils import get_fixture_data, dumb_nav_wrapper
+from tests.integration.utils_cots_test import requests_mock_cause_message
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_cause_message(requests_mock):
+    """
+    Mock all calls to cause message sub-service for this fixture
+    """
+    return requests_mock_cause_message(requests_mock)
 
 
 def test_cots_train_delayed(mock_navitia_fixture):

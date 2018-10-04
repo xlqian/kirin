@@ -7,10 +7,11 @@ from datetime import timedelta
 from celery import schedules
 from kirin.helper import IdFilter
 
-#URI for postgresql
+# URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
-#http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
-SQLALCHEMY_DATABASE_URI = os.getenv('KIRIN_SQLALCHEMY_DATABASE_URI', 'postgresql://navitia:navitia@localhost/kirin')
+# http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
+SQLALCHEMY_DATABASE_URI = os.getenv('KIRIN_SQLALCHEMY_DATABASE_URI',
+                                    'postgresql://navitia:navitia@localhost/kirin')
 
 NAVITIA_URL = os.getenv('KIRIN_NAVITIA_URL', None)
 
@@ -22,11 +23,28 @@ NAVITIA_TOKEN = os.getenv('KIRIN_NAVITIA_TOKEN', None)
 
 CONTRIBUTOR = os.getenv('KIRIN_CONTRIBUTOR', 'realtime.ire')
 
-CELERY_BROKER_URL = os.getenv('KIRIN_CELERY_BROKER_URL', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
+CELERY_BROKER_URL = os.getenv('KIRIN_CELERY_BROKER_URL',
+                              'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
 
 
 # COTS configuration
+# * external configuration
 COTS_CONTRIBUTOR = os.getenv('KIRIN_COTS_CONTRIBUTOR', 'realtime.cots')
+COTS_PAR_IV_API_KEY = os.getenv('KIRIN_COTS_PAR_IV_API_KEY', None)
+COTS_PAR_IV_MOTIF_RESOURCE_SERVER = os.getenv('KIRIN_COTS_PAR_IV_MOTIF_RESOURCE_SERVER', None)
+COTS_PAR_IV_TOKEN_SERVER = os.getenv('KIRIN_COTS_PAR_IV_TOKEN_SERVER', None)
+COTS_PAR_IV_CLIENT_ID = os.getenv('KIRIN_COTS_PAR_IV_CLIENT_ID', None)
+COTS_PAR_IV_CLIENT_SECRET = os.getenv('KIRIN_COTS_PAR_IV_CLIENT_SECRET', None)
+COTS_PAR_IV_GRANT_TYPE = os.getenv('KIRIN_COTS_PAR_IV_GRANT_TYPE', 'client_credentials')
+
+# * technical configuration
+# max instance call failures before stopping attempt
+COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL', 4)
+# the circuit breaker retries after this timeout (in seconds)
+COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S', 60)
+COTS_PAR_IV_TIMEOUT_TOKEN = os.getenv('KIRIN_COTS_COTS_PAR_IV_TIMEOUT_TOKEN', 30*60)
+COTS_PAR_IV_CACHE_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_CACHE_TIMEOUT', 60*60)
+COTS_PAR_IV_REQUEST_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_REQUEST_TIMEOUT', 2)
 
 
 # TODO better conf for multi GTFS-RT
@@ -41,17 +59,18 @@ USE_GEVENT = boolean(os.getenv('KIRIN_USE_GEVENT', False))
 
 DEBUG = boolean(os.getenv('KIRIN_DEBUG', False))
 
-#rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
-RABBITMQ_CONNECTION_STRING = os.getenv('KIRIN_RABBITMQ_CONNECTION_STRING', 'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
+# rabbitmq connections string: http://kombu.readthedocs.org/en/latest/userguide/connections.html#urls
+RABBITMQ_CONNECTION_STRING = os.getenv('KIRIN_RABBITMQ_CONNECTION_STRING',
+                                       'pyamqp://guest:guest@localhost:5672//?heartbeat=60')
 
-#max nb of retries before giving up publishing
+# max nb of retries before giving up publishing
 MAX_RETRIES = 10
 
-#queue used for task of type load_realtime, all instances of kirin must use the same queue
-#to be able to load balance tasks between them
+# queue used for task of type load_realtime, all instances of kirin must use the same queue
+# to be able to load balance tasks between them
 LOAD_REALTIME_QUEUE = 'kirin_load_realtime'
 
-#amqp exhange used for sending disruptions
+# amqp exhange used for sending disruptions
 EXCHANGE = os.getenv('KIRIN_RABBITMQ_EXCHANGE', 'navitia')
 
 ENABLE_RABBITMQ = boolean(os.getenv('KIRIN_ENABLE_RABBITMQ', True))
@@ -67,13 +86,14 @@ CACHE_TYPE = os.getenv('KIRIN_CACHE_TYPE', 'simple')
 NEW_RELIC_CONFIG_FILE = os.getenv('KIRIN_NEW_RELIC_CONFIG_FILE', None)
 
 log_level = os.getenv('KIRIN_LOG_LEVEL', 'DEBUG')
-log_format = os.getenv('KIRIN_LOG_FORMAT', '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
+log_format = os.getenv('KIRIN_LOG_FORMAT',
+                       '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s] %(message)s')
 
 log_formatter = os.getenv('KIRIN_LOG_FORMATTER', 'default')  # can be 'default' or 'json'
 
-log_extras = json.loads(os.getenv('KIRIN_LOG_EXTRAS', '{}')) # fields to add to the logger
+log_extras = json.loads(os.getenv('KIRIN_LOG_EXTRAS', '{}'))  # fields to add to the logger
 
-#Log Level available
+# Log Level available
 # - DEBUG
 # - INFO
 # - WARN
@@ -154,7 +174,7 @@ CELERYBEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule-kirin'
 
 REDIS_HOST = os.getenv('KIRIN_REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
-#index of the database use in redis, between 0 and 15 by default
+# index of the database use in redis, between 0 and 15 by default
 REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 1))
 REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
 

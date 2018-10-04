@@ -77,6 +77,9 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         else:
             assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
+        assert db_trip_delayed.stop_time_updates[2].message == second_st.message
+        assert db_trip_delayed.stop_time_updates[3].message == second_st.message
+
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
         assert last_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
@@ -95,7 +98,7 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.contributor == contributor
 
 
-def check_db_96231_normal(contributor=None, motif_externe_is_null=False):
+def check_db_96231_normal(contributor=None):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -108,6 +111,7 @@ def check_db_96231_normal(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        assert db_trip_delayed.message is None
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -133,10 +137,7 @@ def check_db_96231_normal(contributor=None, motif_externe_is_null=False):
         assert second_st.departure == datetime(2015, 9, 21, 15, 40)
         assert second_st.departure_delay == timedelta(minutes=0)
         assert second_st.departure_status == 'update'
-        if motif_externe_is_null:
-            assert second_st.message is None
-        else:
-            assert second_st.message == 'Affluence exceptionnelle de voyageurs'
+        assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         # last stop is gare de Basel-SBB, the arrival is also updated with a delay at 0
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -151,17 +152,14 @@ def check_db_96231_normal(contributor=None, motif_externe_is_null=False):
             assert last_st.departure == datetime(2015, 9, 21, 16, 39)
             assert last_st.departure_delay == timedelta(minutes=0)
             assert last_st.departure_status == 'none'
-            if motif_externe_is_null:
-                assert second_st.message is None
-            else:
-                assert last_st.message == 'Affluence exceptionnelle de voyageurs'
+            assert last_st.message == 'Affluence exceptionnelle de voyageurs'
         except AssertionError:
             pass  # xfail: we don't change back the departure :(
 
         assert db_trip_delayed.contributor == contributor
 
 
-def check_db_JOHN_trip_removal():
+def check_db_john_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 2
@@ -202,11 +200,12 @@ def check_db_96231_trip_removal():
         assert db_trip_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
+        assert db_trip_removal.message is None
         # full trip removal : no stop_time to precise
         assert len(db_trip_removal.stop_time_updates) == 0
 
 
-def check_db_6113_trip_removal(motif_externe_is_null=False):
+def check_db_6113_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -220,15 +219,12 @@ def check_db_6113_trip_removal(motif_externe_is_null=False):
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
         print db_trip_removal.message
-        if motif_externe_is_null:
-            assert db_trip_removal.message is None
-        else:
-            assert db_trip_removal.message == u'Accident à un Passage à Niveau'
+        assert db_trip_removal.message == u'Accident à un Passage à Niveau'
         # full trip removal : no stop_time to precise
         assert len(db_trip_removal.stop_time_updates) == 0
 
 
-def check_db_6114_trip_removal(motif_externe_is_null=False):
+def check_db_6114_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -243,10 +239,7 @@ def check_db_6114_trip_removal(motif_externe_is_null=False):
         assert db_trip_removal.status == 'delete'
         print db_trip_removal.message
         print db_trip_removal.message
-        if motif_externe_is_null:
-            assert db_trip_removal.message is None
-        else:
-            assert db_trip_removal.message == u'Accident à un Passage à Niveau'
+        assert db_trip_removal.message == u'Accident à un Passage à Niveau'
         # full trip removal : no stop_time to precise
         assert len(db_trip_removal.stop_time_updates) == 0
 
@@ -326,7 +319,7 @@ def check_db_96231_partial_removal(contributor=None):
         assert db_trip_partial_removed.contributor == contributor
 
 
-def check_db_840427_partial_removal(contributor=None, motif_externe_is_null=False):
+def check_db_840427_partial_removal(contributor=None):
     with app.app_context():
         db_trip_partial_removed = TripUpdate.find_by_dated_vj('OCE:SN840427F03001',
                                                               datetime(2017, 3, 18, 13, 5, tzinfo=utc))
@@ -354,40 +347,28 @@ def check_db_840427_partial_removal(contributor=None, motif_externe_is_null=Fals
 
         # the stops Chaumont, Bar-sur-Aube, Vendeuvre and Troyes should have been marked as deleted
         # (even if Chaumont and Vendeuvre were in a 'PRDebut'/'PRFin' tag
-        bar_st = db_trip_partial_removed.stop_time_updates[3]
-        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87142000'  # Chaumont
-        assert bar_st.arrival_status == 'none'  # the train still arrives in this stop
-        assert bar_st.departure_status == 'delete'
-        if motif_externe_is_null:
-            assert bar_st.message is None
-        else:
-            assert bar_st.message == u"Défaut d'alimentation électrique"
+        ch_st = db_trip_partial_removed.stop_time_updates[3]
+        assert ch_st.stop_id == 'stop_point:OCE:SP:TrainTER-87142000'  # Chaumont
+        assert ch_st.arrival_status == 'none'  # the train still arrives in this stop
+        assert ch_st.departure_status == 'delete'
+        assert ch_st.message == u"Défaut d'alimentation électrique"
 
         bar_st = db_trip_partial_removed.stop_time_updates[4]
         assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118299'  # Bar-sur-Aube
         assert bar_st.arrival_status == 'delete'
         assert bar_st.departure_status == 'delete'
-        if motif_externe_is_null:
-            assert bar_st.message is None
-        else:
-            assert bar_st.message == u"Défaut d'alimentation électrique"
+        assert bar_st.message == u"Défaut d'alimentation électrique"
 
-        bar_st = db_trip_partial_removed.stop_time_updates[5]
-        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118257'  # Vendeuvre
-        assert bar_st.arrival_status == 'delete'
-        assert bar_st.departure_status == 'delete'
-        if motif_externe_is_null:
-            assert bar_st.message is None
-        else:
-            assert bar_st.message == u"Défaut d'alimentation électrique"
+        ven_st = db_trip_partial_removed.stop_time_updates[5]
+        assert ven_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118257'  # Vendeuvre
+        assert ven_st.arrival_status == 'delete'
+        assert ven_st.departure_status == 'delete'
+        assert ven_st.message == u"Défaut d'alimentation électrique"
 
-        bar_st = db_trip_partial_removed.stop_time_updates[6]
-        assert bar_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118000'  # Troyes
-        assert bar_st.arrival_status == 'delete'
-        assert bar_st.departure_status == 'none'  # the train still does not leave from this stop
-        if motif_externe_is_null:
-            assert bar_st.message is None
-        else:
-            assert bar_st.message == u"Défaut d'alimentation électrique"
+        tro_st = db_trip_partial_removed.stop_time_updates[6]
+        assert tro_st.stop_id == 'stop_point:OCE:SP:TrainTER-87118000'  # Troyes
+        assert tro_st.arrival_status == 'delete'
+        assert tro_st.departure_status == 'none'  # the train still does not leave from this stop
+        assert tro_st.message == u"Défaut d'alimentation électrique"
 
         assert db_trip_partial_removed.contributor == contributor

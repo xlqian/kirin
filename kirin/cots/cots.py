@@ -55,4 +55,4 @@ class Cots(AbstractSNCFResource):
     def post(self):
         raw_json = get_cots(flask.globals.request)
 
-        return self.process_post(raw_json, 'cots')
+        return self.process_post(raw_json, 'cots', is_new_complete=True)

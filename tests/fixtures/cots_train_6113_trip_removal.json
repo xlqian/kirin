@@ -64,9 +64,10 @@
 			"date": "2015-10-06"
 		}],
 		"listeJourRegimeFacultatif": [],
+		"idMotifInterneReference": 1,
 		"listeMotif": [{
 			"dateHeureDeclaration": "2015-10-06T07:49:50+0000",
-			"idMotifInterne": 21,
+			"idMotifInterne": 1,
 			"source": "IRE-GOP"
 		}],
 		"listePointDeParcours": [{

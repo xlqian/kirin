@@ -80,6 +80,7 @@
         ],
         "listeJourRegimeFacultatif":[
         ],
+        "idMotifInterneReference": 3,
         "listeMotif":[
         ],
         "listePointDeParcours":[
@@ -102,6 +103,7 @@
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
+                "idMotifInterneDepartReference": 9999,
                 "listeHoraireProjeteArrivee":[
                 ],
                 "listeHoraireProjeteDepart":[
@@ -168,6 +170,8 @@
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneDepartReference": 3,
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -240,6 +244,7 @@
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneDepartReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -313,6 +318,7 @@
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneArriveeReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -433,6 +439,8 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 3,
+                "idMotifInterneArriveeReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[

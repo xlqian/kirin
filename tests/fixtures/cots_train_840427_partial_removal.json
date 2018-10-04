@@ -253,14 +253,16 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 4,
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee": [
                 {
-                    "idMotifInterne": 33,
+                    "idMotifInterne": 4,
                     "source": "IRE-GOP"
                 }],
                 "listeMotifDepart": [
                 {
-                    "idMotifInterne": 33,
+                    "idMotifInterne": 4,
                     "source": "IRE-GOP"
                 }],
                 "rang":4,
@@ -304,6 +306,8 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 4,
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -349,6 +353,8 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneDepartReference": 4,
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -393,6 +399,7 @@
                 ],
                 "listeHoraireProjeteDepart":[
                 ],
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[

@@ -40,6 +40,7 @@ from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_n
 import ujson
 
 from kirin.core import model
+from kirin.cots.message_handler import MessageHandler
 from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
 
@@ -136,6 +137,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
         super(KirinModelBuilder, self).__init__(nav, contributor)
+        self.message_handler = MessageHandler(
+            api_key=current_app.config['COTS_PAR_IV_API_KEY'],
+            resource_server=current_app.config['COTS_PAR_IV_MOTIF_RESOURCE_SERVER'],
+            token_server=current_app.config['COTS_PAR_IV_TOKEN_SERVER'],
+            client_id=current_app.config['COTS_PAR_IV_CLIENT_ID'],
+            client_secret=current_app.config['COTS_PAR_IV_CLIENT_SECRET'],
+            grant_type=current_app.config['COTS_PAR_IV_GRANT_TYPE'],
+            timeout=current_app.config['COTS_PAR_IV_REQUEST_TIMEOUT'])
 
     def build(self, rt_update):
         """
@@ -194,6 +203,9 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         logger = logging.getLogger(__name__)
         trip_update = model.TripUpdate(vj=vj)
         trip_update.contributor = self.contributor
+        trip_message_id = get_value(json_train, 'idMotifInterneReference', nullable=True)
+        if trip_message_id:
+            trip_update.message = self.message_handler.get_message(index=trip_message_id)
 
         trip_status = get_value(json_train, 'statutOperationnel')
 
@@ -228,7 +240,15 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             nav_stop = nav_st.get('stop_point', {})
             st_update = model.StopTimeUpdate(nav_stop)
             trip_update.stop_time_updates.append(st_update)
+            # using the message from departure-time in priority, if absent fallback on arrival-time's message
+            st_message_id = get_value(pdp, 'idMotifInterneDepartReference', nullable=True)
+            if not st_message_id:
+                st_message_id = get_value(pdp, 'idMotifInterneArriveeReference', nullable=True)
+            if st_message_id:
+                st_update.message = self.message_handler.get_message(index=st_message_id)
 
+            _status_map = {'Arrivee': 'arrival_status', 'Depart': 'departure_status'}
+            _delay_map = {'Arrivee': 'arrival_delay', 'Depart': 'departure_delay'}
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
                 cots_traveler_time = get_value(pdp,
@@ -252,29 +272,19 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     if cots_delay is None:
                         continue
 
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'update'
-                        st_update.arrival_delay = as_duration(cots_delay)
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'update'
-                        st_update.departure_delay = as_duration(cots_delay)
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
+                    setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'delete'
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'delete'
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled completely (yet), only removal'
                                                  .format(cots_stop_time_status))
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'delete'
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'delete'
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
