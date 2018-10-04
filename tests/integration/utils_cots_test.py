@@ -88,7 +88,7 @@ def data_matcher(request):
            'grant_type=client_credentials' in request.text
 
 
-def requests_mock_message(mock):
+def requests_mock_cause_message(mock):
     """
     Mock all calls to message sub-service, matching test_settings
     """

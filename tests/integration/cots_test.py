@@ -38,7 +38,7 @@ from kirin import app
 from tests import mock_navitia
 from tests.check_utils import get_fixture_data
 from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
-from tests.integration.utils_cots_test import requests_mock_message
+from tests.integration.utils_cots_test import requests_mock_cause_message
 from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_john_trip_removal, \
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
     check_db_840427_partial_removal, check_db_96231_partial_removal
@@ -66,11 +66,11 @@ def mock_rabbitmq(monkeypatch):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def mock_message(requests_mock):
+def mock_cause_message(requests_mock):
     """
-    Mock all calls to message sub-service for this fixture
+    Mock all calls to cause message sub-service for this fixture
     """
-    return requests_mock_message(requests_mock)
+    return requests_mock_cause_message(requests_mock)
 
 
 def test_wrong_cots_post():

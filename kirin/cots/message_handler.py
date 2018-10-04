@@ -40,7 +40,7 @@ from kirin.exceptions import ObjectNotFound, UnauthorizedOnSubService, SubServic
 
 class MessageHandler:
     """
-    class managing calls to ParIV-Motif external service providing messages associated to
+    class managing calls to ParIV-Motif external service providing cause messages associated to
     SNCF realtime feed COTS
 
     The service's authentication is done via Oauth2.0
@@ -96,23 +96,26 @@ class MessageHandler:
             response = self.breaker.call(method, url, **kwargs)
             if not response or response.status_code != 200:
                 logging.getLogger(__name__).error(
-                    'COTS message sub-service, Invalid response, status_code: {}'.format(response.status_code)
+                    'COTS cause message sub-service, Invalid response, '
+                    'status_code: {}'.format(response.status_code)
                 )
                 if response.status_code == 401:
                     raise UnauthorizedOnSubService(
                         'Unauthorized on COTS message sub-service {} {}'.format(method, url))
-                raise ObjectNotFound('non 200 response on COTS message sub-service {} {}'.format(method, url))
+                raise ObjectNotFound('non 200 response on COTS cause message '
+                                     'sub-service {} {}'.format(method, url))
             return response
         except pybreaker.CircuitBreakerError as e:
-            logging.getLogger(__name__).error('COTS message sub-service dead (error: {})'.format(e))
-            raise SubServiceError('COTS message sub-service circuit breaker open')
+            logging.getLogger(__name__).error('COTS cause message sub-service dead (error: {})'.format(e))
+            raise SubServiceError('COTS cause message sub-service circuit breaker open')
         except requests.Timeout as t:
-            logging.getLogger(__name__).error('COTS message sub-service timeout (error: {})'.format(t))
-            raise SubServiceError('COTS message sub-service timeout')
+            logging.getLogger(__name__).error('COTS cause message sub-service timeout (error: {})'.format(t))
+            raise SubServiceError('COTS cause message sub-service timeout')
         except (UnauthorizedOnSubService, ObjectNotFound):
             raise  # Do not change exceptions that were just raised
         except Exception as e:
-            logging.getLogger(__name__).exception('COTS message sub-service handling error : {}'.format(str(e)))
+            logging.getLogger(__name__).exception('COTS cause message sub-service handling '
+                                                  'error : {}'.format(str(e)))
             raise SubServiceError(str(e))
 
     @app.cache.memoize(timeout=app.config.get('COTS_PAR_IV_TIMEOUT_TOKEN', 60*60))
@@ -131,14 +134,14 @@ class MessageHandler:
         content = response.json()
         access_token = content.get('access_token')
         if not access_token:
-            logging.getLogger(__name__).error('COTS message sub-service, no access_token in response')
+            logging.getLogger(__name__).error('COTS cause message sub-service, no access_token in response')
             return None
         return access_token
 
     def _call_webservice(self):
         access_token = self._get_access_token()
         if access_token is None:
-            raise SubServiceError('Impossible to get a token for COTS message sub-service')
+            raise SubServiceError('Impossible to get a token for COTS cause message sub-service')
         headers = {'X-API-Key': self.api_key,
                    'Authorization': 'Bearer {}'.format(access_token)}
         resp = self._service_caller(method=requests.get, url=self.resource_server, headers=headers)
@@ -163,5 +166,6 @@ class MessageHandler:
         try:
             return self._call_webservice_safer().get(index)
         except Exception as e:
-            logging.getLogger(__name__).exception('COTS message sub-service handling error : {}'.format(str(e)))
+            logging.getLogger(__name__).exception('COTS cause message sub-service handling '
+                                                  'error : {}'.format(str(e)))
             return None
