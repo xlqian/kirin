@@ -247,6 +247,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             if st_message_id:
                 st_update.message = self.message_handler.get_message(index=st_message_id)
 
+            _status_map = {'Arrivee': 'arrival_status', 'Depart': 'departure_status'}
+            _delay_map = {'Arrivee': 'arrival_delay', 'Depart': 'departure_delay'}
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
                 cots_traveler_time = get_value(pdp,
@@ -270,29 +272,19 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     if cots_delay is None:
                         continue
 
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'update'
-                        st_update.arrival_delay = as_duration(cots_delay)
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'update'
-                        st_update.departure_delay = as_duration(cots_delay)
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
+                    setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'delete'
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'delete'
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled completely (yet), only removal'
                                                  .format(cots_stop_time_status))
-                    if arrival_departure_toggle == 'Arrivee':
-                        st_update.arrival_status = 'delete'
-                    elif arrival_departure_toggle == 'Depart':
-                        st_update.departure_status = 'delete'
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'update')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
