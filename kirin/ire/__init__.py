@@ -1,3 +1,5 @@
+# coding=utf-8
+
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -26,4 +28,5 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+
 from model_maker import KirinModelBuilder

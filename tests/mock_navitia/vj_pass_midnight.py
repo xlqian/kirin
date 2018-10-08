@@ -1,12 +1,14 @@
 # coding=utf-8
-# Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
+
+#  Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
-# the software to build cool stuff with public transport.
+#     the software to build cool stuff with public transport.
 #
-# powered by Canal TP (www.canaltp.fr).
+# Hope you'll enjoy and contribute to this project,
+#     powered by Canal TP (www.canaltp.fr).
 # Help us simplify mobility and open public transport:
-# a non ending quest to the responsive locomotion way of traveling!
+#     a non ending quest to the responsive locomotion way of traveling!
 #
 # LICENCE: This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -32,7 +34,7 @@ response = navitia_response.NavitiaResponse()
 
 response.query = 'vehicle_journeys/?filter=vehicle_journey.has_code(source, Code-pass-midnight)' \
                  '&depth=2&since=20120616T020000Z&until=20120616T090000Z'
-#resquest time is UTC -> 22:00 to 05:00 local
+# resquest time is UTC -> 22:00 to 05:00 local
 
 response.response_code = 200
 
