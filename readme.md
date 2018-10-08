@@ -140,12 +140,12 @@ In the response received:
 - navitia_url: root url of the navitia server used to consolidate real-time information received by Kirin.  
 Other info are available about Kirin ("version"), the database ("db_version", "db_pool_status") and the rabbitmq ("rabbitmq_info").
 
-##### Ire (POST)
-Post an IRE update file with modifications about a vehicle journey (delay, disruption, deletion, ...) that will be modified and posted in the rabbitmq queue.
-```
-curl -X POST 'http://localhost:5000/ire' -H 'Content-Type: application/xml' -d @<PATH/TO/my_ire.xml>
-```
-For the IRE to be taken into account by navitia, some parameters need to be set for both Kirin and Kraken (the navitia core calculator).
+
+##### SNCF's realtime feeds
+
+For the SNCF's realtime feeds to be taken into account by navitia, some parameters need to be set
+for both Kirin and Kraken (the navitia core calculator).
+
 - In Kirin:
     - KIRIN_CONFIG_FILE:
     ```
@@ -167,28 +167,35 @@ For the IRE to be taken into account by navitia, some parameters need to be set 
     username = guest
     password = guest
     exchange = navitia
-    rt_topics = realtime.ire
+    ```
+
+
+###### Ire (POST)
+Post an IRE update file with modifications about a vehicle journey (delay, disruption, deletion, ...) that will be modified and posted in the rabbitmq queue.
+```
+curl -X POST 'http://localhost:5000/ire' -H 'Content-Type: application/xml' -d @<PATH/TO/my_ire.xml>
+```
+For the IRE to be taken into account by navitia, please add the common SNCF's parameters above, plus:
+- In Kraken:
+    - kraken.ini:
+    ```
+    [BROKER] # in the BROKER section existing from common part
+    rt_topics = realtime.ire  # it's possible to add multiple topics simultaneously
     ```
 
 If the IRE was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
 
-##### Cots (POST)
+###### Cots (POST)
 
 Post a COTS update file with modifications about a vehicle journey (delay, disruption, deletion, ...)
 that will be modified and posted in the rabbitmq queue.
 ```
 curl -X POST 'http://localhost:5000/cots' -H 'Content-Type: application/json' -d @<PATH/TO/my_cots.json>
 ```
-For the COTS to be taken into account by navitia, some parameters need to be set for both Kirin and Kraken (the navitia core calculator).
+For the COTS to be taken into account by navitia, please add the common SNCF's parameters above, plus:
 - In Kirin:
     - KIRIN_CONFIG_FILE:
     ```
-    # Common with IRE
-    NAVITIA_URL = '<url of the navitia server>' # ex: 'http://localhost:5000/'
-    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated>'
-    DEBUG = True
-    log_formatter = 'json'
-
     # Parameters for COTS cause message subservice (ParIV)
     COTS_PAR_IV_API_KEY = '<COTS ParIV API key>'
     COTS_PAR_IV_MOTIF_RESOURCE_SERVER = '<COTS ParIV-Motif cause endpoint's URL>'
@@ -199,20 +206,8 @@ For the COTS to be taken into account by navitia, some parameters need to be set
 - In Kraken:
     - kraken.ini:
     ```
-    # Common with IRE
-    [GENERAL] # The following parameters need to be added to the already existing ones in the GENERAL section
-    is_realtime_enabled = true
-    kirin_timeout = 180000 # in ms (optional)
-
-    [BROKER] # It represents the rabbitmq-server, fill the following parameters according to your settings
-    host = localhost
-    port = 5672
-    username = guest
-    password = guest
-    exchange = navitia
-
-    # differs from IRE (it's possible to add the 2 lines simultaneously)
-    rt_topics = realtime.cots
+    [BROKER] # in the BROKER section existing from common part
+    rt_topics = realtime.cots  # it's possible to add multiple topics simultaneously
     ```
 
 If the COTS was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
