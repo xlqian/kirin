@@ -88,6 +88,7 @@ Setup
  - Create a file ```.env``` with the path to you configuration file:
     ```
     KIRIN_CONFIG_FILE=default_settings.py
+    KIRIN_LOG_FORMATTER='json'  # If you wish to have logs formated as json (more details)
     ```
  - Build the protocol buffer files
     ```
@@ -103,10 +104,6 @@ Setup
     ```
     pip install honcho
     honcho run ./manage.py db upgrade
-    ```
- - Ensure you have a dev_settings.py file for your local configuration:
-    ```
-    touch kirin/dev_settings.py
     ```
  - Run the development server:
     ```
