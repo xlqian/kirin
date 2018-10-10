@@ -47,8 +47,16 @@ Kirin deals with real-time updates for navitia.
 When feeds are provided to Kirin by a client, it requests navitia to find the corresponding vehicle journey and apply the update, that is then posted in a queue for navitia to pick.
 
 The feeds can be of the following type:
-- IRE : A proprietary realtime information feed for SNCF. XML files are posted to the Kirin web service (example of such feed [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/train_96231_delayed.xml))
-- GTFS-RT : A realtime information format that comes with the GTFS format (base-schedule informations). Documentation is available [here](https://developers.google.com/transit/gtfs-realtime/?hl=en). Typically, a transport authority will provide a server where GTFS-RT protobuf files can be consumed and regularly polled.
+- IRE : A proprietary realtime information feed for SNCF. XML files are posted to the Kirin web service
+  (example of such feed [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/train_96231_delayed.xml)).
+- COTS : Also a proprietary realtime information feed for SNCF. JSON files are posted to the Kirin web service
+  (example of such feed
+  [here](https://github.com/CanalTP/kirin/blob/master/tests/fixtures/cots_train_96231_delayed.json)).
+  A cause message subservice is also requested during the processing of this feed.
+- GTFS-RT : A realtime information format that comes with the GTFS format (base-schedule informations).
+  Documentation is available [here](https://developers.google.com/transit/gtfs-realtime/?hl=en).
+  Typically, a transport authority will provide a server where GTFS-RT protobuf files can be consumed and
+  regularly polled.
 
 Setup
 -----
@@ -80,6 +88,7 @@ Setup
  - Create a file ```.env``` with the path to you configuration file:
     ```
     KIRIN_CONFIG_FILE=default_settings.py
+    KIRIN_LOG_FORMATTER='json'  # If you wish to have logs formated as json (more details)
     ```
  - Build the protocol buffer files
     ```
@@ -112,7 +121,8 @@ Setup
 API
 ---
 
-Kirin API provides several endpoints (that can be requested through port 5000 by default).
+Kirin API provides several endpoints (that can be requested through port 5000 by default, or
+port 54746 if using honcho).  
 To list all available endpoints:
 ```
 curl 'http://localhost:5000/'
@@ -130,17 +140,17 @@ In the response received:
 - navitia_url: root url of the navitia server used to consolidate real-time information received by Kirin.  
 Other info are available about Kirin ("version"), the database ("db_version", "db_pool_status") and the rabbitmq ("rabbitmq_info").
 
-##### Ire (POST)
-Post an IRE update file with modifications about a vehicle journey (delay, disruption, deletion, ...) that will be modified and posted in the rabbitmq queue.
-```
-curl -X POST 'http://localhost:5000/ire' -H 'Content-Type: application/xml' -d @<PATH/TO/my_ire.xml>
-```
-For the IRE to be taken into account by navitia, some parameters need to be set for both Kirin and Kraken (the navitia core calculator).
+
+##### SNCF's realtime feeds
+
+For the SNCF's realtime feeds to be taken into account by navitia, some parameters need to be set
+for both Kirin and Kraken (the navitia core calculator).
+
 - In Kirin:
     - KIRIN_CONFIG_FILE:
     ```
     NAVITIA_URL = '<url of the navitia server>' # ex: 'http://localhost:5000/'
-    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated'
+    NAVITIA_INSTANCE = '<name of the instance which vehicle journeys will be updated>'
     DEBUG = True
     log_formatter = 'json'
     ```
@@ -157,10 +167,50 @@ For the IRE to be taken into account by navitia, some parameters need to be set 
     username = guest
     password = guest
     exchange = navitia
-    rt_topics = realtime.ire
+    ```
+
+
+###### Ire (POST)
+Post an IRE update file with modifications about a vehicle journey (delay, disruption, deletion, ...) that will be modified and posted in the rabbitmq queue.
+```
+curl -X POST 'http://localhost:5000/ire' -H 'Content-Type: application/xml' -d @<PATH/TO/my_ire.xml>
+```
+For the IRE to be taken into account by navitia, please add the common SNCF's parameters above, plus:
+- In Kraken:
+    - kraken.ini:
+    ```
+    [BROKER] # in the BROKER section existing from common part
+    rt_topics = realtime.ire  # it's possible to add multiple topics simultaneously
     ```
 
 If the IRE was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
+
+###### Cots (POST)
+
+Post a COTS update file with modifications about a vehicle journey (delay, disruption, deletion, ...)
+that will be modified and posted in the rabbitmq queue.
+```
+curl -X POST 'http://localhost:5000/cots' -H 'Content-Type: application/json' -d @<PATH/TO/my_cots.json>
+```
+For the COTS to be taken into account by navitia, please add the common SNCF's parameters above, plus:
+- In Kirin:
+    - KIRIN_CONFIG_FILE:
+    ```
+    # Parameters for COTS cause message subservice (ParIV)
+    COTS_PAR_IV_API_KEY = '<COTS ParIV API key>'
+    COTS_PAR_IV_MOTIF_RESOURCE_SERVER = '<COTS ParIV-Motif cause endpoint's URL>'
+    COTS_PAR_IV_TOKEN_SERVER = '<COTS ParIV oauth2 token endpoint's URL>'
+    COTS_PAR_IV_CLIENT_ID = '<COTS ParIV username>'
+    COTS_PAR_IV_CLIENT_SECRET = '<COTS ParIV password>'
+    ```
+- In Kraken:
+    - kraken.ini:
+    ```
+    [BROKER] # in the BROKER section existing from common part
+    rt_topics = realtime.cots  # it's possible to add multiple topics simultaneously
+    ```
+
+If the COTS was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
 
 
 Tests
