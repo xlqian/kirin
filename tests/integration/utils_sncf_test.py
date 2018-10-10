@@ -98,6 +98,246 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.contributor == contributor
 
 
+def check_db_870154_partial_removal(contributor=None):
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 12
+        db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
+        assert db_trip
+
+        assert db_trip.vj.navitia_trip_id == 'OCE:SN870154F01001'
+        assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
+        assert db_trip.vj_id == db_trip.vj.id
+        assert db_trip.status == 'update'
+        # 12 stop times must have been created
+        assert len(db_trip.stop_time_updates) == 12
+
+        # the first 5 stops are removed (Rodez to Viviez-Decazeville, also arrival in Capdenac)
+        first_st = db_trip.stop_time_updates[0]
+        assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613422'
+        assert first_st.arrival_status == 'none'
+        assert first_st.departure_status == 'delete'
+        assert first_st.message is None
+
+        second_st = db_trip.stop_time_updates[1]
+        assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613257'
+        assert second_st.arrival_status == 'delete'
+        assert second_st.departure_status == 'delete'
+        assert second_st.message is None
+
+        third_st = db_trip.stop_time_updates[2]
+        assert third_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613232'
+        assert third_st.arrival_status == 'delete'
+        assert third_st.departure_status == 'delete'
+        assert third_st.message is None
+
+        fourth_st = db_trip.stop_time_updates[3]
+        assert fourth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613224'
+        assert fourth_st.arrival_status == 'delete'
+        assert fourth_st.departure_status == 'delete'
+        assert fourth_st.message is None
+
+        assert db_trip.contributor == contributor
+
+
+def check_db_870154_delay():
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 12
+        db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
+        assert db_trip
+
+        assert db_trip.vj.navitia_trip_id == 'OCE:SN870154F01001'
+        assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
+        assert db_trip.vj_id == db_trip.vj.id
+        assert db_trip.status == 'update'
+        assert db_trip.message == u'Régulation du trafic'
+        # 12 stop times must have been created
+        assert len(db_trip.stop_time_updates) == 12
+
+        # departure, arrival at 5th and arrival at 6th stops are deleted with a cause
+        fifth_st = db_trip.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613661'
+        assert fifth_st.arrival_status == 'delete'
+        assert fifth_st.departure_status == 'delete'
+        assert fifth_st.message == u'Affluence exceptionnelle de voyageurs'
+
+        sixth_st = db_trip.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613109'
+        assert sixth_st.arrival_status == 'delete'
+
+        # the last 7 stops are late by 10 min (starting by departure in Capdenac)
+        assert sixth_st.departure_status == 'update'
+        assert sixth_st.departure == datetime(2018, 11, 2, 11, 5)
+        assert sixth_st.departure_delay == timedelta(minutes=10)
+        assert sixth_st.message == u'Régulation du trafic'  # Only departure cause is used
+
+        seventh_st = db_trip.stop_time_updates[6]
+        assert seventh_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613091'
+        assert seventh_st.arrival_status == 'update'
+        assert seventh_st.arrival == datetime(2018, 11, 2, 11, 11)
+        assert seventh_st.arrival_delay == timedelta(minutes=10)
+        assert seventh_st.departure_status == 'update'
+        assert seventh_st.departure == datetime(2018, 11, 2, 11, 12)
+        assert seventh_st.departure_delay == timedelta(minutes=10)
+        assert seventh_st.message == u'Régulation du trafic'
+
+        eight_st = db_trip.stop_time_updates[7]
+        assert eight_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613075'
+        assert eight_st.arrival_status == 'update'
+        assert eight_st.arrival == datetime(2018, 11, 2, 11, 27)
+        assert eight_st.arrival_delay == timedelta(minutes=10)
+        assert eight_st.departure_status == 'update'
+        assert eight_st.departure == datetime(2018, 11, 2, 11, 28)
+        assert eight_st.departure_delay == timedelta(minutes=10)
+        assert eight_st.message == u'Régulation du trafic'
+
+        ninth_st = db_trip.stop_time_updates[8]
+        assert ninth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613059'
+        assert ninth_st.arrival_status == 'update'
+        assert ninth_st.arrival == datetime(2018, 11, 2, 11, 39)
+        assert ninth_st.arrival_delay == timedelta(minutes=10)
+        assert ninth_st.departure_status == 'update'
+        assert ninth_st.departure == datetime(2018, 11, 2, 11, 40)
+        assert ninth_st.departure_delay == timedelta(minutes=10)
+        assert ninth_st.message == u'Régulation du trafic'
+
+        tenth_st = db_trip.stop_time_updates[9]
+        assert tenth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613042'
+        assert tenth_st.arrival_status == 'update'
+        assert tenth_st.arrival == datetime(2018, 11, 2, 11, 46)
+        assert tenth_st.arrival_delay == timedelta(minutes=10)
+        assert tenth_st.departure_status == 'update'
+        assert tenth_st.departure == datetime(2018, 11, 2, 11, 47)
+        assert tenth_st.departure_delay == timedelta(minutes=10)
+        assert tenth_st.message == u'Régulation du trafic'
+
+        eleventh_st = db_trip.stop_time_updates[10]
+        assert eleventh_st.stop_id == 'stop_point:OCE:SP:TrainTER-87594572'
+        assert eleventh_st.arrival_status == 'update'
+        assert eleventh_st.arrival == datetime(2018, 11, 2, 12, 1)
+        assert eleventh_st.arrival_delay == timedelta(minutes=10)
+        assert eleventh_st.departure_status == 'update'
+        assert eleventh_st.departure == datetime(2018, 11, 2, 12, 2)
+        assert eleventh_st.departure_delay == timedelta(minutes=10)
+        assert eleventh_st.message == u'Régulation du trafic'
+
+        twelfth_st = db_trip.stop_time_updates[11]
+        assert twelfth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87594002'
+        assert twelfth_st.arrival_status == 'update'
+        assert twelfth_st.arrival == datetime(2018, 11, 2, 12, 25)
+        assert twelfth_st.arrival_delay == timedelta(minutes=10)
+        assert twelfth_st.departure_status == 'none'
+        assert twelfth_st.departure == datetime(2018, 11, 2, 12, 25)
+        assert twelfth_st.departure_delay == timedelta(minutes=10)
+        assert twelfth_st.message == u'Régulation du trafic'
+
+
+def check_db_870154_normal():
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 12
+        db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
+        assert db_trip
+
+        assert db_trip.vj.navitia_trip_id == 'OCE:SN870154F01001'
+        assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
+        assert db_trip.vj_id == db_trip.vj.id
+        assert db_trip.status == 'update'
+        assert db_trip.message is None
+        # 12 stop times must have been created
+        assert len(db_trip.stop_time_updates) == 12
+
+        # departure, arrival at 5th and arrival at 6th stops are back to normal
+        fifth_st = db_trip.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613661'
+        assert fifth_st.arrival_status == 'update'
+        assert fifth_st.arrival == datetime(2018, 11, 2, 10, 38)
+        assert fifth_st.arrival_delay == timedelta(minutes=0)
+        assert fifth_st.departure_status == 'update'
+        assert fifth_st.departure == datetime(2018, 11, 2, 10, 39)
+        assert fifth_st.departure_delay == timedelta(minutes=0)
+        assert fifth_st.message is None
+
+        sixth_st = db_trip.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613109'
+        assert sixth_st.arrival_status == 'update'
+        assert sixth_st.arrival == datetime(2018, 11, 2, 10, 53)
+        assert sixth_st.arrival_delay == timedelta(minutes=0)
+        # the last 7 stops are late by 10 min (starting by departure in Capdenac)
+        sixth_st = db_trip.stop_time_updates[5]
+        assert sixth_st.departure_status == 'update'
+        assert sixth_st.departure == datetime(2018, 11, 2, 10, 55)
+        assert sixth_st.departure_delay == timedelta(minutes=0)
+        assert sixth_st.message is None
+
+        # "listeHoraireProjeteArrivee" is empty, so it's considered (back to) normal
+        seventh_st = db_trip.stop_time_updates[6]
+        assert seventh_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613091'
+        assert seventh_st.arrival_status == 'none'
+        assert seventh_st.arrival == datetime(2018, 11, 2, 11, 1)
+        assert seventh_st.arrival_delay == timedelta(minutes=0)
+        assert seventh_st.departure_status == 'none'
+        assert seventh_st.departure == datetime(2018, 11, 2, 11, 2)
+        assert seventh_st.departure_delay == timedelta(minutes=0)
+        assert seventh_st.message is None
+
+        eight_st = db_trip.stop_time_updates[7]
+        assert eight_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613075'
+        assert eight_st.arrival_status == 'update'
+        assert eight_st.arrival == datetime(2018, 11, 2, 11, 17)
+        assert eight_st.arrival_delay == timedelta(minutes=0)
+        assert eight_st.departure_status == 'update'
+        assert eight_st.departure == datetime(2018, 11, 2, 11, 18)
+        assert eight_st.departure_delay == timedelta(minutes=0)
+        assert eight_st.message is None
+
+        ninth_st = db_trip.stop_time_updates[8]
+        assert ninth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613059'
+        assert ninth_st.arrival_status == 'update'
+        assert ninth_st.arrival == datetime(2018, 11, 2, 11, 29)
+        assert ninth_st.arrival_delay == timedelta(minutes=0)
+        assert ninth_st.departure_status == 'update'
+        assert ninth_st.departure == datetime(2018, 11, 2, 11, 30)
+        assert ninth_st.departure_delay == timedelta(minutes=0)
+        assert ninth_st.message is None
+
+        # absolutely no information on that stop_time is provided (so the feed is incomplete)
+        # no strict specification on that, Kirin keeps previous information (same as IRE)
+        tenth_st = db_trip.stop_time_updates[9]
+        assert tenth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613042'
+        assert tenth_st.arrival_status == 'update'
+        assert tenth_st.arrival == datetime(2018, 11, 2, 11, 46)
+        assert tenth_st.arrival_delay == timedelta(minutes=10)
+        assert tenth_st.departure_status == 'update'
+        assert tenth_st.departure == datetime(2018, 11, 2, 11, 47)
+        assert tenth_st.departure_delay == timedelta(minutes=10)
+        assert tenth_st.message == u'Régulation du trafic'
+
+        eleventh_st = db_trip.stop_time_updates[10]
+        assert eleventh_st.stop_id == 'stop_point:OCE:SP:TrainTER-87594572'
+        assert eleventh_st.arrival_status == 'update'
+        assert eleventh_st.arrival == datetime(2018, 11, 2, 11, 51)
+        assert eleventh_st.arrival_delay == timedelta(minutes=0)
+        assert eleventh_st.departure_status == 'update'
+        assert eleventh_st.departure == datetime(2018, 11, 2, 11, 52)
+        assert eleventh_st.departure_delay == timedelta(minutes=0)
+        assert eleventh_st.message is None
+
+        twelfth_st = db_trip.stop_time_updates[11]
+        assert twelfth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87594002'
+        assert twelfth_st.arrival_status == 'update'
+        assert twelfth_st.arrival == datetime(2018, 11, 2, 12, 15)
+        assert twelfth_st.arrival_delay == timedelta(minutes=0)
+        assert twelfth_st.departure_status == 'none'
+        assert twelfth_st.departure == datetime(2018, 11, 2, 12, 15)
+        assert twelfth_st.departure_delay == timedelta(minutes=0)
+        assert twelfth_st.message is None
+
+
 def check_db_96231_normal(contributor=None):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1

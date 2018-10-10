@@ -41,7 +41,8 @@ from kirin.core.model import RealTimeUpdate, TripUpdate, StopTimeUpdate
 from tests.integration.utils_cots_test import requests_mock_cause_message
 from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_john_trip_removal, \
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
-    check_db_840427_partial_removal, check_db_96231_partial_removal
+    check_db_840427_partial_removal, check_db_96231_partial_removal, check_db_870154_partial_removal, \
+    check_db_870154_delay, check_db_870154_normal
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -180,6 +181,33 @@ def test_cots_delayed_then_ok(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
     check_db_96231_normal(contributor='realtime.cots')
+    assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_partial_removal_delayed_then_partial_removal_ok(mock_rabbitmq):
+    """
+
+    We delay a stop, then the vj is back on time
+    """
+    cots_870154 = get_fixture_data('cots_train_870154_partial_removal_delay.json')
+    res = api_post('/cots', data=cots_870154)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert RealTimeUpdate.query.first().status == 'OK'
+    check_db_870154_partial_removal(contributor='realtime.cots')
+    check_db_870154_delay()
+    assert mock_rabbitmq.call_count == 1
+
+    cots_870154 = get_fixture_data('cots_train_870154_partial_normal.json')
+    res = api_post('/cots', data=cots_870154)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 2
+    check_db_870154_partial_removal(contributor='realtime.cots')
+    check_db_870154_normal()
     assert mock_rabbitmq.call_count == 2
 
 
