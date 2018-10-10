@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# coding=utf-8
+
 from distutils.core import setup, Command
 from distutils.spawn import find_executable
 import sh
