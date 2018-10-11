@@ -187,7 +187,9 @@ def test_cots_delayed_then_ok(mock_rabbitmq):
 def test_cots_partial_removal_delayed_then_partial_removal_ok(mock_rabbitmq):
     """
 
-    We delay a stop, then the vj is back on time
+    Removing first 5 stops and delay the rest by 10 min,
+    then only the first 4 stops are removed, the rest are back and on time
+    (no information on 10th stop so it should stay delayed)
     """
     cots_870154 = get_fixture_data('cots_train_870154_partial_removal_delay.json')
     res = api_post('/cots', data=cots_870154)
