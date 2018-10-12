@@ -113,7 +113,7 @@ def check_db_870154_partial_removal(contributor=None):
         # 12 stop times must have been created
         assert len(db_trip.stop_time_updates) == 12
 
-        # the first 5 stops are removed (Rodez to Viviez-Decazeville, also arrival in Capdenac)
+        # only the first 4 stops are removed (Rodez to Aubin) in both cases (delay or back to normal)
         first_st = db_trip.stop_time_updates[0]
         assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613422'
         assert first_st.arrival_status == 'none'
@@ -148,16 +148,10 @@ def check_db_870154_delay():
         assert len(StopTimeUpdate.query.all()) == 12
         db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
         assert db_trip
-
-        assert db_trip.vj.navitia_trip_id == 'OCE:SN870154F01001'
-        assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
-        assert db_trip.vj_id == db_trip.vj.id
-        assert db_trip.status == 'update'
         assert db_trip.message == u'Régulation du trafic'
-        # 12 stop times must have been created
-        assert len(db_trip.stop_time_updates) == 12
 
-        # departure, arrival at 5th and arrival at 6th stops are deleted with a cause
+        # only in "delay-case" departure, arrival at 5th (Viviez-Decazeville)
+        # and arrival at 6th stops (Capdenac) are deleted with a cause
         fifth_st = db_trip.stop_time_updates[4]
         assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87613661'
         assert fifth_st.arrival_status == 'delete'
@@ -242,14 +236,7 @@ def check_db_870154_normal():
         assert len(StopTimeUpdate.query.all()) == 12
         db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
         assert db_trip
-
-        assert db_trip.vj.navitia_trip_id == 'OCE:SN870154F01001'
-        assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
-        assert db_trip.vj_id == db_trip.vj.id
-        assert db_trip.status == 'update'
         assert db_trip.message is None
-        # 12 stop times must have been created
-        assert len(db_trip.stop_time_updates) == 12
 
         # departure, arrival at 5th and arrival at 6th stops are back to normal
         fifth_st = db_trip.stop_time_updates[4]
