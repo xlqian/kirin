@@ -39,12 +39,16 @@ COTS_PAR_IV_GRANT_TYPE = os.getenv('KIRIN_COTS_PAR_IV_GRANT_TYPE', 'client_crede
 
 # * technical configuration
 # max instance call failures before stopping attempt
-COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL', 4)
+COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL = int(os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_MAX_FAIL', 4))
 # the circuit breaker retries after this timeout (in seconds)
-COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S = os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S', 60)
-COTS_PAR_IV_TIMEOUT_TOKEN = os.getenv('KIRIN_COTS_COTS_PAR_IV_TIMEOUT_TOKEN', 30*60)
-COTS_PAR_IV_CACHE_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_CACHE_TIMEOUT', 60*60)
-COTS_PAR_IV_REQUEST_TIMEOUT = os.getenv('KIRIN_COTS_COTS_PAR_IV_REQUEST_TIMEOUT', 2)
+COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S = int(os.getenv('KIRIN_COTS_COTS_PAR_IV_CIRCUIT_BREAKER_TIMEOUT_S',
+                                                      timedelta(minutes=1).total_seconds()))
+COTS_PAR_IV_TIMEOUT_TOKEN = int(os.getenv('KIRIN_COTS_COTS_PAR_IV_TIMEOUT_TOKEN',
+                                          timedelta(minutes=30).total_seconds()))
+COTS_PAR_IV_CACHE_TIMEOUT = int(os.getenv('KIRIN_COTS_COTS_PAR_IV_CACHE_TIMEOUT',
+                                          timedelta(hours=1).total_seconds()))
+COTS_PAR_IV_REQUEST_TIMEOUT = int(os.getenv('KIRIN_COTS_COTS_PAR_IV_REQUEST_TIMEOUT',
+                                            timedelta(seconds=2).total_seconds()))
 
 
 # TODO better conf for multi GTFS-RT
@@ -52,8 +56,8 @@ NAVITIA_GTFS_RT_INSTANCE = os.getenv('KIRIN_NAVITIA_GTFS_RT_INSTANCE', 'sherbroo
 NAVITIA_GTFS_RT_TOKEN = os.getenv('KIRIN_NAVITIA_GTFS_RT_TOKEN', None)
 GTFS_RT_CONTRIBUTOR = os.getenv('KIRIN_GTFS_RT_CONTRIBUTOR', 'realtime.sherbrooke')
 GTFS_RT_FEED_URL = os.getenv('KIRIN_GTFS_RT_FEED_URL', None)
-NB_DAYS_TO_KEEP_TRIP_UPDATE = os.getenv('NB_DAYS_TO_KEEP_TRIP_UPDATE', 2)
-NB_DAYS_TO_KEEP_RT_UPDATE = os.getenv('NB_DAYS_TO_KEEP_RT_UPDATE', 10)
+NB_DAYS_TO_KEEP_TRIP_UPDATE = int(os.getenv('NB_DAYS_TO_KEEP_TRIP_UPDATE', 2))
+NB_DAYS_TO_KEEP_RT_UPDATE = int(os.getenv('NB_DAYS_TO_KEEP_RT_UPDATE', 10))
 
 USE_GEVENT = boolean(os.getenv('KIRIN_USE_GEVENT', False))
 
@@ -178,48 +182,48 @@ REDIS_PORT = int(os.getenv('KIRIN_REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('KIRIN_REDIS_DB', 1))
 REDIS_PASSWORD = os.getenv('KIRIN_REDIS_PASSWORD', '')  # No password is needed by default
 
-REDIS_LOCK_TIMEOUT_POLLER = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=5).total_seconds())
-REDIS_LOCK_TIMEOUT_PURGE = os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_PURGE', timedelta(hours=12).total_seconds())
+REDIS_LOCK_TIMEOUT_POLLER = int(os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_POLLER', timedelta(minutes=5).total_seconds()))
+REDIS_LOCK_TIMEOUT_PURGE = int(os.getenv('KIRIN_REDIS_LOCK_TIMEOUT_PURGE', timedelta(hours=12).total_seconds()))
 
 TASK_LOCK_PREFIX = 'kirin.lock'
 
-TASK_STOP_MAX_DELAY = os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10).total_seconds())
-TASK_WAIT_FIXED = os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2).total_seconds())
+TASK_STOP_MAX_DELAY = int(os.getenv('KIRIN_TASK_STOP_MAX_DELAY', timedelta(seconds=10).total_seconds()))
+TASK_WAIT_FIXED = int(os.getenv('KIRIN_TASK_WAIT_FIXED', timedelta(seconds=2).total_seconds()))
 
 CELERYBEAT_SCHEDULE = {
     'poller': {
         'task': 'kirin.tasks.poller',
         'schedule': timedelta(seconds=1),
-        'options': {'expires': 1}
+        'options': {'expires': timedelta(seconds=1).total_seconds()}
     },
     'purge_gtfs_trip_update': {
         'task': 'kirin.tasks.purge_gtfs_trip_update',
         'schedule': schedules.crontab(hour='3', minute='0'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     },
     'purge_gtfs_rt_update': {
         'task': 'kirin.tasks.purge_gtfs_rt_update',
         'schedule': schedules.crontab(hour='3', minute='15'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     },
     'purge_ire_trip_update': {
         'task': 'kirin.tasks.purge_ire_trip_update',
         'schedule': schedules.crontab(hour='3', minute='30'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     },
     'purge_ire_rt_update': {
         'task': 'kirin.tasks.purge_ire_rt_update',
         'schedule': schedules.crontab(hour='3', minute='45'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     },
     'purge_cots_trip_update': {
         'task': 'kirin.tasks.purge_cots_trip_update',
         'schedule': schedules.crontab(hour='4', minute='0'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     },
     'purge_cots_rt_update': {
         'task': 'kirin.tasks.purge_cots_rt_update',
         'schedule': schedules.crontab(hour='4', minute='15'),
-        'options': {'expires': 3600}
+        'options': {'expires': timedelta(hours=1).total_seconds()}
     }
 }
