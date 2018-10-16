@@ -1,0 +1,831 @@
+{
+	"ressource": "courseOPE",
+	"mode": "modification",
+	"evt": ["PERTURBATION"],
+	"PdPObserveArrivee": [],
+	"PdPObserveDepart": [],
+	"PdPPronosticBrutArrivee": ["718c4652-a5f7-49f0-8529-ab3b5b41f870",
+	"8cabf482-5316-43ee-bf75-7249fe1994b0",
+	"391c9a2e-fe63-4664-8bb5-8e5dcbce948e",
+	"5733ad2f-918e-46e2-a287-610eb63fd7d3",
+	"c296a1f6-891b-4b1e-873f-0b438ebc001c",
+	"bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
+	"ca34497a-e868-481e-a3a8-d9521c05d37e",
+	"8c2bf83b-e026-46ba-96d8-0f420386ca89",
+	"9092b3b2-7e1b-4cc1-a92f-6689bc566d99",
+	"5d7dbc20-daa1-4dc9-aebe-7998afccf766",
+	"84c90b78-5f9a-4137-bd57-25be94c0246c"],
+	"PdPPronosticBrutDepart": ["718c4652-a5f7-49f0-8529-ab3b5b41f870",
+	"8cabf482-5316-43ee-bf75-7249fe1994b0",
+	"391c9a2e-fe63-4664-8bb5-8e5dcbce948e",
+	"5733ad2f-918e-46e2-a287-610eb63fd7d3",
+	"bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
+	"ca34497a-e868-481e-a3a8-d9521c05d37e",
+	"8c2bf83b-e026-46ba-96d8-0f420386ca89",
+	"99fdb6ab-093d-4640-90f6-8509369553b2",
+	"9092b3b2-7e1b-4cc1-a92f-6689bc566d99",
+	"5d7dbc20-daa1-4dc9-aebe-7998afccf766",
+	"84c90b78-5f9a-4137-bd57-25be94c0246c"],
+	"PdPPronosticIVArrivee": ["718c4652-a5f7-49f0-8529-ab3b5b41f870",
+	"8cabf482-5316-43ee-bf75-7249fe1994b0",
+	"391c9a2e-fe63-4664-8bb5-8e5dcbce948e",
+	"5733ad2f-918e-46e2-a287-610eb63fd7d3",
+	"c296a1f6-891b-4b1e-873f-0b438ebc001c",
+	"bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
+	"ca34497a-e868-481e-a3a8-d9521c05d37e",
+	"8c2bf83b-e026-46ba-96d8-0f420386ca89",
+	"9092b3b2-7e1b-4cc1-a92f-6689bc566d99",
+	"5d7dbc20-daa1-4dc9-aebe-7998afccf766",
+	"84c90b78-5f9a-4137-bd57-25be94c0246c"],
+	"PdPPronosticIVDepart": ["718c4652-a5f7-49f0-8529-ab3b5b41f870",
+	"8cabf482-5316-43ee-bf75-7249fe1994b0",
+	"391c9a2e-fe63-4664-8bb5-8e5dcbce948e",
+	"5733ad2f-918e-46e2-a287-610eb63fd7d3",
+	"bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
+	"ca34497a-e868-481e-a3a8-d9521c05d37e",
+	"8c2bf83b-e026-46ba-96d8-0f420386ca89",
+	"99fdb6ab-093d-4640-90f6-8509369553b2",
+	"9092b3b2-7e1b-4cc1-a92f-6689bc566d99",
+	"5d7dbc20-daa1-4dc9-aebe-7998afccf766",
+	"84c90b78-5f9a-4137-bd57-25be94c0246c"],
+	"PdPImpacteDepart": [],
+	"PdPImpacteArrivee": [],
+	"nouvelleVersion": {
+		"codeCompagnieTransporteur": "1187",
+		"codeMarqueTransporteur": "TER",
+		"codeRelation": "MP06SP",
+		"codeService": "A2018",
+		"codeTransporteurResponsable": "5T",
+		"codeTypeMoyenTransport": "0",
+		"coursePTP": {
+			"@id": "81a3b095-c97e-433e-9471-a8a723d9095a",
+			"impactPTP": "MODIFICATION",
+			"validePourDiffusion": "true"
+		},
+		"dateDebutService": "2017-12-10",
+		"dateDerniereModification": "2018-11-02T09:00:15+0000",
+		"dateFinService": "2018-12-08",
+		"estDiscontinue": false,
+		"estTechnique": false,
+		"estimationManuelle": false,
+		"etat": "ACTIVE",
+		"idMotifInterneReference": 24,
+		"idVersion": "2ed34927-ba6a-4733-ba9e-694cacea7bba",
+		"identifiantDansSystemeCreateur": "d1fdf817-763c-4c10-9596-334e33a2e446",
+		"indicateurFer": "FERRE",
+		"listeCouplageCourseOPE": [],
+		"listeCodeTransporteurAssocie": [],
+		"listeEvenement": [{
+			"dateHeureCreation": "2018-11-02T09:00:15+0000",
+			"identifiantDansSystemeCreateur": "CROMPY050920180051",
+			"lieu": {
+				"cr": "0087",
+				"ci": "613422",
+				"ch": "BV"
+			},
+			"systemeCreateur": "2887"
+		}],
+		"listeJourRegimeDApplication": [{
+			"date": "2018-11-02"
+		}],
+		"listeJourRegimeFacultatif": [],
+		"listeMotif": [{
+			"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+			"idMotifInterne": 24,
+			"source": "IRE-GOP"
+		}],
+		"listePointDeParcours": [{
+			"@id": "99fdb6ab-093d-4640-90f6-8509369553b2",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613422",
+			"ch": "BV",
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "10:54:00",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T08:54:00+0000",
+				"heureLocale": "10:54:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"idMotifInterneDepartReference": 98,
+			"listeHoraireProjeteArrivee": [],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T08:59:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"rang": 1,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "ca34497a-e868-481e-a3a8-d9521c05d37e",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613257",
+			"ch": "00",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:17:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:18:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T09:17:30+0000",
+				"heureLocale": "11:17:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T09:18:30+0000",
+				"heureLocale": "11:18:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"idMotifInterneArriveeReference": 98,
+			"idMotifInterneDepartReference": 98,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T09:22:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T09:23:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"rang": 2,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "718c4652-a5f7-49f0-8529-ab3b5b41f870",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613232",
+			"ch": "00",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:29:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:30:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T09:29:30+0000",
+				"heureLocale": "11:29:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T09:30:30+0000",
+				"heureLocale": "11:30:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"idMotifInterneArriveeReference": 98,
+			"idMotifInterneDepartReference": 98,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T09:34:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T09:35:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"rang": 3,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "391c9a2e-fe63-4664-8bb5-8e5dcbce948e",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613224",
+			"ch": "00",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:33:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:34:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T09:33:30+0000",
+				"heureLocale": "11:33:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T09:34:30+0000",
+				"heureLocale": "11:34:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"idMotifInterneArriveeReference": 98,
+			"idMotifInterneDepartReference": 98,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T09:38:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T09:39:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 98,
+				"source": "IRE-GOP"
+			}],
+			"rang": 4,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "84c90b78-5f9a-4137-bd57-25be94c0246c",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613661",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:38:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:39:30",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T09:38:30+0000",
+				"heureLocale": "11:38:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T09:39:30+0000",
+				"heureLocale": "11:39:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"idMotifInterneArriveeReference": 3,
+			"idMotifInterneDepartReference": 3,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T09:43:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T09:44:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 3,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 3,
+				"source": "IRE-GOP"
+			}],
+			"rang": 5,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "8c2bf83b-e026-46ba-96d8-0f420386ca89",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613109",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:53:00",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "11:55:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T09:53:00+0000",
+				"heureLocale": "11:53:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0,
+				"statutCirculationOPE": "SUPPRESSION"
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T09:55:00+0000",
+				"heureLocale": "11:55:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 3,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T09:58:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 300,
+				"pronosticIV": 300,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:00:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 3,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 6,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "9092b3b2-7e1b-4cc1-a92f-6689bc566d99",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613091",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:01:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:02:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:01:00+0000",
+				"heureLocale": "12:01:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:02:00+0000",
+				"heureLocale": "12:02:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:06:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:07:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 7,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "5d7dbc20-daa1-4dc9-aebe-7998afccf766",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613075",
+			"ch": "00",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:17:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:18:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:17:00+0000",
+				"heureLocale": "12:17:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:18:00+0000",
+				"heureLocale": "12:18:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:22:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:23:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 8,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "5733ad2f-918e-46e2-a287-610eb63fd7d3",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613059",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:29:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:30:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:29:00+0000",
+				"heureLocale": "12:29:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:30:00+0000",
+				"heureLocale": "12:30:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:34:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:35:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 9,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "8cabf482-5316-43ee-bf75-7249fe1994b0",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613042",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:36:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:37:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:36:30+0000",
+				"heureLocale": "12:36:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:37:30+0000",
+				"heureLocale": "12:37:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:41:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:42:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 10,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "594572",
+			"ch": "00",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:51:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:52:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:51:30+0000",
+				"heureLocale": "12:51:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:52:30+0000",
+				"heureLocale": "12:52:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:56:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:57:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 11,
+			"typeArret": "CH"
+		},
+		{
+			"@id": "c296a1f6-891b-4b1e-873f-0b438ebc001c",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"cr": "0087",
+			"ci": "594002",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "13:15:00",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T11:15:00+0000",
+				"heureLocale": "13:15:00",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T11:20:00+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [],
+			"rang": 12,
+			"typeArret": "CH"
+		}],
+		"listeService": [],
+		"listeSubstitutionCourse": [],
+		"listeUtilisationSillon": [{
+			"identifiantSillon": {
+				"numeroOperationnelSillon": "870154",
+				"sillonTTH": "042610010014"
+			},
+			"listeJourRegimeDApplication": [{
+				"date": "2018-11-02"
+			}],
+			"listeJourRegimeFacultatif": [],
+			"pointDebutUtilisationSillon": {
+				"@id": "99fdb6ab-093d-4640-90f6-8509369553b2"
+			},
+			"pointFinUtilisationSillon": {
+				"@id": "c296a1f6-891b-4b1e-873f-0b438ebc001c"
+			},
+			"porteur": true,
+			"rangPRDebutUtilisationSillon": 1,
+			"decalagePasseMinuit": 0,
+			"rangPRFinUtilisationSillon": 26
+		}],
+		"numeroCourse": "870154",
+		"statutSillonCourse": "NON_CONNU",
+		"statutOperationnel": "PERTURBEE",
+		"systemeCreateur": "2148",
+		"type": "COURSE_OPE",
+		"@id": "d1fdf817-763c-4c10-9596-334e33a2e446"
+	}
+}
