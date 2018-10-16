@@ -501,3 +501,21 @@ def test_cots_partial_removal(mock_rabbitmq):
         assert RealTimeUpdate.query.first().status == 'OK'
     check_db_840427_partial_removal(contributor='realtime.cots')
     assert mock_rabbitmq.call_count == 1
+
+
+def test_wrong_planned_stop_time_reference_post():
+    """
+    Rejected COTS feed, contains wrong planned-stoptime
+    """
+    cots_file = get_fixture_data('cots_train_96231_delaylist_at_stop_ko.json')
+    res, status = api_post('/cots', check=False, data=cots_file)
+
+    assert status == 400
+    assert res.get('message') == 'Invalid arguments'
+    assert 'error' in res
+    assert u'invalid json, impossible to find source "ESCALE" in any json dict of list:' in res.get('error')
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 0
+        assert len(StopTimeUpdate.query.all()) == 0

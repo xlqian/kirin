@@ -156,18 +156,18 @@
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T15:55:30+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":910,
-                        "pronosticIV":900,
-                        "source":"ESCALE"
-                    },
-                    {
                         "dateHeure":"2015-09-21T17:54:30+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":830,
                         "pronosticIV":840,
                         "source":"TEST"
+                    },
+                    {
+                        "dateHeure":"2015-09-21T15:55:30+0000",
+                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
+                        "pronosticBrut":910,
+                        "pronosticIV":900,
+                        "source":"ESCALE"
                     }
                 ],
                 "idMotifInterneDepartReference": 3,
