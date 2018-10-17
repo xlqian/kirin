@@ -33,6 +33,7 @@ import navitia_response
 response = navitia_response.NavitiaResponse()
 
 response.query = 'vehicle_journeys/?depth=2&since=20170318T130500&headsign=840427&show_codes=true&until=20170318T171600'
+response.query_utc = 'vehicle_journeys/?depth=2&since=20170318T120500+0000&headsign=840427&show_codes=true&until=20170318T161600+0000'
 
 response.response_code = 200
 

@@ -61,6 +61,9 @@ mocks = [
     vj_start_midnight.response
 ]
 _mock_navitia_call = {r.query: r for r in mocks}
+for r in mocks:
+    if hasattr(r, 'query_utc'):
+        _mock_navitia_call[r.query_utc] = r
 
 
 def mock_navitia_query(self, query, q=None):
