@@ -379,6 +379,24 @@ def check_db_96231_mixed_statuses_inside_stops(contributor=None):
         assert fourth_st.arrival_delay == timedelta(seconds=60)  # arrival delayed
         assert fourth_st.departure_status == 'delete'  # departure removed
 
+        fifth_st = db_trip_delayed.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
+        assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
+        assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.arrival_delay == timedelta(0)
+        assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
+        assert fifth_st.departure_status == 'update'
+        assert fifth_st.departure_delay == timedelta(0)
+
+        sixth_st = db_trip_delayed.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert sixth_st.arrival == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert sixth_st.arrival_delay == timedelta(0)
+        assert sixth_st.departure == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.departure_status == 'none'  # not in the feed, so none and no delay
+        assert sixth_st.departure_delay == timedelta(0)
+
         assert db_trip_delayed.contributor == contributor
 
 
@@ -433,6 +451,24 @@ def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
         assert fourth_st.departure == datetime(2015, 9, 21, 16, 18)
         assert fourth_st.departure_status == 'update'
         assert fourth_st.departure_delay == timedelta(seconds=120)
+
+        fifth_st = db_trip_delayed.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
+        assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
+        assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.arrival_delay == timedelta(0)
+        assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
+        assert fifth_st.departure_status == 'update'
+        assert fifth_st.departure_delay == timedelta(0)
+
+        sixth_st = db_trip_delayed.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert sixth_st.arrival == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert sixth_st.arrival_delay == timedelta(0)
+        assert sixth_st.departure == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.departure_status == 'none'  # not in the feed, so none and no delay
+        assert sixth_st.departure_delay == timedelta(0)
 
         assert db_trip_delayed.contributor == contributor
 
