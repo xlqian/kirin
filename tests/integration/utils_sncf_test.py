@@ -51,7 +51,7 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
-        # the first stop (in Strasbourg) is not in the IRE, only on navitia's base schedule
+        # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
         # no delay then, only base schedule
         # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
         first_st = db_trip_delayed.stop_time_updates[0]
@@ -325,6 +325,148 @@ def check_db_870154_normal():
         assert twelfth_st.message is None
 
 
+def check_db_96231_mixed_statuses_inside_stops(contributor=None):
+    with app.app_context():
+        db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
+                                                      datetime(2015, 9, 21, 15, 21, tzinfo=utc))
+        assert db_trip_delayed
+        assert db_trip_delayed.vj.navitia_trip_id == 'trip:OCETrainTER-87212027-85000109-3:11859'
+        assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
+        assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
+        assert db_trip_delayed.status == 'update'
+        # 6 stop times must have been created
+        assert len(db_trip_delayed.stop_time_updates) == 6
+
+        # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
+        # no delay then, only base schedule
+        # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
+        first_st = db_trip_delayed.stop_time_updates[0]
+        assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87212027'
+        assert first_st.arrival == datetime(2015, 9, 21, 15, 21)
+        assert first_st.arrival_status == 'none'
+        assert first_st.arrival_delay == timedelta(0)
+        assert first_st.departure == datetime(2015, 9, 21, 15, 21)
+        assert first_st.departure_delay == timedelta(0)
+        assert first_st.departure_status == 'none'
+        assert first_st.message is None
+
+        second_st = db_trip_delayed.stop_time_updates[1]
+        assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
+        assert second_st.arrival == datetime(2015, 9, 21, 15, 38)
+        assert second_st.arrival_status == 'none'
+        assert second_st.arrival_delay == timedelta(0)
+        assert second_st.departure == datetime(2015, 9, 21, 15, 40, 30)
+        assert second_st.departure_delay == timedelta(seconds=30)  # only departure is delayed
+        assert second_st.departure_status == 'update'
+
+        third_st = db_trip_delayed.stop_time_updates[2]
+        assert third_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
+        assert third_st.arrival == datetime(2015, 9, 21, 15, 51, 30)
+        assert third_st.arrival_status == 'update'
+        assert third_st.arrival_delay == timedelta(seconds=30)  # only arrival is delayed
+        assert third_st.departure == datetime(2015, 9, 21, 15, 53)
+        assert third_st.departure_delay == timedelta(0)
+        assert third_st.departure_status == 'update'
+
+        fourth_st = db_trip_delayed.stop_time_updates[3]
+        assert fourth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182063'
+        assert fourth_st.arrival == datetime(2015, 9, 21, 16, 15)
+        assert fourth_st.arrival_status == 'update'
+        assert fourth_st.arrival_delay == timedelta(seconds=60)  # arrival delayed
+        assert fourth_st.departure_status == 'delete'  # departure removed
+
+        # checking the last 2 stops mostly to check that nothing is propagated and they respect input feed
+        fifth_st = db_trip_delayed.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
+        assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
+        assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.arrival_delay == timedelta(0)
+        assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
+        assert fifth_st.departure_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.departure_delay == timedelta(0)
+
+        sixth_st = db_trip_delayed.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert sixth_st.arrival == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert sixth_st.arrival_delay == timedelta(0)
+        assert sixth_st.departure == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.departure_status == 'none'  # not in the feed, so none and no delay
+        assert sixth_st.departure_delay == timedelta(0)
+
+        assert db_trip_delayed.contributor == contributor
+
+
+def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
+    with app.app_context():
+        db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
+                                                      datetime(2015, 9, 21, 15, 21, tzinfo=utc))
+        assert db_trip_delayed
+        assert db_trip_delayed.vj.navitia_trip_id == 'trip:OCETrainTER-87212027-85000109-3:11859'
+        assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
+        assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
+        assert db_trip_delayed.status == 'update'
+        # 6 stop times must have been created
+        assert len(db_trip_delayed.stop_time_updates) == 6
+
+        # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
+        # no delay then, only base schedule
+        # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
+        first_st = db_trip_delayed.stop_time_updates[0]
+        assert first_st.stop_id == 'stop_point:OCE:SP:TrainTER-87212027'
+        assert first_st.arrival == datetime(2015, 9, 21, 15, 21)
+        assert first_st.arrival_status == 'none'
+        assert first_st.arrival_delay == timedelta(0)
+        assert first_st.departure == datetime(2015, 9, 21, 15, 21)
+        assert first_st.departure_status == 'none'
+        assert first_st.departure_delay == timedelta(0)
+        assert first_st.message is None
+
+        second_st = db_trip_delayed.stop_time_updates[1]
+        assert second_st.stop_id == 'stop_point:OCE:SP:TrainTER-87214056'
+        assert second_st.arrival == datetime(2015, 9, 21, 15, 43)
+        assert second_st.arrival_status == 'update'
+        assert second_st.arrival_delay == timedelta(seconds=300)  # delayed by 5 min
+        assert second_st.departure == datetime(2015, 9, 21, 15, 45)
+        assert second_st.departure_status == 'update'
+        assert second_st.departure_delay == timedelta(seconds=300)
+
+        third_st = db_trip_delayed.stop_time_updates[2]
+        assert third_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182014'
+        assert third_st.arrival_status == 'delete'  # removed
+        assert third_st.departure_status == 'delete'
+
+        fourth_st = db_trip_delayed.stop_time_updates[3]
+        assert fourth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182063'
+        assert fourth_st.arrival == datetime(2015, 9, 21, 16, 16)
+        assert fourth_st.arrival_status == 'update'
+        assert fourth_st.arrival_delay == timedelta(seconds=120)  # delayed by 2 min
+        assert fourth_st.departure == datetime(2015, 9, 21, 16, 18)
+        assert fourth_st.departure_status == 'update'
+        assert fourth_st.departure_delay == timedelta(seconds=120)
+
+        # checking the last 2 stops mostly to check that nothing is propagated and they respect input feed
+        fifth_st = db_trip_delayed.stop_time_updates[4]
+        assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
+        assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
+        assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.arrival_delay == timedelta(0)
+        assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
+        assert fifth_st.departure_status == 'update'  # in the feed, so updated but no delay
+        assert fifth_st.departure_delay == timedelta(0)
+
+        sixth_st = db_trip_delayed.stop_time_updates[5]
+        assert sixth_st.stop_id == 'stop_point:OCE:SP:TrainTER-85000109'
+        assert sixth_st.arrival == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.arrival_status == 'update'  # in the feed, so updated but no delay
+        assert sixth_st.arrival_delay == timedelta(0)
+        assert sixth_st.departure == datetime(2015, 9, 21, 16, 39)
+        assert sixth_st.departure_status == 'none'  # not in the feed, so none and no delay
+        assert sixth_st.departure_delay == timedelta(0)
+
+        assert db_trip_delayed.contributor == contributor
+
+
 def check_db_96231_normal(contributor=None):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
@@ -342,7 +484,7 @@ def check_db_96231_normal(contributor=None):
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
-        # the first stop (in Strasbourg) is not in the IRE, only on navitia's base schedule
+        # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
         # no delay then, only base schedule
         # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
         first_st = db_trip_delayed.stop_time_updates[0]
@@ -487,7 +629,7 @@ def check_db_96231_partial_removal(contributor=None):
         # 6 stop times must have been created
         assert len(db_trip_partial_removed.stop_time_updates) == 6
 
-        # the first stop (in Strasbourg) is not in the IRE, only on navitia's base schedule
+        # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
         # no delay then, only base schedule
         # Navitia's time are in local, so departure 17h21 in paris is 15h21 in UTC
         first_st = db_trip_partial_removed.stop_time_updates[0]

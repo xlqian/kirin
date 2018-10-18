@@ -42,7 +42,8 @@ from tests.integration.utils_cots_test import requests_mock_cause_message
 from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_john_trip_removal, \
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
     check_db_840427_partial_removal, check_db_96231_partial_removal, check_db_870154_partial_removal, \
-    check_db_870154_delay, check_db_870154_normal
+    check_db_870154_delay, check_db_870154_normal, check_db_96231_mixed_statuses_inside_stops, \
+    check_db_96231_mixed_statuses_delay_removal_delay
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -230,6 +231,46 @@ def test_cots_delayed_post_twice(mock_rabbitmq):
     check_db_96231_delayed(contributor='realtime.cots')
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
+
+
+def test_cots_mixed_statuses_inside_stop_times(mock_rabbitmq):
+    """
+    stops have mixed statuses (between their departure and arrival especially)
+    on 2nd stop departure is delayed by 30 s, arrival OK
+    on 3rd stop arrival is delayed by 30 s, departure OK (catching up on lost time)
+    on 4th stop arrival is delayed by 1 min, departure is removed
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_mixed_statuses_inside_stops.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_mixed_statuses_inside_stops(contributor='realtime.cots')
+
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_mixed_statuses_delay_removal_delay(mock_rabbitmq):
+    """
+    stops have mixed statuses
+    on 2nd stop is delayed by 5 min
+    on 3rd is removed
+    on 4th stop is delayed by 2 min
+    """
+    cots_96231 = get_fixture_data('cots_train_96231_mixed_statuses_delay_removal_delay.json')
+    res = api_post('/cots', data=cots_96231)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 6
+    check_db_96231_mixed_statuses_delay_removal_delay(contributor='realtime.cots')
+    # the rabbit mq has to have been called twice
+    assert mock_rabbitmq.call_count == 1
 
 
 def test_cots_trip_delayed_then_removal(mock_rabbitmq):
