@@ -327,13 +327,9 @@ def check_db_870154_normal():
 
 def check_db_96231_mixed_statuses_inside_stops(contributor=None):
     with app.app_context():
-        assert len(RealTimeUpdate.query.all()) >= 1
-        assert len(TripUpdate.query.all()) >= 1
-        assert len(StopTimeUpdate.query.all()) >= 6
         db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
                                                       datetime(2015, 9, 21, 15, 21, tzinfo=utc))
         assert db_trip_delayed
-
         assert db_trip_delayed.vj.navitia_trip_id == 'trip:OCETrainTER-87212027-85000109-3:11859'
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
@@ -379,13 +375,14 @@ def check_db_96231_mixed_statuses_inside_stops(contributor=None):
         assert fourth_st.arrival_delay == timedelta(seconds=60)  # arrival delayed
         assert fourth_st.departure_status == 'delete'  # departure removed
 
+        # checking the last 2 stops mostly to check that nothing is propagated and they respect input feed
         fifth_st = db_trip_delayed.stop_time_updates[4]
         assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
         assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
         assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
         assert fifth_st.arrival_delay == timedelta(0)
         assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
-        assert fifth_st.departure_status == 'update'
+        assert fifth_st.departure_status == 'update'  # in the feed, so updated but no delay
         assert fifth_st.departure_delay == timedelta(0)
 
         sixth_st = db_trip_delayed.stop_time_updates[5]
@@ -402,13 +399,9 @@ def check_db_96231_mixed_statuses_inside_stops(contributor=None):
 
 def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
     with app.app_context():
-        assert len(RealTimeUpdate.query.all()) >= 1
-        assert len(TripUpdate.query.all()) >= 1
-        assert len(StopTimeUpdate.query.all()) >= 6
         db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
                                                       datetime(2015, 9, 21, 15, 21, tzinfo=utc))
         assert db_trip_delayed
-
         assert db_trip_delayed.vj.navitia_trip_id == 'trip:OCETrainTER-87212027-85000109-3:11859'
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
@@ -452,13 +445,14 @@ def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
         assert fourth_st.departure_status == 'update'
         assert fourth_st.departure_delay == timedelta(seconds=120)
 
+        # checking the last 2 stops mostly to check that nothing is propagated and they respect input feed
         fifth_st = db_trip_delayed.stop_time_updates[4]
         assert fifth_st.stop_id == 'stop_point:OCE:SP:TrainTER-87182139'
         assert fifth_st.arrival == datetime(2015, 9, 21, 16, 30)
         assert fifth_st.arrival_status == 'update'  # in the feed, so updated but no delay
         assert fifth_st.arrival_delay == timedelta(0)
         assert fifth_st.departure == datetime(2015, 9, 21, 16, 31)
-        assert fifth_st.departure_status == 'update'
+        assert fifth_st.departure_status == 'update'  # in the feed, so updated but no delay
         assert fifth_st.departure_delay == timedelta(0)
 
         sixth_st = db_trip_delayed.stop_time_updates[5]
