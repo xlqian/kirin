@@ -76,11 +76,23 @@ order |  | `stop_time` order of this stop in the `VehicleJourney`
 stop_id |  | Id of this stop in Navitia
 message | *idMotifInterneDepartReference* | If present, it points to the field `labelExt` of the *parametreLIV* feed having the same `id`. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference. If no matching `id` is found, the message is left empty.
 departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia.
-departure_delay | *listeHoraireProjeteDepart/pronosticIV* | The first item of the list is taken into account.
+departure_delay | *listeHoraireProjeteDepart/pronosticIV* | See the mapping method below.
 departure_status | *horaireVoyageurDepart/statutCirculationOPE* | See the mapping method below.
 arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia.
-arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | The first item of the list is taken into account.
+arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | See the mapping method below.
 arrival_status | *horaireVoyageurArrivee/statutCirculationOPE* | See the mapping method below.
+
+**Setting the departure_delay and arrival_delay property**
+For the departure_delay :
+* If the *sourceHoraireProjeteDepartReference* is not defined (or contains an empty value)
+  * If *listeHoraireProjeteDepart* is not defined (or empty) => the train is considered on time
+  * If there is only one item in the *listeHoraireProjeteDepart* => the value of its *pronosticIV* is used
+  * Else (there are several items in the *listeHoraireProjeteDepart*) => the cots stream is considered invalid and is rejected.
+* If the *sourceHoraireProjeteDepartReference* is available (and non empty value)
+  * If *listeHoraireProjeteDepart* is not empty and one of the items has the same value in its *source* property as *sourceHoraireProjeteDepartReference* => the value of its *pronosticIV* is used
+  * Else (empty or no item has the same *source* property as *sourceHoraireProjeteDepartReference*) => the cots stream is considered invalid and is rejected.
+
+For the **arrival_delay**, the same rule applies with the *sourceHoraireProjeteArriveeReference* property and the *listeHoraireProjeteArrivee*.
 
 **Setting the arrival/departure status**
 
@@ -93,4 +105,3 @@ The departure status is resolved with regard to the field *horaireVoyageurDepart
 The arrival status is resolved with regard to the field *horaireVoyageurArrivee/statutCirculationOPE*:
 * status is set to `add` when the field value is `CREATION`, `delete` when the field value is `SUPPRESSION` or `SUPPRESSION_DETOURNEMENT` and `update` otherwise.
 * status is set to `none` when the arrival delay is set to 0 or when this is the first stop of the `VehicleJourney`.
-

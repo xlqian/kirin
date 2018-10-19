@@ -159,7 +159,6 @@
                 "listeMotifDepart":[
                 ],
                 "rang":2,
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -203,8 +202,6 @@
                 "listeMotifDepart":[
                 ],
                 "rang":3,
-                "sourceHoraireProjeteArriveeReference":"TEST",
-                "sourceHoraireProjeteDepartReference":"TEST",
                 "typeArret":"CH"
             },
             {
@@ -249,8 +246,6 @@
                 "listeMotifDepart":[
                 ],
                 "rang":4,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -298,8 +293,6 @@
                 "listeMotifDepart":[
                 ],
                 "rang":5,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
-                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -332,7 +325,6 @@
                 "listeMotifDepart":[
                 ],
                 "rang":6,
-                "sourceHoraireProjeteArriveeReference":"ESCALE",
                 "typeArret":"CH"
             }
         ],

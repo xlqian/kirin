@@ -134,6 +134,35 @@ def as_duration(seconds):
     return datetime.utcfromtimestamp(seconds) - datetime.utcfromtimestamp(0)
 
 
+def _retrieve_projected_time(source_ref, list_proj_time):
+    """
+    pick the good projected arrival/departure objects from the list provided,
+    using the source-reference if existing
+    """
+    # if a source-reference is defined
+    if source_ref is not None:
+        # retrieve the one mentioned if it exists
+        if list_proj_time:
+            for p in list_proj_time:
+                s = get_value(p, 'source', nullable=True)
+                if s is not None and s == source_ref:
+                    return p
+
+        # if a reference is provided but impossible to retrieve corresponding element, reject whole COTS feed
+        raise InvalidArguments('invalid json, impossible to find source "{s}" in any json dict '
+                               'of list: {l}'.format(s=source_ref, l=ujson.dumps(list_proj_time)))
+
+    elif list_proj_time:
+        # if no source-reference exists, but only one element in the list, we take it
+        if len(list_proj_time) == 1:
+            return list_proj_time[0]
+        # if list has multiple elements but no source-reference, reject whole COTS feed
+        raise InvalidArguments('invalid json, impossible no source but multiple json dicts '
+                               'in list: {l}'.format(l=ujson.dumps(list_proj_time)))
+
+    return None
+
+
 class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
@@ -262,12 +291,17 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                   nullable=True)
                 if cots_stop_time_status is None:
                     # if no cots_stop_time_status, it is considered an 'update' of the stop_time
+                    # (can be a delay, back to normal, normal, ...)
+                    cots_ref_planned = get_value(pdp,
+                                                 'sourceHoraireProjete{}Reference'.format(
+                                                     arrival_departure_toggle),
+                                                 nullable=True)
                     cots_planned_stop_times = get_value(pdp,
                                                         'listeHoraireProjete{}'.format(arrival_departure_toggle),
                                                         nullable=True)
-                    if not cots_planned_stop_times or not isinstance(cots_planned_stop_times, list):
+                    cots_planned_stop_time = _retrieve_projected_time(cots_ref_planned, cots_planned_stop_times)
+                    if cots_planned_stop_time is None:
                         continue
-                    cots_planned_stop_time = cots_planned_stop_times[0]
 
                     cots_delay = get_value(cots_planned_stop_time, 'pronosticIV', nullable=True)
                     if cots_delay is None:

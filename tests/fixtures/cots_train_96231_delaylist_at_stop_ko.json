@@ -79,6 +79,7 @@
         ],
         "listeJourRegimeFacultatif":[
         ],
+        "idMotifInterneReference": 3,
         "listeMotif":[
         ],
         "listePointDeParcours":[
@@ -101,6 +102,7 @@
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
+                "idMotifInterneDepartReference": 9999,
                 "listeHoraireProjeteArrivee":[
                 ],
                 "listeHoraireProjeteDepart":[
@@ -150,46 +152,31 @@
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
-                    {
-                        "dateHeure":"2015-09-21T15:39:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":300,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T15:39:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":300,
-                        "source":"TEST"
-                    }
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T15:40:30+0000",
+                        "dateHeure":"2015-09-21T15:55:30+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":300,
+                        "pronosticBrut":910,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T17:40:30+0000",
+                        "dateHeure":"2015-09-21T17:54:30+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":300,
+                        "pronosticBrut":830,
+                        "pronosticIV":840,
                         "source":"TEST"
                     }
                 ],
-                "sourceHoraireProjeteArriveeReference":"TEST",
-                "sourceHoraireProjeteDepartReference":"TEST",
                 "idMotifInterneDepartReference": 3,
-                "idMotifInterneArriveeReference": 3,
+                "idMotifInterneArriveeReference": 4,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
                 ],
                 "rang":2,
+                "sourceHoraireProjeteDepartReference":"ESCALE",
                 "typeArret":"CH"
             },
             {
@@ -203,61 +190,60 @@
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"17:51:00",
+                    "heureLocale":"18:06:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"17:53:00",
+                    "heureLocale":"18:08:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
                     "dateHeure":"2015-09-21T15:51:00+0000",
                     "heureLocale":"17:51:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0,
-                    "statutCirculationOPE": "SUPPRESSION"
+                    "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
                     "dateHeure":"2015-09-21T17:53:00+0000",
                     "heureLocale":"17:53:00",
                     "idFuseauHoraire":"Europe/Paris",
-                    "nbJoursPasseMinuit":0,
-                    "statutCirculationOPE": "SUPPRESSION"
+                    "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T15:51:00+0000",
+                        "dateHeure":"2015-09-21T16:06:00+0000",
                         "dateHeureEmission":"2018-04-19T18:06:00+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T15:51:00+0000",
+                        "dateHeure":"2015-09-21T16:06:00+0000",
                         "dateHeureEmission":"2018-04-19T18:06:00+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T15:53:00+0000",
+                        "dateHeure":"2015-09-21T16:08:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T15:53:00+0000",
+                        "dateHeure":"2015-09-21T16:08:00+0000",
                         "dateHeureEmission":"2018-04-19T18:08:00+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneDepartReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -278,13 +264,13 @@
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:14:00",
+                    "heureLocale":"18:29:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:16:00",
+                    "heureLocale":"18:31:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
@@ -301,36 +287,37 @@
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T16:14:00+0000",
+                        "dateHeure":"2015-09-21T16:29:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":120,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:14:00+0000",
+                        "dateHeure":"2015-09-21T16:29:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":120,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T16:16:00+0000",
+                        "dateHeure":"2015-09-21T16:31:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":120,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:16:00+0000",
+                        "dateHeure":"2015-09-21T16:31:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":120,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
+                "idMotifInterneArriveeReference": 3,
                 "listeMotifArrivee":[
                 ],
                 "listeMotifDepart":[
@@ -351,13 +338,13 @@
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:30:00",
+                    "heureLocale":"18:45:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireProductionDepart":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:31:00",
+                    "heureLocale":"18:46:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
@@ -374,33 +361,26 @@
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T16:30:00+0000",
+                        "dateHeure":"2015-09-21T16:45:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
-                        "source":"ESCALE"
-                    },
-                    {
-                        "dateHeure":"2015-09-21T16:30:00+0000",
-                        "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
+                        "dateHeure":"2015-09-21T16:46:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
+                        "dateHeure":"2015-09-21T16:46:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
@@ -424,7 +404,7 @@
                 "horaireProductionArrivee":{
                     "idFuseauHoraire":"Europe/Paris",
                     "heureIncertaine":false,
-                    "heureLocale":"18:39:00",
+                    "heureLocale":"18:54:00",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
@@ -435,17 +415,17 @@
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T16:39:00+0000",
+                        "dateHeure":"2015-09-21T16:54:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:39:00+0000",
+                        "dateHeure":"2015-09-21T16:54:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
-                        "pronosticBrut":0,
-                        "pronosticIV":0,
+                        "pronosticBrut":900,
+                        "pronosticIV":900,
                         "source":"TEST"
                     }
                 ],
