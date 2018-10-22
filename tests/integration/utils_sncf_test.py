@@ -593,6 +593,25 @@ def check_db_6113_trip_removal():
         assert len(db_trip_removal.stop_time_updates) == 0
 
 
+def check_db_6111_trip_removal_pass_midnight():
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) >= 1
+        assert len(TripUpdate.query.all()) >= 1
+        assert len(StopTimeUpdate.query.all()) >= 0
+        db_trip_removal = TripUpdate.find_by_dated_vj('trip:OCETGV-87686006-87751008-2:25768',
+                                                      datetime(2015, 10, 6, 20, 37, tzinfo=utc))
+        assert db_trip_removal
+
+        assert db_trip_removal.vj.navitia_trip_id == 'trip:OCETGV-87686006-87751008-2:25768'
+        assert db_trip_removal.vj.get_start_timestamp() == datetime(2015, 10, 6, 20, 37, tzinfo=utc)
+        assert db_trip_removal.vj_id == db_trip_removal.vj.id
+        assert db_trip_removal.status == 'delete'
+        print db_trip_removal.message
+        assert db_trip_removal.message == u'Accident à un Passage à Niveau'
+        # full trip removal : no stop_time to precise
+        assert len(db_trip_removal.stop_time_updates) == 0
+
+
 def check_db_6114_trip_removal():
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1

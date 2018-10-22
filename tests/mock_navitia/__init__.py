@@ -30,8 +30,9 @@
 # www.navitia.io
 import json
 import vj_john
-import vj_6113
+import vj_6111
 import vj_6112
+import vj_6113
 import vj_6114
 import vj_96231
 import vj_870154
@@ -45,6 +46,7 @@ import vj_start_midnight
 
 mocks = [
     vj_john.response,
+    vj_6111.response,
     vj_6112.response,
     vj_6113.response,
     vj_6114.response,
@@ -59,6 +61,9 @@ mocks = [
     vj_start_midnight.response
 ]
 _mock_navitia_call = {r.query: r for r in mocks}
+for r in mocks:
+    if hasattr(r, 'query_utc'):
+        _mock_navitia_call[r.query_utc] = r
 
 
 def mock_navitia_query(self, query, q=None):

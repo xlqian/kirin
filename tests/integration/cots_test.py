@@ -43,7 +43,7 @@ from tests.integration.utils_sncf_test import check_db_96231_delayed, check_db_j
     check_db_96231_trip_removal, check_db_6113_trip_removal, check_db_6114_trip_removal, check_db_96231_normal, \
     check_db_840427_partial_removal, check_db_96231_partial_removal, check_db_870154_partial_removal, \
     check_db_870154_delay, check_db_870154_normal, check_db_96231_mixed_statuses_inside_stops, \
-    check_db_96231_mixed_statuses_delay_removal_delay
+    check_db_96231_mixed_statuses_delay_removal_delay, check_db_6111_trip_removal_pass_midnight
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -327,6 +327,22 @@ def test_cots_trip_removal_simple_post(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 0
     check_db_6113_trip_removal()
+    assert mock_rabbitmq.call_count == 1
+
+
+def test_cots_trip_removal_pass_midnight(mock_rabbitmq):
+    """
+    simple trip removal post on a pass-midnight trip
+    """
+    cots_6111 = get_fixture_data('cots_train_6111_pass_midnight_trip_removal.json')
+    res = api_post('/cots', data=cots_6111)
+    assert res == 'OK'
+
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert len(StopTimeUpdate.query.all()) == 0
+    check_db_6111_trip_removal_pass_midnight()
     assert mock_rabbitmq.call_count == 1
 
 
