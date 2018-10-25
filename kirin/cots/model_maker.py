@@ -253,21 +253,20 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
         # all other status is considered an 'update' of the trip
         trip_update.status = 'update'
-        pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
 
+        pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
             # retrieve navitia's stop_time information corresponding to the current COTS pdp
-            nav_st, log_dict = self._get_navitia_stop_time(pdp, vj.navitia_vj)
+            nav_stop, log_dict = self._get_navitia_stop_point(pdp, vj.navitia_vj)
             if log_dict:
                 record_internal_failure(log_dict['log'], contributor=self.contributor)
                 log_dict.update({'contributor': self.contributor})
                 logging.getLogger(__name__).info('metrology', extra=log_dict)
 
-            if nav_st is None:
+            if not nav_stop:
                 continue
 
-            nav_stop = nav_st.get('stop_point', {})
             st_update = model.StopTimeUpdate(nav_stop)
             trip_update.stop_time_updates.append(st_update)
             # using the message from departure-time in priority, if absent fallback on arrival-time's message
@@ -323,8 +322,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
-                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
-                                                 '"{}" is not handled (yet)'.format(cots_stop_time_status))
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'add')
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
@@ -337,17 +335,40 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
         return trip_update
 
-    @staticmethod
-    def _get_navitia_stop_time(pdp, nav_vj):
+    def _get_navitia_stop_point(self, pdp, nav_vj):
         """
-        get a navitia stop from a Point de Parcours dict
-        the dict MUST contain cr, ci, ch tags
+        Get a navitia stop point from the stop_time in a 'Point de Parcours' dict.
+        The dict MUST contain cr, ci, ch tags.
+        It searches in the vj's stops for a stop_area with the external code cr-ci-ch
 
-        it searches in the vj's stops for a stop_area with the external code
-        cr-ci-ch
-        we also return error messages as 'missing stop point', 'duplicate stops'
+        If the stop_time isn't found in the vj, in case of an additional stop_time,
+        a request is made to Navitia.
+
+        Error messages are also returned as 'missing stop point', 'duplicate stops'
         """
-        return get_navitia_stop_time_sncf(cr=get_value(pdp, 'cr'),
-                                          ci=get_value(pdp, 'ci'),
-                                          ch=get_value(pdp, 'ch'),
-                                          nav_vj=nav_vj)
+        nav_st, log_dict = get_navitia_stop_time_sncf(cr=get_value(pdp, 'cr'),
+                                                      ci=get_value(pdp, 'ci'),
+                                                      ch=get_value(pdp, 'ch'),
+                                                      nav_vj=nav_vj)
+        if not nav_st:
+            nav_stop, log_dict = self.request_navitia_stop_point(cr=get_value(pdp, 'cr'),
+                                                                 ci=get_value(pdp, 'ci'),
+                                                                 ch=get_value(pdp, 'ch'))
+        else:
+            nav_stop = nav_st.get('stop_point', {})
+        return nav_stop, log_dict
+
+    def request_navitia_stop_point(self, cr, ci, ch):
+        result = None
+        log_dict = None
+        external_code = '{}-{}-{}'.format(cr, ci, ch)
+        stop_points = self.navitia.stop_points(q={
+            'filter': 'stop_area.has_code("CR-CI-CH", "{}")'.format(external_code),
+            'count': 1
+            })
+        if stop_points:
+            result = stop_points[0]
+        else:
+            log_dict = {'log': 'No stop point found', 'stop_point_code': external_code}
+
+        return result, log_dict

@@ -62,7 +62,7 @@ def log_stu_modif(trip_update, stu, string_additional_info):
 
 def manage_consistency(trip_update):
     """
-    receive a TripUpdate, then manage and adjust it's consistency
+    receive a TripUpdate, then manage and adjust its consistency
     returns False if trip update cannot be managed
     """
     logger = logging.getLogger(__name__)
@@ -165,7 +165,7 @@ def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
 def _get_datetime(local_circulation_date, time, timezone):
     dt = datetime.datetime.combine(local_circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)
-    # in the db dt with timezone cannot coexist with dt without tz
+    # in the db, dt with timezone cannot coexist with dt without timezone
     # since at the beginning there was dt without tz, we need to erase the tz info
     return dt.replace(tzinfo=None)
 

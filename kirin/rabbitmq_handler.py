@@ -34,7 +34,6 @@ import logging
 from amqp.exceptions import ConnectionForced
 import gevent
 from retrying import retry
-import retrying
 from kirin import task_pb2
 from google.protobuf.message import DecodeError
 import socket
@@ -43,7 +42,6 @@ from kirin.core.populate_pb import convert_to_gtfsrt
 import gtfs_realtime_pb2
 from kirin.utils import str_to_date, record_call
 from socket import error
-import time
 from datetime import datetime
 from kombu.mixins import ConsumerProducerMixin
 
