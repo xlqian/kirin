@@ -75,15 +75,16 @@ Kirin property | COTS object | Comment/Mapping rule
 order |  | `stop_time` order of this stop in the `VehicleJourney`
 stop_id |  | Id of this stop in Navitia
 message | *idMotifInterneDepartReference* | If present, it points to the field `labelExt` of the *parametreLIV* feed having the same `id`. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference. If no matching `id` is found, the message is left empty.
-departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia.
+departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia. In case of a new stop, the departure time is set to *horaireVoyageurDepart/dateHeure*. 
 departure_delay | *listeHoraireProjeteDepart/pronosticIV* | See the mapping method below.
 departure_status | *horaireVoyageurDepart/statutCirculationOPE* | See the mapping method below.
-arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia.
+arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia. In case of a new stop, the arrival time is set to *horaireVoyageurArrivee/dateHeure*.
 arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | See the mapping method below.
 arrival_status | *horaireVoyageurArrivee/statutCirculationOPE* | See the mapping method below.
 
 **Setting the departure_delay and arrival_delay property**
-For the departure_delay :
+
+For the **departure_delay** :
 * If the *sourceHoraireProjeteDepartReference* is not defined (or contains an empty value)
   * If *listeHoraireProjeteDepart* is not defined (or empty) => the train is considered on time
   * If there is only one item in the *listeHoraireProjeteDepart* => the value of its *pronosticIV* is used
