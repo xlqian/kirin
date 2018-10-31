@@ -230,6 +230,33 @@ honcho run ./manage.py db migrate
 This will generate a new migration file, that you can amend to your will.
 
 
+Release
+-------
+
+To generate a new release:
+1. merge the version you want to release into release branch (adapt script):
+   ```bash
+   git checkout release
+   git merge canaltp/master
+   ```
+2. tag and annotate the version:
+   ```bash
+   git tag -a <version> # then annotate with 'Version <version>'
+   # check that the version is OK
+   git describe # should output the desired version
+   ```
+3. if needed merge back release into master branch:
+   ```bash
+   git checkout master
+   git pull
+   git merge release
+   ```
+4. push master, release and tags to central repo
+   ```bash
+   git push canaltp release master --tags
+   ```
+
+
 Docker
 ------
 
