@@ -72,19 +72,20 @@ start_timestamp | Start datetime of the `VehicleJourney` in Navitia.
 ### StopTimeUpdate
 Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
-order |  | `stop_time` order of this stop in the `VehicleJourney`
+order |  | `stop_time` order of this stop in the `VehicleJourney`. The order must respect the *rang* of each stop in the COTS stream.
 stop_id |  | Id of this stop in Navitia
 message | *idMotifInterneDepartReference* | If present, it points to the field `labelExt` of the *parametreLIV* feed having the same `id`. Otherwise, the value of *idMotifInterneArriveeReference* is used as reference. If no matching `id` is found, the message is left empty.
-departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia. In case of a new stop, the departure time is set to *horaireVoyageurDepart/dateHeure*. 
+departure |  | Departure datetime of the `VehicleJourney` for this stop in Navitia. In case of a stop addition, the departure time is set to *horaireVoyageurDepart/dateHeure* if no delay is specified for this new stop or to *horaireProjeteDepart/dateHeure* otherwise.
 departure_delay | *listeHoraireProjeteDepart/pronosticIV* | See the mapping method below.
 departure_status | *horaireVoyageurDepart/statutCirculationOPE* | See the mapping method below.
-arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia. In case of a new stop, the arrival time is set to *horaireVoyageurArrivee/dateHeure*.
+arrival |  | Arrival datetime of the `VehicleJourney` for this stop in Navitia. In case of a stop addition, the arrival time is set to *horaireVoyageurArrivee/dateHeure* if no delay is specified for this new stop or to *horaireProjeteArrivee/dateHeure* otherwise.
 arrival_delay | *listeHoraireProjeteArrivee/pronosticIV* | See the mapping method below.
 arrival_status | *horaireVoyageurArrivee/statutCirculationOPE* | See the mapping method below.
 
 **Setting the departure_delay and arrival_delay property**
 
 For the **departure_delay** :
+* In case of a stop addition, if *listeHoraireProjeteDepart* is defined, the value of *pronosticIV* is ignored (no delay is considered).
 * If the *sourceHoraireProjeteDepartReference* is not defined (or contains an empty value)
   * If *listeHoraireProjeteDepart* is not defined (or empty) => the train is considered on time
   * If there is only one item in the *listeHoraireProjeteDepart* => the value of its *pronosticIV* is used
