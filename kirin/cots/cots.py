@@ -28,6 +28,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+
 import flask
 from flask.globals import current_app
 
@@ -56,5 +57,4 @@ class Cots(AbstractSNCFResource):
 
     def post(self):
         raw_json = get_cots(flask.globals.request)
-
         return self.process_post(raw_json, 'cots', is_new_complete=True)

@@ -594,6 +594,67 @@
 			"typeArret": "CH"
 		},
 		{
+			"@id": "8cabf482-5316-43ee-bf75-7249fe1994b0",
+			"arretFacultatif": false,
+			"categorieStatistiqueArrivee": "RCT",
+			"categorieStatistiqueDepart": "RCT",
+			"cr": "0087",
+			"ci": "613042",
+			"ch": "BV",
+			"horaireProductionArrivee": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:36:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireProductionDepart": {
+				"idFuseauHoraire": "Europe/Paris",
+				"heureIncertaine": true,
+				"heureLocale": "12:37:30",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurArrivee": {
+				"dateHeure": "2018-11-02T10:36:30+0000",
+				"heureLocale": "12:36:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"horaireVoyageurDepart": {
+				"dateHeure": "2018-11-02T10:37:30+0000",
+				"heureLocale": "12:37:30",
+				"idFuseauHoraire": "Europe/Paris",
+				"nbJoursPasseMinuit": 0
+			},
+			"idMotifInterneArriveeReference": 24,
+			"idMotifInterneDepartReference": 24,
+			"listeHoraireProjeteArrivee": [{
+				"dateHeure": "2018-11-02T10:41:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeHoraireProjeteDepart": [{
+				"dateHeure": "2018-11-02T10:42:30+0000",
+				"dateHeureEmission": "2018-11-02T09:00:15+0000",
+				"pronosticBrut": 600,
+				"pronosticIV": 600,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifArrivee": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"listeMotifDepart": [{
+				"dateHeureDeclaration": "2018-11-02T09:00:15+0000",
+				"idMotifInterne": 24,
+				"source": "IRE-GOP"
+			}],
+			"rang": 10,
+			"typeArret": "CH"
+		},
+		{
 			"@id": "bd94ab98-a55a-49f2-97eb-bfb7de7ddbb6",
 			"arretFacultatif": false,
 			"categorieStatistiqueArrivee": "RCT",

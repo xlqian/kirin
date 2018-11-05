@@ -257,14 +257,15 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
-            # retrieve navitia's stop_time information corresponding to the current COTS pdp
+            # retrieve navitia's stop_point corresponding to the current COTS pdp
             nav_stop, log_dict = self._get_navitia_stop_point(pdp, vj.navitia_vj)
+
             if log_dict:
                 record_internal_failure(log_dict['log'], contributor=self.contributor)
                 log_dict.update({'contributor': self.contributor})
                 logging.getLogger(__name__).info('metrology', extra=log_dict)
 
-            if not nav_stop:
+            if nav_stop is None:
                 continue
 
             st_update = model.StopTimeUpdate(nav_stop)
@@ -278,6 +279,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
             _status_map = {'Arrivee': 'arrival_status', 'Depart': 'departure_status'}
             _delay_map = {'Arrivee': 'arrival_delay', 'Depart': 'departure_delay'}
+            _add_map = {'Arrivee': 'arrival', 'Depart': 'departure'}
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
                 cots_traveler_time = get_value(pdp,
@@ -323,6 +325,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
                     setattr(st_update, _status_map[arrival_departure_toggle], 'add')
+                    cots_stop_time = get_value(cots_traveler_time,
+                                                      'dateHeure',
+                                                      nullable=True)
+                    setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
@@ -355,7 +361,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                                  ci=get_value(pdp, 'ci'),
                                                                  ch=get_value(pdp, 'ch'))
         else:
-            nav_stop = nav_st.get('stop_point', {})
+            nav_stop = nav_st.get('stop_point', None)
         return nav_stop, log_dict
 
     def request_navitia_stop_point(self, cr, ci, ch):

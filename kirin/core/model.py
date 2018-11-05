@@ -197,7 +197,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         if status:
             self.arrival_status = status
 
-    def is_ne(self, other):
+    def is_not_equal(self, other):
         """
         we don't want to override the __ne__ function to avoid side effects
         :param other:

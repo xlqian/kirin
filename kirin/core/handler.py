@@ -28,6 +28,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+
 import datetime
 import logging
 import socket
@@ -127,6 +128,13 @@ def manage_consistency(trip_update):
     return True
 
 
+def find_st_in_vj(st_id, vj_sts):
+    for vj_st in vj_sts:
+        vj_st_id = vj_st.get('stop_point').get('id')
+        if vj_st_id == st_id:
+            return vj_st
+
+
 def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
@@ -178,7 +186,7 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
         new_time = (base_time + input_delay) if base_time else None
         status = input_status
         delay = input_delay
-    elif input_status == 'delete':
+    elif input_status in ('delete', 'add'):
         # passing status delete on the stoptime
         # Note: we keep providing base_schedule stoptime to better identify the stoptime
         # in the vj (for lolipop lines for example)
@@ -276,8 +284,33 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     last_departure = None
     local_circulation_date = new_trip_update.vj.get_local_circulation_date()
 
+    def get_next_stop():
+        if is_new_complete:
+            # Iterate on the new trip update stop_times if they're all present in it
+            for order, st in enumerate(new_trip_update.stop_time_updates):
+                # Find corresponding stop_time in the theoretical VJ
+                vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
+
+                if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
+                    # It is an added stop_time, create a new StopTimeUpdate
+                    added_st = {
+                        'stop_point': st.navitia_stop,
+                        'departure_time':  datetime.datetime.strptime(st.departure, '%Y-%m-%dT%H:%M:%S+%f').time(),
+                        'arrival_time': datetime.datetime.strptime(st.arrival, '%Y-%m-%dT%H:%M:%S+%f').time(),
+                        'departure_status': 'add',
+                        'arrival_status': 'add'
+                    }
+                    yield order, added_st
+                else:
+                    yield order, vj_st
+
+        else:
+            # Iterate on the theoretical VJ if the new trip update doesn't list all stop_times
+            for order, vj_st in enumerate(navitia_vj.get('stop_times', [])):
+                yield order, vj_st
+
     has_changes = False
-    for nav_order, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
+    for nav_order, navitia_stop in get_next_stop():
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
@@ -313,7 +346,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                                                    new_st,
                                                    navitia_stop['stop_point'],
                                                    order=nav_order)
-            has_changes |= (db_st is None) or db_st.is_ne(new_st_update)
+            has_changes |= (db_st is None) or db_st.is_not_equal(new_st_update)
             res_st = new_st_update if has_changes else db_st
 
         elif db_trip_update is None and new_st is not None:
