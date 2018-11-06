@@ -292,13 +292,13 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                 vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
 
                 if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
-                    # It is an added stop_time, create a new StopTimeUpdate
+                    # It is an added stop_time, create a new stop time
                     added_st = {
                         'stop_point': st.navitia_stop,
                         'departure_time':  datetime.datetime.strptime(st.departure, '%Y-%m-%dT%H:%M:%S+%f').time(),
                         'arrival_time': datetime.datetime.strptime(st.arrival, '%Y-%m-%dT%H:%M:%S+%f').time(),
-                        'departure_status': 'add',
-                        'arrival_status': 'add'
+                        'departure_status': st.departure_status,
+                        'arrival_status': st.arrival_status
                     }
                     yield order, added_st
                 else:

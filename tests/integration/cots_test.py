@@ -519,3 +519,19 @@ def test_wrong_planned_stop_time_reference_post():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 0
         assert len(StopTimeUpdate.query.all()) == 0
+
+
+def test_cots_added_stop_time():
+    """
+    A new stop time is added in the VJ 96231
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add.json')
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[3].departure_status == 'add'
+        assert StopTimeUpdate.query.all()[3].arrival_status == 'add'

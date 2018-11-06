@@ -370,7 +370,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         external_code = '{}-{}-{}'.format(cr, ci, ch)
         stop_points = self.navitia.stop_points(q={
             'filter': 'stop_area.has_code("CR-CI-CH", "{}")'.format(external_code),
-            'count': 1
+            'count': '1'
             })
         if stop_points:
             result = stop_points[0]
