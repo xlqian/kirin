@@ -136,11 +136,7 @@ def find_st_in_vj(st_id, vj_sts):
     :param vj_sts: list of stop_times available in the vj
     :return: stop_time if found else None
     """
-    for vj_st in vj_sts:
-        if 'stop_point' in vj_st:
-            vj_st_id = vj_st.get('stop_point').get('id')
-            if vj_st_id == st_id:
-                return vj_st
+    return next((vj_st for vj_st in vj_sts if vj_st.get('stop_point', {}).get('id') == st_id), None)
 
 
 def convert_to_local_time(timezone, utc_time):

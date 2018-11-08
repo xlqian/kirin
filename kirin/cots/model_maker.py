@@ -326,8 +326,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     # new stop_time added
                     setattr(st_update, _status_map[arrival_departure_toggle], 'add')
                     cots_stop_time = get_value(cots_traveler_time,
-                                                      'dateHeure',
-                                                      nullable=True)
+                                               'dateHeure',
+                                               nullable=True)
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
@@ -365,16 +365,12 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         return nav_stop, log_dict
 
     def request_navitia_stop_point(self, cr, ci, ch):
-        result = None
-        log_dict = None
         external_code = '{}-{}-{}'.format(cr, ci, ch)
         stop_points = self.navitia.stop_points(q={
             'filter': 'stop_area.has_code("CR-CI-CH", "{}")'.format(external_code),
             'count': '1'
-            })
+        })
         if stop_points:
-            result = stop_points[0]
-        else:
-            log_dict = {'log': 'No stop point found', 'stop_point_code': external_code}
+            return stop_points[0], None
 
-        return result, log_dict
+        return None, {'log': 'No stop point found', 'stop_point_code': external_code}
