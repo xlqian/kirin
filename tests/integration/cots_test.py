@@ -533,5 +533,7 @@ def test_cots_added_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert len(StopTimeUpdate.query.all()) == 7
-        assert StopTimeUpdate.query.all()[3].departure_status == 'add'
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
+        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 02)
+        assert StopTimeUpdate.query.all()[3].departure_status == 'add'
+        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 04)

@@ -204,7 +204,7 @@
           "nbJoursPasseMinuit": 0
         },
         "horaireVoyageurDepart": {
-          "dateHeure": "2015-09-21T17:53:00+0000",
+          "dateHeure": "2015-09-21T15:53:00+0000",
           "heureLocale": "17:53:00",
           "idFuseauHoraire": "Europe/Paris",
           "nbJoursPasseMinuit": 0
@@ -249,15 +249,15 @@
         "ch": "BV",
         "timeZoneLocale": "Europe/Paris",
         "horaireVoyageurArrivee": {
-          "dateHeure": "2018-10-23T11:45:00+0000",
-          "heureLocale": "13:45:00",
+          "dateHeure": "2015-09-21T16:02:00+0000",
+          "heureLocale": "18:02:00",
           "idFuseauHoraire": "Europe/Paris",
           "nbJoursPasseMinuit": 0,
           "statutCirculationOPE": "CREATION"
         },
         "horaireVoyageurDepart": {
-          "dateHeure": "2018-10-23T11:49:00+0000",
-          "heureLocale": "13:49:00",
+          "dateHeure": "2015-09-21T16:04:00+0000",
+          "heureLocale": "18:04:00",
           "idFuseauHoraire": "Europe/Paris",
           "nbJoursPasseMinuit": 0,
           "statutCirculationOPE": "CREATION"

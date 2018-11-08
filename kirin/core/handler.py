@@ -130,10 +130,35 @@ def manage_consistency(trip_update):
 
 
 def find_st_in_vj(st_id, vj_sts):
+    """
+    Find a stop_time in the navitia vehicle journey
+    :param st_id: id of the requested stop_time
+    :param vj_sts: list of stop_times available in the vj
+    :return: stop_time if found else None
+    """
     for vj_st in vj_sts:
-        vj_st_id = vj_st.get('stop_point').get('id')
-        if vj_st_id == st_id:
-            return vj_st
+        if 'stop_point' in vj_st:
+            vj_st_id = vj_st.get('stop_point').get('id')
+            if vj_st_id == st_id:
+                return vj_st
+
+
+def convert_to_local_time(timezone, utc_time):
+    """
+    Return local time according to UTC time and timezone
+    :param timezone: timezone info (type: datetime.tzinfo)
+    :param utc_time: UTC time (type: datetime.datetime)
+    :return: local time (type: datetime.time)
+
+    >>> utc_time = '20181108T093000+0000'
+    >>> timezone = pytz.timezone('Europe/Paris')
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(10, 30)
+    >>> timezone = pytz.timezone('Asia/Tokyo')
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(18, 30)
+    """
+    return pytz.utc.localize(parser.parse(utc_time).replace(tzinfo=None), is_dst=None).astimezone(timezone).time()
 
 
 def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
@@ -187,11 +212,14 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
         new_time = (base_time + input_delay) if base_time else None
         status = input_status
         delay = input_delay
-    elif input_status in ('delete', 'add'):
-        # passing status delete on the stoptime
-        # Note: we keep providing base_schedule stoptime to better identify the stoptime
-        # in the vj (for lolipop lines for example)
+    elif input_status == 'delete':
+        # passing status 'delete' on the stop_time
+        # Note: we keep providing base_schedule stop_time to better identify the stop_time
+        # in the vj (for lollipop lines for example)
         status = input_status
+    elif input_status == 'add':
+        status = input_status
+        new_time = base_time
     else:
         new_time = base_time
     return new_time, status, delay
@@ -287,18 +315,18 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
     def get_next_stop():
         if is_new_complete:
-            # Iterate on the new trip update stop_times if they're all present in it
+            # Iterate on the new trip update stop_times if it is complete (all stop_times present in it)
             for order, st in enumerate(new_trip_update.stop_time_updates):
                 # Find corresponding stop_time in the theoretical VJ
                 vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
 
                 if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
                     # It is an added stop_time, create a new stop time
-                    timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                    st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
                     added_st = {
                         'stop_point': st.navitia_stop,
-                        'departure_time': pytz.utc.localize(parser.parse(st.departure).replace(tzinfo=None), is_dst=None).astimezone(timezone).time(),
-                        'arrival_time': pytz.utc.localize(parser.parse(st.arrival).replace(tzinfo=None), is_dst=None).astimezone(timezone).time(),
+                        'departure_time': convert_to_local_time(st_timezone, st.departure),
+                        'arrival_time': convert_to_local_time(st_timezone, st.arrival),
                         'departure_status': st.departure_status,
                         'arrival_status': st.arrival_status
                     }
