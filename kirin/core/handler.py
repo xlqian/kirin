@@ -33,6 +33,7 @@ import datetime
 import logging
 import socket
 from datetime import timedelta
+from dateutil import parser
 import pytz
 
 import kirin
@@ -293,10 +294,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
                 if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
                     # It is an added stop_time, create a new stop time
+                    timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
                     added_st = {
                         'stop_point': st.navitia_stop,
-                        'departure_time':  datetime.datetime.strptime(st.departure, '%Y-%m-%dT%H:%M:%S+%f').time(),
-                        'arrival_time': datetime.datetime.strptime(st.arrival, '%Y-%m-%dT%H:%M:%S+%f').time(),
+                        'departure_time': pytz.utc.localize(parser.parse(st.departure).replace(tzinfo=None), is_dst=None).astimezone(timezone).time(),
+                        'arrival_time': pytz.utc.localize(parser.parse(st.arrival).replace(tzinfo=None), is_dst=None).astimezone(timezone).time(),
                         'departure_status': st.departure_status,
                         'arrival_status': st.arrival_status
                     }
