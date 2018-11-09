@@ -237,7 +237,7 @@ Please read [tests readme](https://github.com/CanalTP/kirin/blob/master/tests/re
 
 ###### pgAdmin
 
-To use pgAdmin, simply `File/add server` then Enter any `name` then
+To use pgAdmin, simply `File/add server` then enter any `name` then
 `Host`, `user` and `password` used by Kirin on given platform.   
 If you use pgAdmin, you can increase massively the number of characters per column
 (as the feed is big):
@@ -247,13 +247,13 @@ If you use pgAdmin, you can increase massively the number of characters per colu
 ###### IRE
 
 To retrieve an IRE feed concerning a given train number at a given date,
-you can connect to the given base and execute the following command:
+you can connect to the desired database and execute the following command:
 ```sql
 SELECT * FROM real_time_update WHERE connector = 'ire' AND raw_data
     LIKE '%<NumeroTrain>009580/1</NumeroTrain><DateCirculation>26/10/2018%'
     ORDER BY received_at desc;
 ```
-Pay attention to the train number that can mix multiple and can contain trailing 0.
+Pay attention to the train number that can mix multiple numbers and can contain trailing 0.
 
 
 ### Release
