@@ -1,5 +1,4 @@
-Kirin
-=====
+# Kirin
 
 
                                                         /
@@ -58,8 +57,9 @@ The feeds can be of the following type:
   Typically, a transport authority will provide a server where GTFS-RT protobuf files can be consumed and
   regularly polled.
 
-Setup
------
+
+## Setup
+
  - Install dependencies with
     ```
     pip install -r requirements.txt
@@ -118,8 +118,7 @@ Setup
  - Enjoy: you can now request the Kirin API
 
 
-API
----
+## API
 
 Kirin API provides several endpoints (that can be requested through port 5000 by default, or
 port 54746 if using honcho).  
@@ -128,7 +127,9 @@ To list all available endpoints:
 curl 'http://localhost:5000/'
 ```
 
+
 ##### Status (GET)
+
 Returns info about the Kirin and the previous jobs performed
 ```
 curl 'http://localhost:5000/status'
@@ -171,6 +172,7 @@ for both Kirin and Kraken (the navitia core calculator).
 
 
 ###### Ire (POST)
+
 Post an IRE update file with modifications about a vehicle journey (delay, disruption, deletion, ...) that will be modified and posted in the rabbitmq queue.
 ```
 curl -X POST 'http://localhost:5000/ire' -H 'Content-Type: application/xml' -d @<PATH/TO/my_ire.xml>
@@ -184,6 +186,7 @@ For the IRE to be taken into account by navitia, please add the common SNCF's pa
     ```
 
 If the IRE was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
+
 
 ###### Cots (POST)
 
@@ -213,15 +216,7 @@ For the COTS to be taken into account by navitia, please add the common SNCF's p
 If the COTS was successfully sent and processed by Kirin, the http response 200 will have a message "OK".
 
 
-Tests
------
-
-Most tests are implemented in `/tests` directory.  
-Please read [tests readme](https://github.com/CanalTP/kirin/blob/master/tests/readme.md) for more information.
-
-
-Development
------------
+## Development
 
 To generate a new migration script for database (after an upgrade of the model.py file):
 ```
@@ -230,8 +225,38 @@ honcho run ./manage.py db migrate
 This will generate a new migration file, that you can amend to your will.
 
 
-Release
--------
+### Tests
+
+Most tests are implemented in `/tests` directory.  
+Please read [tests readme](https://github.com/CanalTP/kirin/blob/master/tests/readme.md) for more information.
+
+
+### Troubleshooting
+
+##### Retrieve processed feed
+
+###### pgAdmin
+
+To use pgAdmin, simply `File/add server` then Enter any `name` then
+`Host`, `user` and `password` used by Kirin on given platform.   
+If you use pgAdmin, you can increase massively the number of characters per column
+(as the feed is big):
+`File/preferences` then `Request editor/Request editor/Maximum number of characters per column`
+
+
+###### IRE
+
+To retrieve an IRE feed concerning a given train number at a given date,
+you can connect to the given base and execute the following command:
+```sql
+SELECT * FROM real_time_update WHERE connector = 'ire' AND raw_data
+    LIKE '%<NumeroTrain>009580/1</NumeroTrain><DateCirculation>26/10/2018%'
+    ORDER BY received_at desc;
+```
+Pay attention to the train number that can mix multiple and can contain trailing 0.
+
+
+### Release
 
 To generate a new release:
 1. merge the version you want to release into release branch (adapt script):
@@ -257,8 +282,7 @@ To generate a new release:
    ```
 
 
-Docker
-------
+### Docker
 
 A docker image of Kirin can be built using the Dockerfile:
 `docker build -t kirin .`
