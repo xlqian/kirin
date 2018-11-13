@@ -534,6 +534,40 @@ def test_cots_added_stop_time():
         assert TripUpdate.query.all()[0].status == 'update'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
-        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 02)
+        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
         assert StopTimeUpdate.query.all()[3].departure_status == 'add'
-        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 04)
+        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
+
+
+def test_cots_added_stop_time_first_position():
+    """
+    A new stop time is added in the VJ 96231 in first position
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_first.json')
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[0].arrival_status == 'none'
+        assert StopTimeUpdate.query.all()[0].departure_status == 'add'
+        assert StopTimeUpdate.query.all()[0].departure == datetime(2015, 9, 21, 14, 20)
+
+
+def test_cots_added_stop_time_last_position():
+    """
+    A new stop time is added in the VJ 96231 in first position
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_last.json')
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[6].departure_status == 'none'
+        assert StopTimeUpdate.query.all()[6].arrival_status == 'add'
+        assert StopTimeUpdate.query.all()[6].departure == datetime(2015, 9, 21, 16, 50)

@@ -34,6 +34,8 @@ import vj_6113
 import vj_6112
 import vj_6114
 import vj_96231
+import vj_96231_early
+import vj_96231_late
 import vj_870154
 import vj_840426
 import vj_R_vj1
@@ -50,6 +52,8 @@ mocks = [
     vj_6113.response,
     vj_6114.response,
     vj_96231.response,
+    vj_96231_early.response,
+    vj_96231_late.response,
     vj_870154.response,
     vj_840426.response,
     vj_R_vj1.response,

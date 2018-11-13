@@ -150,11 +150,19 @@ def convert_to_local_time(timezone, utc_time):
     >>> timezone = pytz.timezone('Europe/Paris')
     >>> convert_to_local_time(timezone, utc_time)
     datetime.time(10, 30)
+    >>> utc_time = '20181108T093000+0100'
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(9, 30)
+    >>> utc_time = '20181108T093000+0900'
     >>> timezone = pytz.timezone('Asia/Tokyo')
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(9, 30)
+    >>> utc_time = '20181108T093000+0000'
     >>> convert_to_local_time(timezone, utc_time)
     datetime.time(18, 30)
     """
-    return pytz.utc.localize(parser.parse(utc_time).replace(tzinfo=None), is_dst=None).astimezone(timezone).time()
+    if utc_time:
+        return parser.parse(utc_time).astimezone(timezone).time()
 
 
 def handle(real_time_update, trip_updates, contributor, is_new_complete=False):

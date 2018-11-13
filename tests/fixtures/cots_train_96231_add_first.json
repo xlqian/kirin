@@ -82,6 +82,30 @@
     "listeMotif": [
     ],
     "listePointDeParcours": [
+            {
+        "@id": "6a4a4413-a668-487c-b25d-907ef7e64e75",
+        "cr": "0087",
+        "ci": "713065",
+        "ch": "BV",
+        "timeZoneLocale": "Europe/Paris",
+        "horaireVoyageurArrivee": {
+        },
+        "horaireVoyageurDepart": {
+          "dateHeure": "2015-09-21T14:20:00+0000",
+          "heureLocale": "16:20:00",
+          "idFuseauHoraire": "Europe/Paris",
+          "nbJoursPasseMinuit": 0,
+          "statutCirculationOPE": "CREATION"
+        },
+        "listeHoraireProjeteArrivee": [
+        ],
+        "listeHoraireProjeteDepart": [
+        ],
+        "listeMotifArrivee": [],
+        "listeMotifDepart": [],
+        "rang": 0,
+        "typeArret": "CH"
+      },
       {
         "@id": "998484ec-4335-45b6-aad4-8840047b275f",
         "arretFacultatif": false,
@@ -240,51 +264,6 @@
         ],
         "rang": 3,
         "sourceHoraireProjeteDepartReference": "TEST",
-        "typeArret": "CH"
-      },
-      {
-        "@id": "6a4a4413-a668-487c-b25d-907ef7e64e75",
-        "cr": "0087",
-        "ci": "713065",
-        "ch": "BV",
-        "timeZoneLocale": "Europe/Paris",
-        "horaireVoyageurArrivee": {
-          "dateHeure": "2015-09-21T18:02:00+0200",
-          "heureLocale": "18:02:00",
-          "idFuseauHoraire": "Europe/Paris",
-          "nbJoursPasseMinuit": 0,
-          "statutCirculationOPE": "CREATION"
-        },
-        "horaireVoyageurDepart": {
-          "dateHeure": "2015-09-21T16:04:00+0000",
-          "heureLocale": "18:04:00",
-          "idFuseauHoraire": "Europe/Paris",
-          "nbJoursPasseMinuit": 0,
-          "statutCirculationOPE": "CREATION"
-        },
-        "listeHoraireProjeteArrivee": [
-          {
-            "dateHeure": "2018-10-23T11:50:00+0000",
-            "dateHeureEmission": "2018-10-23T09:22:19+0000",
-            "pronosticBrut": 300,
-            "pronosticIV": 300,
-            "source": "IRE-GOP"
-          }
-        ],
-        "listeHoraireProjeteDepart": [
-          {
-            "dateHeure": "2018-10-23T11:54:00+0000",
-            "dateHeureEmission": "2018-10-23T09:22:19+0000",
-            "pronosticBrut": 300,
-            "pronosticIV": 300,
-            "source": "IRE-GOP"
-          }
-        ],
-        "listeMotifArrivee": [],
-        "listeMotifDepart": [],
-        "rang": 11,
-        "sourceHoraireProjeteArriveeReference": "IRE-GOP",
-        "sourceHoraireProjeteDepartReference": "IRE-GOP",
         "typeArret": "CH"
       },
       {
