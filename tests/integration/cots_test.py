@@ -574,7 +574,7 @@ def test_cots_added_stop_time_first_position():
 
 def test_cots_added_stop_time_last_position():
     """
-    A new stop time is added in the VJ 96231 in first position
+    A new stop time is added in the VJ 96231 in last position
     """
     cots_add_file = get_fixture_data('cots_train_96231_add_last.json')
     res = api_post('/cots', data=cots_add_file)

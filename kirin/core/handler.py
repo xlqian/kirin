@@ -323,7 +323,6 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             for order, st in enumerate(new_trip_update.stop_time_updates):
                 # Find corresponding stop_time in the theoretical VJ
                 vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
-
                 if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
                     # It is an added stop_time, create a new stop time
                     st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
@@ -345,6 +344,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
     has_changes = False
     for nav_order, navitia_stop in get_next_stop():
+        if navitia_stop is None:
+            logging.getLogger(__name__).warning('No stop point found (order:{}'.format(nav_order))
+            continue
+
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
