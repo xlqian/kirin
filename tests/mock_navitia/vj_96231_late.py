@@ -34,7 +34,7 @@ from vj_96231 import VJ_96231_COMMON_RESPONSE
 
 response = navitia_response.NavitiaResponse()
 
-response.query = 'vehicle_journeys/?depth=2&since=20150921T153000&headsign=96231&show_codes=true&until=20150921T195000'
+response.query = 'vehicle_journeys/?depth=2&since=20150921T133000+0000&headsign=96231&show_codes=true&until=20150921T175000+0000'
 
 response.response_code = 200
 

@@ -45,7 +45,7 @@ def to_navitia_str(dt):
     """
     format a datetime to a navitia-readable str
     """
-    return dt.strftime("%Y%m%dT%H%M%S")
+    return dt.strftime("%Y%m%dT%H%M%S%z")
 
 
 def headsigns(str):

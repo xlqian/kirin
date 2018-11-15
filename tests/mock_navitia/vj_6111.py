@@ -32,8 +32,8 @@ import navitia_response
 
 response = navitia_response.NavitiaResponse()
 
-response.query = 'vehicle_journeys/?depth=2&since=20151006T121600&headsign=6113&show_codes=true&until=20151006T173400'
-response.query_utc = 'vehicle_journeys/?depth=2&since=20151006T101600+0000&headsign=6113&show_codes=true&until=20151006T153400+0000'
+response.query = 'vehicle_journeys/?depth=2&since=20151006T221600&headsign=6111&show_codes=true&until=20151007T073400'
+response.query_utc = 'vehicle_journeys/?depth=2&since=20151006T201600+0000&headsign=6111&show_codes=true&until=20151007T053400+0000'
 
 response.response_code = 200
 
@@ -43,10 +43,10 @@ response.json_response = """{
             "codes": [
                 {
                     "type": "external_code",
-                    "value": "OCESN006113F02009"
+                    "value": "OCESN006111F02009"
                 }
             ],
-            "name": "6113",
+            "name": "6111",
             "journey_pattern": {
                 "route": {
                     "direction": {
@@ -117,12 +117,12 @@ response.json_response = """{
             ],
             "stop_times": [
                 {
-                    "arrival_time": "123700",
+                    "arrival_time": "223700",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
                     },
-                    "headsign": "6113",
-                    "departure_time": "123700",
+                    "headsign": "6111",
+                    "departure_time": "223700",
                     "stop_point": {
                         "codes": [
                             {
@@ -165,108 +165,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "152100",
-                    "journey_pattern_point": {
-                        "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87318964:1"
-                    },
-                    "headsign": "6113",
-                    "departure_time": "152400",
-                    "stop_point": {
-                        "codes": [
-                            {
-                                "type": "external_code",
-                                "value": "OCETGV-87318964"
-                            }
-                        ],
-                        "name": "gare de Avignon-TGV",
-                        "links": [
-
-                        ],
-                        "coord": {
-                            "lat": "43.921963",
-                            "lon": "4.78616"
-                        },
-                        "label": "gare de Avignon-TGV",
-                        "equipments": [
-
-                        ],
-                        "id": "stop_point:OCE:SP:TGV-87318964",
-                        "stop_area": {
-                            "codes": [
-                                {
-                                    "type": "external_code",
-                                    "value": "OCE87318964"
-                                }
-                            ],
-                            "name": "gare de Avignon-TGV",
-                            "links": [
-
-                            ],
-                            "coord": {
-                                "lat": "43.921963",
-                                "lon": "4.78616"
-                            },
-                            "label": "gare de Avignon-TGV",
-                            "timezone": "Europe/Paris",
-                            "id": "stop_area:OCE:SA:87318964"
-                        }
-                    }
-                },
-                {
-                    "arrival_time": "154300",
-                    "journey_pattern_point": {
-                        "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87319012:2"
-                    },
-                    "headsign": "6113",
-                    "departure_time": "154600",
-                    "stop_point": {
-                        "codes": [
-                            {
-                                "type": "external_code",
-                                "value": "OCETGV-87319012"
-                            }
-                        ],
-                        "name": "gare de Aix-en-Provence-TGV",
-                        "links": [
-
-                        ],
-                        "coord": {
-                            "lat": "43.455151",
-                            "lon": "5.317273"
-                        },
-                        "label": "gare de Aix-en-Provence-TGV",
-                        "equipments": [
-
-                        ],
-                        "id": "stop_point:OCE:SP:TGV-87319012",
-                        "stop_area": {
-                            "codes": [
-                                {
-                                    "type": "external_code",
-                                    "value": "OCE87319012"
-                                }
-                            ],
-                            "name": "gare de Aix-en-Provence-TGV",
-                            "links": [
-
-                            ],
-                            "coord": {
-                                "lat": "43.455151",
-                                "lon": "5.317273"
-                            },
-                            "label": "gare de Aix-en-Provence-TGV",
-                            "timezone": "Europe/Paris",
-                            "id": "stop_area:OCE:SA:87319012"
-                        }
-                    }
-                },
-                {
-                    "arrival_time": "160300",
+                    "arrival_time": "060300",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
                     },
-                    "headsign": "6113",
-                    "departure_time": "160300",
+                    "headsign": "6111",
+                    "departure_time": "060300",
                     "stop_point": {
                         "codes": [
                             {

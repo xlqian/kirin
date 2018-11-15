@@ -208,14 +208,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
                                    'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
-        dates_str = [get_value(d, 'date') for d in get_value(json_train, 'listeJourRegimeDApplication')]
-        date = min([as_date(d) for d in dates_str]).date()
-        str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'heureLocale')
-        time_start = datetime.strptime(str_time_start, '%H:%M:%S').time()
-        vj_start = datetime.combine(date, time_start)
-        str_time_end = get_value(get_value(pdps[-1], 'horaireVoyageurArrivee'), 'heureLocale')
-        time_end = datetime.strptime(str_time_end, '%H:%M:%S').time()
-        vj_end = datetime.combine(date, time_end)
+        str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'dateHeure')
+        vj_start = parser.parse(str_time_start, dayfirst=False, yearfirst=True, ignoretz=False)
+
+        str_time_end = get_value(get_value(pdps[-1], 'horaireVoyageurArrivee'), 'dateHeure')
+        vj_end = parser.parse(str_time_end, dayfirst=False, yearfirst=True, ignoretz=False)
 
         return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
