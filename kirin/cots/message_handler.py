@@ -163,9 +163,10 @@ class MessageHandler:
             return self._call_webservice()
 
     def get_message(self, index):
-        try:
-            return self._call_webservice_safer().get(index)
-        except Exception as e:
-            logging.getLogger(__name__).exception('COTS cause message sub-service handling '
-                                                  'error : {}'.format(str(e)))
-            return None
+        if self.token_server and self.resource_server:
+            try:
+                return self._call_webservice_safer().get(index)
+            except Exception as e:
+                logging.getLogger(__name__).exception('COTS cause message sub-service handling '
+                                                      'error : {}'.format(str(e)))
+                return None

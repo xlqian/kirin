@@ -28,10 +28,12 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+
 import datetime
 import logging
 import socket
 from datetime import timedelta
+from dateutil import parser
 import pytz
 
 import kirin
@@ -62,7 +64,7 @@ def log_stu_modif(trip_update, stu, string_additional_info):
 
 def manage_consistency(trip_update):
     """
-    receive a TripUpdate, then manage and adjust it's consistency
+    receive a TripUpdate, then manage and adjust its consistency
     returns False if trip update cannot be managed
     """
     logger = logging.getLogger(__name__)
@@ -127,6 +129,42 @@ def manage_consistency(trip_update):
     return True
 
 
+def find_st_in_vj(st_id, vj_sts):
+    """
+    Find a stop_time in the navitia vehicle journey
+    :param st_id: id of the requested stop_time
+    :param vj_sts: list of stop_times available in the vj
+    :return: stop_time if found else None
+    """
+    return next((vj_st for vj_st in vj_sts if vj_st.get('stop_point', {}).get('id') == st_id), None)
+
+
+def convert_to_local_time(timezone, utc_time):
+    """
+    Return local time according to UTC time and timezone
+    :param timezone: timezone info (type: datetime.tzinfo)
+    :param utc_time: UTC time (type: datetime.datetime)
+    :return: local time (type: datetime.time)
+
+    >>> utc_time = '20181108T093000+0000'
+    >>> timezone = pytz.timezone('Europe/Paris')
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(10, 30)
+    >>> utc_time = '20181108T093000+0100'
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(9, 30)
+    >>> utc_time = '20181108T093000+0900'
+    >>> timezone = pytz.timezone('Asia/Tokyo')
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(9, 30)
+    >>> utc_time = '20181108T093000+0000'
+    >>> convert_to_local_time(timezone, utc_time)
+    datetime.time(18, 30)
+    """
+    if utc_time:
+        return parser.parse(utc_time).astimezone(timezone).time()
+
+
 def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
     """
     receive a RealTimeUpdate with at least one TripUpdate filled with the data received
@@ -165,7 +203,7 @@ def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
 def _get_datetime(local_circulation_date, time, timezone):
     dt = datetime.datetime.combine(local_circulation_date, time)
     dt = timezone.localize(dt).astimezone(pytz.UTC)
-    # in the db dt with timezone cannot coexist with dt without tz
+    # in the db, dt with timezone cannot coexist with dt without timezone
     # since at the beginning there was dt without tz, we need to erase the tz info
     return dt.replace(tzinfo=None)
 
@@ -179,10 +217,13 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
         status = input_status
         delay = input_delay
     elif input_status == 'delete':
-        # passing status delete on the stoptime
-        # Note: we keep providing base_schedule stoptime to better identify the stoptime
-        # in the vj (for lolipop lines for example)
+        # passing status 'delete' on the stop_time
+        # Note: we keep providing base_schedule stop_time to better identify the stop_time
+        # in the vj (for lollipop lines for example)
         status = input_status
+    elif input_status == 'add':
+        status = input_status
+        new_time = base_time
     else:
         new_time = base_time
     return new_time, status, delay
@@ -276,8 +317,37 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     last_departure = None
     local_circulation_date = new_trip_update.vj.get_local_circulation_date()
 
+    def get_next_stop():
+        if is_new_complete:
+            # Iterate on the new trip update stop_times if it is complete (all stop_times present in it)
+            for order, st in enumerate(new_trip_update.stop_time_updates):
+                # Find corresponding stop_time in the theoretical VJ
+                vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
+                if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
+                    # It is an added stop_time, create a new stop time
+                    st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                    added_st = {
+                        'stop_point': st.navitia_stop,
+                        'departure_time': convert_to_local_time(st_timezone, st.departure),
+                        'arrival_time': convert_to_local_time(st_timezone, st.arrival),
+                        'departure_status': st.departure_status,
+                        'arrival_status': st.arrival_status
+                    }
+                    yield order, added_st
+                else:
+                    yield order, vj_st
+
+        else:
+            # Iterate on the theoretical VJ if the new trip update doesn't list all stop_times
+            for order, vj_st in enumerate(navitia_vj.get('stop_times', [])):
+                yield order, vj_st
+
     has_changes = False
-    for nav_order, navitia_stop in enumerate(navitia_vj.get('stop_times', [])):
+    for nav_order, navitia_stop in get_next_stop():
+        if navitia_stop is None:
+            logging.getLogger(__name__).warning('No stop point found (order:{}'.format(nav_order))
+            continue
+
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
         nav_departure_time = navitia_stop.get('departure_time')
         nav_arrival_time = navitia_stop.get('arrival_time')
@@ -313,7 +383,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                                                    new_st,
                                                    navitia_stop['stop_point'],
                                                    order=nav_order)
-            has_changes |= (db_st is None) or db_st.is_ne(new_st_update)
+            has_changes |= (db_st is None) or db_st.is_not_equal(new_st_update)
             res_st = new_st_update if has_changes else db_st
 
         elif db_trip_update is None and new_st is not None:

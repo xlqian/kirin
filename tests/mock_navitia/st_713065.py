@@ -1,5 +1,5 @@
 # coding=utf-8
-
+#
 # Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -29,32 +29,56 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import flask
-from flask.globals import current_app
+import navitia_response
 
-from kirin.abstract_sncf_resource import AbstractSNCFResource
-from kirin.cots import KirinModelBuilder
-from kirin.exceptions import InvalidArguments
-from kirin.utils import make_navitia_wrapper
+response = navitia_response.NavitiaResponse()
 
+response.query = 'stop_points/?filter=stop_area.has_code("CR-CI-CH", "0087-713065-BV")&count=1'
 
-def get_cots(req):
-    """
-    get COTS stream, for the moment, it's the raw json
-    """
-    if not req.data:
-        raise InvalidArguments('no COTS data provided')
-    return req.data
+response.response_code = 200
 
-
-class Cots(AbstractSNCFResource):
-
-    def __init__(self):
-        super(Cots, self).__init__(make_navitia_wrapper(),
-                                   current_app.config.get('NAVITIA_TIMEOUT', 5),
-                                   current_app.config['COTS_CONTRIBUTOR'],
-                                   KirinModelBuilder)
-
-    def post(self):
-        raw_json = get_cots(flask.globals.request)
-        return self.process_post(raw_json, 'cots', is_new_complete=True)
+response.json_response = """
+{
+"stop_points": [
+    {
+      "equipments": [],
+      "stop_area": {
+        "codes": [
+          {
+            "type": "CR-CI-CH",
+            "value": "0087-713065-BV"
+          },
+          {
+            "type": "UIC8",
+            "value": "87713065"
+          },
+          {
+            "type": "external_code",
+            "value": "OCE87713065"
+          }
+        ],
+        "name": "Malain",
+        "links": [],
+        "coord": {
+          "lat": "47.327267",
+          "lon": "4.809469"
+        },
+        "label": "Malain",
+        "timezone": "Europe/Paris",
+        "id": "stop_area:OCE:SA:87713065"
+      },
+      "name": "Malain",
+      "links": [],
+      "fare_zone": {
+        "name": "0"
+      },
+      "id": "stop_point:OCE:SP:TrainTER-87713065",
+      "coord": {
+        "lat": "47.327267",
+        "lon": "4.809469"
+      },
+      "label": "Malain"
+    }
+  ]
+}
+"""

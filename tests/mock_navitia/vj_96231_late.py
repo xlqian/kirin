@@ -1,6 +1,6 @@
 # coding=utf-8
 
-# Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
+#  Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
 #     the software to build cool stuff with public transport.
@@ -29,32 +29,13 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import flask
-from flask.globals import current_app
+import navitia_response
+from vj_96231 import VJ_96231_COMMON_RESPONSE
 
-from kirin.abstract_sncf_resource import AbstractSNCFResource
-from kirin.cots import KirinModelBuilder
-from kirin.exceptions import InvalidArguments
-from kirin.utils import make_navitia_wrapper
+response = navitia_response.NavitiaResponse()
 
+response.query = 'vehicle_journeys/?depth=2&since=20150921T133000+0000&headsign=96231&show_codes=true&until=20150921T175000+0000'
 
-def get_cots(req):
-    """
-    get COTS stream, for the moment, it's the raw json
-    """
-    if not req.data:
-        raise InvalidArguments('no COTS data provided')
-    return req.data
+response.response_code = 200
 
-
-class Cots(AbstractSNCFResource):
-
-    def __init__(self):
-        super(Cots, self).__init__(make_navitia_wrapper(),
-                                   current_app.config.get('NAVITIA_TIMEOUT', 5),
-                                   current_app.config['COTS_CONTRIBUTOR'],
-                                   KirinModelBuilder)
-
-    def post(self):
-        raw_json = get_cots(flask.globals.request)
-        return self.process_post(raw_json, 'cots', is_new_complete=True)
+response.json_response = VJ_96231_COMMON_RESPONSE

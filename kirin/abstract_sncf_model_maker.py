@@ -50,9 +50,8 @@ def to_navitia_str(dt):
 
 def headsigns(str):
     """
-    we remove leading 0 for the headsigns and handle the train's parity
-
-    the parity is the number after the '/'. it gives an alternative train number
+    we remove leading 0 for the headsigns and handle the train's parity.
+    The parity is the number after the '/', it gives an alternative train number.
 
     >>> headsigns('2038')
     ['2038']
