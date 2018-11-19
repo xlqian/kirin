@@ -38,6 +38,7 @@ vj_id | UUID | id of the VehicleJourney being updated
 status | Enum, Required | Modification type for this trip (Possible values are `add`, `delete`, `update` or `none`)
 message | String, Optional | Text to be displayed in Navitia for the `VehicleJourney`
 contributor | String, Optional | Identifier of the realtime connector. It must be known by Kraken.
+company_id | String, Optional | Identifier of the transport operator found in Navitia for this trip.
 stop_time_updates | List | List of `StopTimeUpdate` provided by this bloc of data
 
 ### VehicleJourney
