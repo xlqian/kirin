@@ -247,12 +247,14 @@ class TripUpdate(db.Model, TimestampMixin):
                                         order_by="StopTimeUpdate.order",
                                         collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
+    company_id = db.Column(db.Text, nullable=True)
 
-    def __init__(self, vj=None, status='none', contributor=None):
+    def __init__(self, vj=None, status='none', contributor=None, company_id=None):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
         self.status = status
         self.contributor = contributor
+        self.company_id = company_id
 
     def __repr__(self):
         return '<TripUpdate %r>' % self.vj_id

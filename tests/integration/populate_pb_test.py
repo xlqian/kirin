@@ -76,8 +76,9 @@ def test_populate_pb_with_one_stop_time():
         assert pb_stop_time.departure.time == to_posix_time(_dt("8:15"))
         assert pb_stop_time.stop_id == 'sa:1'
 
-        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) == False
-        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == False
+        assert pb_trip_update.HasExtension(kirin_pb2.trip_message) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.company_id) is False
 
 
 def test_populate_pb_with_two_stop_time():
@@ -124,6 +125,7 @@ def test_populate_pb_with_two_stop_time():
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.trip_message) is False
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.company_id) is False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 2
@@ -216,6 +218,7 @@ def test_populate_pb_with_deleted_stop_time():
         assert pb_trip_update.trip.start_date == '20150908'
         assert pb_trip_update.HasExtension(kirin_pb2.trip_message) is False
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) is False
+        assert pb_trip_update.trip.HasExtension(kirin_pb2.company_id) is False
         assert pb_trip_update.trip.schedule_relationship == gtfs_realtime_pb2.TripDescriptor.SCHEDULED
 
         assert len(pb_trip_update.stop_time_update) == 4
@@ -285,6 +288,7 @@ def test_populate_pb_with_cancelation():
         trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.contributor = 'kisio-digital'
+        trip_update.company_id = 'sncf'
         real_time_update.trip_updates.append(trip_update)
 
         db.session.add(real_time_update)
@@ -303,6 +307,7 @@ def test_populate_pb_with_cancelation():
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
         assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
+        assert pb_trip_update.trip.Extensions[kirin_pb2.company_id] == 'sncf'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
 
@@ -324,6 +329,7 @@ def test_populate_pb_with_full_dataset():
         trip_update.message = 'Message Test'
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.contributor = 'kisio-digital'
+        trip_update.company_id = 'keolis'
         real_time_update.trip_updates.append(trip_update)
 
         db.session.add(real_time_update)
@@ -342,5 +348,6 @@ def test_populate_pb_with_full_dataset():
 
         assert pb_trip_update.trip.HasExtension(kirin_pb2.contributor) == True
         assert pb_trip_update.trip.Extensions[kirin_pb2.contributor] == 'kisio-digital'
+        assert pb_trip_update.trip.Extensions[kirin_pb2.company_id] == 'keolis'
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
