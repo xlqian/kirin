@@ -234,9 +234,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         trip_message_id = get_value(json_train, 'idMotifInterneReference', nullable=True)
         if trip_message_id:
             trip_update.message = self.message_handler.get_message(index=trip_message_id)
-        cot_company_id = get_value(json_train, 'codeCompagnieTransporteur', nullable=True)
-        if not cot_company_id:
-            cot_company_id = DEFAULT_COMPANY_ID
+        cot_company_id = get_value(json_train, 'codeCompagnieTransporteur', nullable=True) or DEFAULT_COMPANY_ID
         trip_update.company_id = self._get_navitia_company(cot_company_id)
 
         trip_status = get_value(json_train, 'statutOperationnel')
@@ -383,10 +381,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         If the company doesn't exist in navitia, another request is made to
         find company for key="RefProd" and value="1187"
         """
-        company = self.request_navitia_company(code)
-        if not company:
-            company = self.request_navitia_company(DEFAULT_COMPANY_ID)
-        return company
+        return self.request_navitia_company(code) or self.request_navitia_company(DEFAULT_COMPANY_ID)
 
     def request_navitia_company(self, code):
         companies = self.navitia.companies(q={
