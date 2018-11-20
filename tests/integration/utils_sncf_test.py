@@ -48,6 +48,7 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        assert db_trip_delayed.company_id == 'company:OCE:SN'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -72,6 +73,7 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert second_st.departure == datetime(2015, 9, 21, 15, 55)
         assert second_st.departure_delay == timedelta(minutes=15)
         assert second_st.departure_status == 'update'
+        assert db_trip_delayed.company_id == 'company:OCE:SN'
         if motif_externe_is_null:
             assert second_st.message is None
         else:
