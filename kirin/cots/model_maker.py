@@ -45,6 +45,7 @@ from kirin.cots.message_handler import MessageHandler
 from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
 
+DEFAULT_COMPANY_ID = "1187"
 
 def get_value(sub_json, key, nullable=False):
     """
@@ -233,6 +234,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         trip_message_id = get_value(json_train, 'idMotifInterneReference', nullable=True)
         if trip_message_id:
             trip_update.message = self.message_handler.get_message(index=trip_message_id)
+        cot_company_id = get_value(json_train, 'codeCompagnieTransporteur', nullable=True) or DEFAULT_COMPANY_ID
+        trip_update.company_id = self._get_navitia_company(cot_company_id)
 
         trip_status = get_value(json_train, 'statutOperationnel')
 
@@ -371,3 +374,20 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             return stop_points[0], None
 
         return None, {'log': 'No stop point found', 'stop_point_code': external_code}
+
+    def _get_navitia_company(self, code):
+        """
+        Get a navitia company for the code present in COTS
+        If the company doesn't exist in navitia, another request is made to
+        find company for key="RefProd" and value="1187"
+        """
+        return self.request_navitia_company(code) or self.request_navitia_company(DEFAULT_COMPANY_ID)
+
+    def request_navitia_company(self, code):
+        companies = self.navitia.companies(q={
+            'filter': 'company.has_code("RefProd", "{}")'.format(code),
+            'count': '1'
+        })
+        if companies:
+            return companies[0].get("id", None)
+        return None

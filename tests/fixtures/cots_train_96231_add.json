@@ -35,7 +35,7 @@
   "PdPImpacteArrivee": [
   ],
   "nouvelleVersion": {
-    "codeCompagnieTransporteur": "1187",
+    "codeCompagnieTransporteur": "OCETH",
     "codeMarqueTransporteur": "TGV",
     "codeRelation": "401",
     "codeService": "A2018",
