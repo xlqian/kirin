@@ -31,6 +31,7 @@ vj_id | | Id of the `VehicleJourney` in Navitia updated by this `TripUpdate`. Se
 status | *nouvelleVersion/statutOperationnel* | Status is set to `add` when value is `AJOUTEE`, `delete` when value is `SUPPRIMEE`, and `update` in every other case.
 message | *nouvelleVersion/idMotifInterneReference* | Reference to the field `labelExt` of the *parametreLIV* feed having the same `id`. If no matching `id` is found, the message is left empty.
 contributor |  | Fixed value specified in the configuration of Kirin.
+company_id |  | Id of the transport operator that runs the `VehicleJourney` in Navitia. If no associated operator is found in Navitia, then the id of the SNCF is used by default. See below for the mapping method.
 stop_time_updates |  | List of arrival/departure time updates at stops for this trip, see `StopTimeUpdates` below.
 
 ### VehicleJourney
@@ -59,7 +60,7 @@ Otherwise, the previously listed modes should be removed.
 
 **Use of *nouvelleVersion/codeCompagnieTransporteur***
 
-The operator code is not currently used in the research of Navitia trips. It is expected to be handled in a later version of the connector.
+The operator associated to the considered Navitia trips should have a complementary code of type `RefProd` that matches the value of *nouvelleVersion/codeCompagnieTransporteur*. If the field is empty in the COTS stream, then the value `1187` that corresponds to the SNCF operator is used.
 
 #### Recording the VehicleJourneys 
 Each `VehicleJourney` found in Navitia corresponding to the COTS stream is recorded, so that they are all impacted.
@@ -70,6 +71,8 @@ navitia_trip_id | `trip_id` of the VehicleJourney in Navitia. See above for the 
 start_timestamp | Start datetime of the `VehicleJourney` in Navitia.
 
 ### StopTimeUpdate
+Note that if, for a given trip, a station in the COTS stream cannot be mapped to a `stop_time` in the corresponding `VehicleJourney` in Navitia, then the station is ignored, unless the stop_time is created.
+
 Kirin property | COTS object | Comment/Mapping rule
 --- | --- | ---
 order |  | `stop_time` order of this stop in the `VehicleJourney`. The order must respect the *rang* of each stop in the COTS stream.
