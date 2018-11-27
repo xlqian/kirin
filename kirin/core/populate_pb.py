@@ -68,6 +68,20 @@ def get_st_event(st_status):
         # 'update' or 'none' are modeled as 'SCHEDULED'
         return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SCHEDULED
 
+def get_trip_event(trip_status):
+    trip_events = {
+        'NO_SERVICE': gtfs_realtime_pb2.Alert.NO_SERVICE,
+        'REDUCED_SERVICE': gtfs_realtime_pb2.Alert.REDUCED_SERVICE,
+        'SIGNIFICANT_DELAYS': gtfs_realtime_pb2.Alert.SIGNIFICANT_DELAYS,
+        'DETOUR': gtfs_realtime_pb2.Alert.DETOUR,
+        'ADDITIONAL_SERVICE': gtfs_realtime_pb2.Alert.ADDITIONAL_SERVICE,
+        'MODIFIED_SERVICE': gtfs_realtime_pb2.Alert.MODIFIED_SERVICE,
+        'OTHER_EFFECT': gtfs_realtime_pb2.Alert.OTHER_EFFECT,
+        'UNKNOWN_EFFECT': gtfs_realtime_pb2.Alert.UNKNOWN_EFFECT,
+        'STOP_MOVED': gtfs_realtime_pb2.Alert.STOP_MOVED,
+    }
+    return trip_events.get(trip_status, None)
+
 
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
@@ -103,6 +117,8 @@ def fill_trip_update(pb_trip_update, trip_update):
         fill_message(pb_trip_update, trip_update.message)
     if trip_update.company_id:
         pb_trip.Extensions[kirin_pb2.company_id] = trip_update.company_id
+    if trip_update.effect:
+        pb_trip_update.Extensions[kirin_pb2.effect] = get_trip_event(trip_update.effect)
 
     vj = trip_update.vj
     if vj:
