@@ -73,8 +73,6 @@ order = {
     'update': 3
 }
 
-stop_time_status = OrderedDict(sorted(stop_time_status.items(), key=lambda t: order[t[0]]))
-
 
 def get_value(sub_json, key, nullable=False):
     """
@@ -194,9 +192,7 @@ def _retrieve_projected_time(source_ref, list_proj_time):
 
 
 def _get_higher_status(st1, st2):
-    idx1 = stop_time_status.keys().index(st1)
-    idx2 = stop_time_status.keys().index(st2)
-    return stop_time_status.keys()[max(idx1, idx2)]
+    return max([st1, st2], key=lambda st: order[st])
 
 
 def _get_effect_by_stop_time_status(status):
