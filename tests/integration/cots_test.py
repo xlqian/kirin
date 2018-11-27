@@ -613,3 +613,19 @@ def test_cots_add_stop_time_without_delay():
         assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
         assert StopTimeUpdate.query.all()[3].departure_status == 'add'
         assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
+
+
+def test_cots_added_stop_time_earlier_than_previous():
+    """
+    A new stop time is added in the VJ 96231 whose arrival/departure is earlier
+    than the previous one.
+
+    This cots should be rejected
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_stop_time_earlier_than_previous.json')
+    res, status = api_post('/cots', data=cots_add_file, check=False)
+    assert status == 400
+    assert res.get('message') == 'Invalid arguments'
+    with app.app_context():
+        assert RealTimeUpdate.query.first().error == \
+               'invalid cost: stop_point\'s(0087-713065-BV) Arrivee time is less than previous departure time'
