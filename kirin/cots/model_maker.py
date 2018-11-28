@@ -44,29 +44,28 @@ from kirin.core import model
 from kirin.cots.message_handler import MessageHandler
 from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
-from collections import OrderedDict
+from enum import Enum
 
 DEFAULT_COMPANY_ID = "1187"
-trip_effect = {
-    'NO_SERVICE': 'NO_SERVICE',
-    'REDUCED_SERVICE': 'REDUCED_SERVICE',
-    'SIGNIFICANT_DELAYS': 'SIGNIFICANT_DELAYS',
-    'DETOUR': 'DETOUR',
-    'ADDITIONAL_SERVICE': 'ADDITIONAL_SERVICE',
-    'MODIFIED_SERVICE': 'MODIFIED_SERVICE',
-    'OTHER_EFFECT': 'OTHER_EFFECT',
-    'UNKNOWN_EFFECT': 'UNKNOWN_EFFECT',
-    'STOP_MOVED': 'STOP_MOVED'
-}
 
-stop_time_status = {
-    'nochange': 'nochange',
-    'add': 'add',
-    'delete': 'delete',
-    'update': 'update'
-}
 
-order = {
+class Effect(Enum):
+    NO_SERVICE = 0
+    REDUCED_SERVICE = 1
+    SIGNIFICANT_DELAYS = 2
+    DETOUR = 3
+    ADDITIONAL_SERVICE = 4
+    MODIFIED_SERVICE = 5
+    OTHER_EFFECT = 6
+    UNKNOWN_EFFECT = 7
+    STOP_MOVED = 8
+
+
+trip_effect = ('NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS', 'DETOUR', 'ADDITIONAL_SERVICE',
+              'MODIFIED_SERVICE', 'OTHER_EFFECT', 'UNKNOWN_EFFECT', 'STOP_MOVED')
+
+
+status_order = {
     'nochange': 0,
     'add': 1,
     'delete': 2,
@@ -192,7 +191,7 @@ def _retrieve_projected_time(source_ref, list_proj_time):
 
 
 def _get_higher_status(st1, st2):
-    return max([st1, st2], key=lambda st: order[st])
+    return max([st1, st2], key=lambda st: status_order[st])
 
 
 def _get_effect_by_stop_time_status(status):
@@ -288,14 +287,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             # the whole trip is deleted
             trip_update.status = 'delete'
             trip_update.stop_time_updates = []
-            trip_update.effect = trip_effect.get('NO_SERVICE', None)
+            trip_update.effect = trip_effect[Effect.NO_SERVICE.value]
             return trip_update
 
         elif trip_status == 'AJOUTEE':
             # the trip is created from scratch
             # not handled yet
             self._record_and_log(logger, 'nouvelleVersion/statutOperationnel == "AJOUTEE" is not handled (yet)')
-            trip_update.effect = trip_effect.get('ADDITIONAL_SERVICE', None)
+            trip_update.effect = trip_effect[Effect.ADDITIONAL_SERVICE.value]
             return trip_update
 
         # all other status is considered an 'update' of the trip_update and effect is calculated
@@ -303,10 +302,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         # Ordered stop_time status= 'nochange', 'add', 'delete', 'update'
         # 'nochange' or 'update' -> SIGNIFICANT_DELAYS, add -> MODIFIED_SERVICE, delete = DETOUR
         trip_update.status = 'update'
-        trip_update.effect = trip_effect.get('MODIFIED_SERVICE', None)
+        trip_update.effect = trip_effect[Effect.MODIFIED_SERVICE.value]
 
         # Initialize stop_time staus to nochange
-        st_status = stop_time_status.get('nochange')
+        st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
@@ -365,12 +364,12 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                     setattr(st_update, _status_map[arrival_departure_toggle], 'update')
                     setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
-                    _arr_or_dep_status[arrival_departure_toggle] = stop_time_status.get('update', 'nochange')
+                    _arr_or_dep_status[arrival_departure_toggle] = 'update'
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
-                    _arr_or_dep_status[arrival_departure_toggle] = stop_time_status.get('delete', 'nochange')
+                    _arr_or_dep_status[arrival_departure_toggle] = 'delete'
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
@@ -387,7 +386,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                'dateHeure',
                                                nullable=True)
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
-                    _arr_or_dep_status[arrival_departure_toggle] = stop_time_status.get('add', 'nochange')
+                    _arr_or_dep_status[arrival_departure_toggle] = 'add'
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
