@@ -301,7 +301,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         trip_update.effect = Effect.MODIFIED_SERVICE.name
 
         # Initialize stop_time staus to nochange
-        st_status = 'nochange'
+        highest_st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
@@ -393,10 +393,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
 
-                st_status = _get_higher_status(st_status, _arr_or_dep_status[arrival_departure_toggle])
+                highest_st_status = _get_higher_status(highest_st_status, _arr_or_dep_status[arrival_departure_toggle])
 
         # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)
-        trip_update.effect = _get_effect_by_stop_time_status(st_status)
+        trip_update.effect = _get_effect_by_stop_time_status(highest_st_status)
         return trip_update
 
     def _get_navitia_stop_point(self, pdp, nav_vj):
