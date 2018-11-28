@@ -61,10 +61,6 @@ class Effect(Enum):
     STOP_MOVED = 8
 
 
-trip_effect = ('NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS', 'DETOUR', 'ADDITIONAL_SERVICE',
-              'MODIFIED_SERVICE', 'OTHER_EFFECT', 'UNKNOWN_EFFECT', 'STOP_MOVED')
-
-
 status_order = {
     'nochange': 0,
     'add': 1,
@@ -287,14 +283,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             # the whole trip is deleted
             trip_update.status = 'delete'
             trip_update.stop_time_updates = []
-            trip_update.effect = trip_effect[Effect.NO_SERVICE.value]
+            trip_update.effect = Effect.NO_SERVICE.name
             return trip_update
 
         elif trip_status == 'AJOUTEE':
             # the trip is created from scratch
             # not handled yet
             self._record_and_log(logger, 'nouvelleVersion/statutOperationnel == "AJOUTEE" is not handled (yet)')
-            trip_update.effect = trip_effect[Effect.ADDITIONAL_SERVICE.value]
+            trip_update.effect = Effect.ADDITIONAL_SERVICE.name
             return trip_update
 
         # all other status is considered an 'update' of the trip_update and effect is calculated
@@ -302,7 +298,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         # Ordered stop_time status= 'nochange', 'add', 'delete', 'update'
         # 'nochange' or 'update' -> SIGNIFICANT_DELAYS, add -> MODIFIED_SERVICE, delete = DETOUR
         trip_update.status = 'update'
-        trip_update.effect = trip_effect[Effect.MODIFIED_SERVICE.value]
+        trip_update.effect = Effect.MODIFIED_SERVICE.name
 
         # Initialize stop_time staus to nochange
         st_status = 'nochange'
