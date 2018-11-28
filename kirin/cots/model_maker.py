@@ -373,7 +373,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                  '"{}" is not handled completely (yet), only removal'
                                                  .format(cots_stop_time_status))
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
-                    _arr_or_dep_status[arrival_departure_toggle] = stop_time_status.get('delete', 'nochange')
+                    _arr_or_dep_status[arrival_departure_toggle] = 'delete'
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
