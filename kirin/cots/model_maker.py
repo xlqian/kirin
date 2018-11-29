@@ -312,7 +312,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         highest_st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
 
-        # this dict is used to memoize the last stop_time in order to check the stop_time consistency
+        # this variable is used to memoize the last stop_time's departure in order to check the stop_time consistency
         # ex. stop_time[i].arrival/departure must be greater than stop_time[i-1].departure
         last_stop_time_depart = None
 
@@ -406,6 +406,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
+                    # TODO: stop_time's consistency should also be tested once the feature is implemented
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled (yet)'.format(cots_stop_time_status))
 
