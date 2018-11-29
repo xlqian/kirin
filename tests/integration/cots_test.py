@@ -548,6 +548,7 @@ def test_cots_added_stop_time():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
@@ -567,6 +568,7 @@ def test_cots_added_stop_time_first_position():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[0].arrival_status == 'none'
@@ -585,8 +587,29 @@ def test_cots_added_stop_time_last_position():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[6].departure_status == 'none'
         assert StopTimeUpdate.query.all()[6].arrival_status == 'add'
         assert StopTimeUpdate.query.all()[6].departure == datetime(2015, 9, 21, 16, 50)
+
+
+def test_cots_add_stop_time_without_delay():
+    """
+    A new stop time is added in the VJ 96231 without delay
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_without_delay.json')
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
+        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
+        assert StopTimeUpdate.query.all()[3].departure_status == 'add'
+        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)

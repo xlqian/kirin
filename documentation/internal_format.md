@@ -40,6 +40,7 @@ message | String, Optional | Text to be displayed in Navitia for the `VehicleJou
 contributor | String, Optional | Identifier of the realtime connector. It must be known by Kraken.
 company_id | String, Optional | Identifier of the transport operator found in Navitia for this trip.
 stop_time_updates | List | List of `StopTimeUpdate` provided by this bloc of data
+effect | Enum, optional | Effect to be displayed in navitia (Possible values are `NO_SERVICE`, `REDUCED_SERVICE`, `SIGNIFICANT_DELAYS`, `DETOUR`, `ADDITIONAL_SERVICE`, `MODIFIED_SERVICE`, `OTHER_EFFECT`, `UNKNOWN_EFFECT`, `STOP_MOVED`)
 
 ### VehicleJourney
 Property | TYpe | Description

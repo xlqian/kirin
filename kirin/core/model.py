@@ -50,6 +50,19 @@ meta = sqlalchemy.schema.MetaData(naming_convention={
         "pk": "pk_%(table_name)s"
       })
 
+TripEffect = db.Enum(
+    'NO_SERVICE',
+    'REDUCED_SERVICE',
+    'SIGNIFICANT_DELAYS',
+    'DETOUR',
+    'ADDITIONAL_SERVICE',
+    'MODIFIED_SERVICE',
+    'OTHER_EFFECT',
+    'UNKNOWN_EFFECT',
+    'STOP_MOVED',
+    name='trip_effect'
+)
+
 #force the server to use UTC time for each connection checkouted from the pool
 @sqlalchemy.event.listens_for(sqlalchemy.pool.Pool, 'checkout')
 def set_utc_on_connect(dbapi_con, connection_record, connection_proxy):
@@ -248,13 +261,15 @@ class TripUpdate(db.Model, TimestampMixin):
                                         collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
     company_id = db.Column(db.Text, nullable=True)
+    effect = db.Column(TripEffect, nullable=True)
 
-    def __init__(self, vj=None, status='none', contributor=None, company_id=None):
+    def __init__(self, vj=None, status='none', contributor=None, company_id=None, effect=None):
         self.created_at = datetime.datetime.utcnow()
         self.vj = vj
         self.status = status
         self.contributor = contributor
         self.company_id = company_id
+        self.effect = effect
 
     def __repr__(self):
         return '<TripUpdate %r>' % self.vj_id
