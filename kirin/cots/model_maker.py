@@ -196,7 +196,7 @@ def _get_effect_by_stop_time_status(status):
     :return: the corresponding value for trip_update effect
     """
     status_to_effect = {
-        'nochange': 'SIGNIFICANT_DELAYS',
+        'nochange': 'UNKNOWN_EFFECT',
         'add': 'MODIFIED_SERVICE',
         'delete': 'DETOUR',
         'update': 'SIGNIFICANT_DELAYS'
@@ -300,7 +300,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         trip_update.status = 'update'
         trip_update.effect = Effect.MODIFIED_SERVICE.name
 
-        # Initialize stop_time staus to nochange
+        # Initialize stop_time status to nochange
         highest_st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
         # manage realtime information stop_time by stop_time
@@ -328,7 +328,6 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             _status_map = {'Arrivee': 'arrival_status', 'Depart': 'departure_status'}
             _delay_map = {'Arrivee': 'arrival_delay', 'Depart': 'departure_delay'}
             _add_map = {'Arrivee': 'arrival', 'Depart': 'departure'}
-            _arr_or_dep_status = {}
 
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
@@ -360,12 +359,12 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                     setattr(st_update, _status_map[arrival_departure_toggle], 'update')
                     setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
-                    _arr_or_dep_status[arrival_departure_toggle] = 'update'
+                    highest_st_status = _get_higher_status(highest_st_status, 'update')
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
-                    _arr_or_dep_status[arrival_departure_toggle] = 'delete'
+                    highest_st_status = _get_higher_status(highest_st_status, 'delete')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
@@ -373,7 +372,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                  '"{}" is not handled completely (yet), only removal'
                                                  .format(cots_stop_time_status))
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
-                    _arr_or_dep_status[arrival_departure_toggle] = 'delete'
+                    highest_st_status = _get_higher_status(highest_st_status, 'delete')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
@@ -382,7 +381,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                'dateHeure',
                                                nullable=True)
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
-                    _arr_or_dep_status[arrival_departure_toggle] = 'add'
+                    highest_st_status = _get_higher_status(highest_st_status, 'add')
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
@@ -392,8 +391,6 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
-
-                highest_st_status = _get_higher_status(highest_st_status, _arr_or_dep_status[arrival_departure_toggle])
 
         # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)
         trip_update.effect = _get_effect_by_stop_time_status(highest_st_status)
