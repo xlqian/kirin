@@ -317,10 +317,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
-                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
-                                                 '"{}" is not handled completely (yet), only removal'
-                                                 .format(cots_stop_time_status))
-                    setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'skipped_for_detour')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
@@ -331,9 +328,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
-                    # new stop_time added also?
-                    self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
-                                                 '"{}" is not handled (yet)'.format(cots_stop_time_status))
+                    cots_stop_time = get_value(cots_traveler_time,
+                                               'dateHeure',
+                                               nullable=True)
+                    setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'added_for_detour')
 
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.

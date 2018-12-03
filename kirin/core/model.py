@@ -37,7 +37,7 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
 from sqlalchemy import desc
-
+from kirin.core.types import ModicitationType
 
 db = SQLAlchemy()
 
@@ -71,8 +71,7 @@ class TimestampMixin(object):
     updated_at = db.Column(db.DateTime(), default=None, onupdate=datetime.datetime.utcnow)
 
 
-ModificationType = db.Enum('add', 'delete', 'update', 'none', name='modification_type')
-
+Db_ModificationType = db.Enum(*[t.name for t in ModicitationType], name='modification_type')
 
 def get_utc_localized_timestamp_safe(timestamp):
     '''
@@ -158,11 +157,11 @@ class StopTimeUpdate(db.Model, TimestampMixin):
     # and the delay to be able to handle the base navitia schedule changes
     departure = db.Column(db.DateTime, nullable=True)
     departure_delay = db.Column(db.Interval, nullable=True)
-    departure_status = db.Column(ModificationType, nullable=False, default='none')
+    departure_status = db.Column(Db_ModificationType, nullable=False, default='none')
 
     arrival = db.Column(db.DateTime, nullable=True)
     arrival_delay = db.Column(db.Interval, nullable=True)
-    arrival_status = db.Column(ModificationType, nullable=False, default='none')
+    arrival_status = db.Column(Db_ModificationType, nullable=False, default='none')
 
     def __init__(self, navitia_stop,
                  departure=None, arrival=None,
@@ -236,7 +235,7 @@ class TripUpdate(db.Model, TimestampMixin):
                       nullable=False,
                       primary_key=True)
     db.Index('vj_id_idx', vj_id)
-    status = db.Column(ModificationType, nullable=False, default='none')
+    status = db.Column(Db_ModificationType, nullable=False, default='none')
     vj = db.relationship('VehicleJourney', uselist=False, lazy='joined',
                          backref=backref('trip_update', cascade='all, delete-orphan', single_parent=True),
                          cascade='all, delete-orphan', single_parent=True)
