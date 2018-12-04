@@ -628,4 +628,4 @@ def test_cots_added_stop_time_earlier_than_previous():
     assert res.get('message') == 'Invalid arguments'
     with app.app_context():
         assert RealTimeUpdate.query.first().error == \
-               'invalid cost: stop_point\'s(0087-713065-BV) Arrivee time is less than previous departure time'
+               'invalid cots: stop_point\'s(0087-713065-BV) time is not consistent'

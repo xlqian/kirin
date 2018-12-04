@@ -33,7 +33,7 @@ from __future__ import absolute_import, print_function, division
 
 import logging
 from datetime import datetime
-from dateutil import parser
+from dateutil import parser, tz
 from flask.globals import current_app
 from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 # For perf benches:
@@ -263,13 +263,31 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         log_dict.update({'contributor': self.contributor})
         logger.info('metrology', extra=log_dict)
 
-    def _check_stop_time_consistency(self, last_stop_time_depart, projected_stop_time, pdp):
-        if last_stop_time_depart:
-            for arrival_departure_toggle in ['Arrivee', 'Depart']:
-                if (projected_stop_time[arrival_departure_toggle] and
-                        projected_stop_time[arrival_departure_toggle] < last_stop_time_depart):
-                    raise InvalidArguments('invalid cost: stop_point\'s({}) {} time is less than previous departure time'.format(
-                        '-'.join(pdp[key] for key in ['cr', 'ci', 'ch']),  arrival_departure_toggle))
+    def _check_stop_time_consistency(self, last_stop_time_depart, projected_stop_time, pdp_code):
+        last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else datetime.fromtimestamp(0,
+                                                                                                           tz.tzutc())
+        projected_arrival = projected_stop_time.get('Arrivee')
+        projected_arrival = projected_arrival if projected_arrival is not None else last_stop_time_depart
+
+        projected_departure = projected_stop_time.get('Depart')
+        projected_departure = projected_departure if projected_departure is not None else projected_arrival
+
+        if not (projected_departure >= projected_arrival >= last_stop_time_depart):
+            raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
+                                   .format(pdp_code))
+
+        # def _project_stop_time_is_consistent():
+        #     return projected_departure >= projected_arrival if (projected_departure and projected_arrival) else True
+        #
+        # def _last_depart_is_earlier_than_projected():
+        #     if last_stop_time_depart:
+        #         return all((last_stop_time_depart < projected_departure if projected_departure else True,
+        #                    last_stop_time_depart < projected_arrival if projected_arrival else True))
+        #     return True
+        #
+        # if not _project_stop_time_is_consistent() or not _last_depart_is_earlier_than_projected():
+        #     raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
+        #                                    .format(pdp_code))
 
     def _make_trip_update(self, vj, json_train):
         """
@@ -414,7 +432,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
 
-            self._check_stop_time_consistency(last_stop_time_depart, projected_stop_time, pdp)
+            self._check_stop_time_consistency(last_stop_time_depart, projected_stop_time,
+                                              pdp_code='-'.join(pdp[key] for key in ['cr', 'ci', 'ch']))
             last_stop_time_depart = projected_stop_time['Depart']
 
         # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)

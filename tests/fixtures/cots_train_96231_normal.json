@@ -139,13 +139,13 @@
                 },
                 "horaireVoyageurArrivee":{
                     "dateHeure":"2015-09-21T14:39:00+0000",
-                    "heureLocale":"17:39:00",
+                    "heureLocale":"16:39:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
                     "dateHeure":"2015-09-21T14:40:30+0000",
-                    "heureLocale":"17:40:30",
+                    "heureLocale":"16:40:30",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
@@ -199,13 +199,13 @@
                 },
                 "horaireVoyageurArrivee":{
                     "dateHeure":"2015-09-21T14:51:00+0000",
-                    "heureLocale":"17:51:00",
+                    "heureLocale":"16:51:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
                     "dateHeure":"2015-09-21T14:53:00+0000",
-                    "heureLocale":"17:53:00",
+                    "heureLocale":"16:53:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
@@ -264,13 +264,13 @@
                 },
                 "horaireVoyageurArrivee":{
                     "dateHeure":"2015-09-21T15:14:00+0000",
-                    "heureLocale":"18:14:00",
+                    "heureLocale":"17:14:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
                     "dateHeure":"2015-09-21T15:16:00+0000",
-                    "heureLocale":"18:16:00",
+                    "heureLocale":"17:16:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
@@ -337,13 +337,13 @@
                 },
                 "horaireVoyageurArrivee":{
                     "dateHeure":"2015-09-21T15:30:00+0000",
-                    "heureLocale":"18:30:00",
+                    "heureLocale":"17:30:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
                     "dateHeure":"2015-09-21T15:31:00+0000",
-                    "heureLocale":"18:31:00",
+                    "heureLocale":"17:31:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
