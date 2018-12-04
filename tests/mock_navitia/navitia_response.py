@@ -30,6 +30,6 @@
 
 
 class NavitiaResponse(object):
-    query = None
+    queries = []
     response_code = None
     json_response = None

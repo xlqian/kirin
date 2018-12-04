@@ -33,7 +33,9 @@ import navitia_response
 
 response = navitia_response.NavitiaResponse()
 
-response.query = 'companies/?filter=company.has_code("RefProd", "OCETH")&count=1'
+response.queries = [
+    'companies/?filter=company.has_code("RefProd", "OCETH")&count=1'
+]
 
 response.response_code = 200
 
