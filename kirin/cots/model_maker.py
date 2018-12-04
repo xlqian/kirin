@@ -167,6 +167,23 @@ def _retrieve_projected_time(source_ref, list_proj_time):
     return None
 
 
+def _is_fully_added_pdp(pdp):
+    """
+    Check if a projected arrival/departure object is fully created
+    """
+    # retrieve expressed statuses
+    dep_arr_statuses = []
+    for arrival_departure_toggle in ['Arrivee', 'Depart']:
+        cots_traveler_time = get_value(pdp,
+                                       'horaireVoyageur{}'.format(arrival_departure_toggle),
+                                       nullable=True)
+        if cots_traveler_time:
+            dep_arr_statuses.append(get_value(cots_traveler_time, 'statutCirculationOPE', nullable=True))
+
+    # if there are expressed cots_traveler_times and all are 'CREATION', pdp is fully added
+    return dep_arr_statuses and all(s == 'CREATION' for s in dep_arr_statuses)
+
+
 def _get_higher_status(st1, st2):
     return max([st1, st2], key=get_modification_type_order)
 
@@ -230,10 +247,20 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
                                    'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
-        str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'dateHeure')
+        # retrieve first base-schedule departure
+        str_time_start = None
+        for p in pdps:
+            if not _is_fully_added_pdp(p):
+                str_time_start = get_value(get_value(p, 'horaireVoyageurDepart'), 'dateHeure')
+                break
         vj_start = parser.parse(str_time_start, dayfirst=False, yearfirst=True, ignoretz=False)
 
-        str_time_end = get_value(get_value(pdps[-1], 'horaireVoyageurArrivee'), 'dateHeure')
+        # retrieve last base-schedule arrival
+        str_time_end = None
+        for p in reversed(pdps):
+            if not _is_fully_added_pdp(p):
+                str_time_end = get_value(get_value(p, 'horaireVoyageurArrivee'), 'dateHeure')
+                break
         vj_end = parser.parse(str_time_end, dayfirst=False, yearfirst=True, ignoretz=False)
 
         return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
