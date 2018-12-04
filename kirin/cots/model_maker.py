@@ -33,7 +33,7 @@ from __future__ import absolute_import, print_function, division
 
 import logging
 from datetime import datetime
-from dateutil import parser
+from dateutil import parser, tz
 from flask.globals import current_app
 from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 # For perf benches:
@@ -263,6 +263,21 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         log_dict.update({'contributor': self.contributor})
         logger.info('metrology', extra=log_dict)
 
+    @staticmethod
+    def _check_stop_time_consistency(last_stop_time_depart, projected_stop_time, pdp_code):
+        last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else \
+            datetime.fromtimestamp(0,tz.tzutc())
+
+        projected_arrival = projected_stop_time.get('Arrivee')
+        projected_arrival = projected_arrival if projected_arrival is not None else last_stop_time_depart
+
+        projected_departure = projected_stop_time.get('Depart')
+        projected_departure = projected_departure if projected_departure is not None else projected_arrival
+
+        if not (projected_departure >= projected_arrival >= last_stop_time_depart):
+            raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
+                                   .format(pdp_code))
+
     def _make_trip_update(self, vj, json_train):
         """
         create the new TripUpdate object
@@ -303,10 +318,16 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         # Initialize stop_time status to nochange
         highest_st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
+
+        # this variable is used to memoize the last stop_time's departure in order to check the stop_time consistency
+        # ex. stop_time[i].arrival/departure must be greater than stop_time[i-1].departure
+        last_stop_time_depart = None
+
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
             # retrieve navitia's stop_point corresponding to the current COTS pdp
             nav_stop, log_dict = self._get_navitia_stop_point(pdp, vj.navitia_vj)
+            projected_stop_time = {'Arrivee': None, 'Depart': None}
 
             if log_dict:
                 record_internal_failure(log_dict['log'], contributor=self.contributor)
@@ -342,6 +363,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 if cots_stop_time_status is None:
                     # if no cots_stop_time_status, it is considered an 'update' of the stop_time
                     # (can be a delay, back to normal, normal, ...)
+
+                    base_schedule_datetime = get_value(cots_traveler_time, 'dateHeure', True)
+                    if base_schedule_datetime:
+                        projected_stop_time[arrival_departure_toggle] = parser.parse(base_schedule_datetime)
+
                     cots_ref_planned = get_value(pdp,
                                                  'sourceHoraireProjete{}Reference'.format(
                                                      arrival_departure_toggle),
@@ -360,6 +386,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     setattr(st_update, _status_map[arrival_departure_toggle], 'update')
                     setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
                     highest_st_status = _get_higher_status(highest_st_status, 'update')
+                    projected_stop_time[arrival_departure_toggle] += as_duration(cots_delay)
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
@@ -382,15 +409,21 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                nullable=True)
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
                     highest_st_status = _get_higher_status(highest_st_status, 'add')
+                    projected_stop_time[arrival_departure_toggle] = parser.parse(cots_stop_time)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     # new stop_time added also?
+                    # TODO: stop_time's consistency should also be tested once the feature is implemented
                     self._record_and_log(logger, 'nouvelleVersion/listePointDeParcours/statutCirculationOPE == '
                                                  '"{}" is not handled (yet)'.format(cots_stop_time_status))
 
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
+
+            self._check_stop_time_consistency(last_stop_time_depart, projected_stop_time,
+                                              pdp_code='-'.join(pdp[key] for key in ['cr', 'ci', 'ch']))
+            last_stop_time_depart = projected_stop_time['Depart']
 
         # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)
         trip_update.effect = _get_effect_by_stop_time_status(highest_st_status)

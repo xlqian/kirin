@@ -121,7 +121,7 @@
                 "ci":"214056",
                 "ch":"00",
                 "horaireObserveArrivee":{
-                    "dateHeure":"2015-09-21T15:39:00+0000",
+                    "dateHeure":"2015-09-21T16:39:00+0000",
                     "dateHeureEmission":"2018-04-19T15:44:53+0000",
                     "source":"ESCALE"
                 },
@@ -138,14 +138,14 @@
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T15:39:00+0000",
-                    "heureLocale":"17:39:00",
+                    "dateHeure":"2015-09-21T14:39:00+0000",
+                    "heureLocale":"16:39:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T15:40:30+0000",
-                    "heureLocale":"17:40:30",
+                    "dateHeure":"2015-09-21T14:40:30+0000",
+                    "heureLocale":"16:40:30",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
@@ -153,14 +153,14 @@
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T15:40:30+0000",
+                        "dateHeure":"2015-09-21T14:40:30+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T17:40:30+0000",
+                        "dateHeure":"2015-09-21T14:40:30+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -198,20 +198,20 @@
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T15:51:00+0000",
-                    "heureLocale":"17:51:00",
+                    "dateHeure":"2015-09-21T14:51:00+0000",
+                    "heureLocale":"16:51:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T17:53:00+0000",
-                    "heureLocale":"17:53:00",
+                    "dateHeure":"2015-09-21T14:53:00+0000",
+                    "heureLocale":"16:53:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T15:51:00+0000",
+                        "dateHeure":"2015-09-21T14:51:00+0000",
                         "dateHeureEmission":"2018-04-19T18:06:00+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -220,14 +220,14 @@
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T15:53:00+0000",
+                        "dateHeure":"2015-09-21T14:53:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T15:53:00+0000",
+                        "dateHeure":"2015-09-21T14:53:00+0000",
                         "dateHeureEmission":"2018-04-19T18:08:00+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -263,27 +263,27 @@
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T16:14:00+0000",
-                    "heureLocale":"18:14:00",
+                    "dateHeure":"2015-09-21T15:14:00+0000",
+                    "heureLocale":"17:14:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T16:16:00+0000",
-                    "heureLocale":"18:16:00",
+                    "dateHeure":"2015-09-21T15:16:00+0000",
+                    "heureLocale":"17:16:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T16:14:00+0000",
+                        "dateHeure":"2015-09-21T15:14:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:14:00+0000",
+                        "dateHeure":"2015-09-21T15:14:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -292,14 +292,14 @@
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T16:16:00+0000",
+                        "dateHeure":"2015-09-21T15:16:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:16:00+0000",
+                        "dateHeure":"2015-09-21T15:16:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -336,27 +336,27 @@
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurArrivee":{
-                    "dateHeure":"2015-09-21T16:30:00+0000",
-                    "heureLocale":"18:30:00",
+                    "dateHeure":"2015-09-21T15:30:00+0000",
+                    "heureLocale":"17:30:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "horaireVoyageurDepart":{
-                    "dateHeure":"2015-09-21T16:31:00+0000",
-                    "heureLocale":"18:31:00",
+                    "dateHeure":"2015-09-21T15:31:00+0000",
+                    "heureLocale":"17:31:00",
                     "idFuseauHoraire":"Europe/Paris",
                     "nbJoursPasseMinuit":0
                 },
                 "listeHoraireProjeteArrivee":[
                     {
-                        "dateHeure":"2015-09-21T16:30:00+0000",
+                        "dateHeure":"2015-09-21T15:30:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:30:00+0000",
+                        "dateHeure":"2015-09-21T15:30:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
@@ -365,14 +365,14 @@
                 ],
                 "listeHoraireProjeteDepart":[
                     {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
+                        "dateHeure":"2015-09-21T15:31:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,
                         "source":"ESCALE"
                     },
                     {
-                        "dateHeure":"2015-09-21T16:31:00+0000",
+                        "dateHeure":"2015-09-21T15:31:00+0000",
                         "dateHeureEmission":"2018-04-19T15:44:53+0000",
                         "pronosticBrut":0,
                         "pronosticIV":0,

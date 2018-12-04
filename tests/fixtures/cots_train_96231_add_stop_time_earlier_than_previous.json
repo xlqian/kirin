@@ -82,30 +82,6 @@
     "listeMotif": [
     ],
     "listePointDeParcours": [
-            {
-        "@id": "6a4a4413-a668-487c-b25d-907ef7e64e75",
-        "cr": "0087",
-        "ci": "713065",
-        "ch": "BV",
-        "timeZoneLocale": "Europe/Paris",
-        "horaireVoyageurArrivee": {
-        },
-        "horaireVoyageurDepart": {
-          "dateHeure": "2015-09-21T14:20:00+0000",
-          "heureLocale": "16:20:00",
-          "idFuseauHoraire": "Europe/Paris",
-          "nbJoursPasseMinuit": 0,
-          "statutCirculationOPE": "CREATION"
-        },
-        "listeHoraireProjeteArrivee": [
-        ],
-        "listeHoraireProjeteDepart": [
-        ],
-        "listeMotifArrivee": [],
-        "listeMotifDepart": [],
-        "rang": 0,
-        "typeArret": "CH"
-      },
       {
         "@id": "998484ec-4335-45b6-aad4-8840047b275f",
         "arretFacultatif": false,
@@ -120,18 +96,6 @@
           "nbJoursPasseMinuit": 0
         },
         "horaireVoyageurDepart": {
-          "dateHeure": "2015-09-21T14:39:00+0000",
-          "heureLocale": "16:30:00",
-          "idFuseauHoraire": "Europe/Paris",
-          "nbJoursPasseMinuit": 0
-        },
-        "horaireProductionArrivee": {
-          "idFuseauHoraire": "Europe/Paris",
-          "heureIncertaine": false,
-          "heureLocale": "16:30:00",
-          "nbJoursPasseMinuit": 0
-        },
-        "horaireVoyageurArrivee": {
           "dateHeure": "2015-09-21T14:30:00+0000",
           "heureLocale": "16:30:00",
           "idFuseauHoraire": "Europe/Paris",
@@ -279,6 +243,51 @@
         "typeArret": "CH"
       },
       {
+        "@id": "6a4a4413-a668-487c-b25d-907ef7e64e75",
+        "cr": "0087",
+        "ci": "713065",
+        "ch": "BV",
+        "timeZoneLocale": "Europe/Paris",
+        "horaireVoyageurArrivee": {
+          "dateHeure": "2015-09-21T14:02:00+0200",
+          "heureLocale": "14:02:00",
+          "idFuseauHoraire": "Europe/Paris",
+          "nbJoursPasseMinuit": 0,
+          "statutCirculationOPE": "CREATION"
+        },
+        "horaireVoyageurDepart": {
+          "dateHeure": "2015-09-21T14:04:00+0000",
+          "heureLocale": "14:04:00",
+          "idFuseauHoraire": "Europe/Paris",
+          "nbJoursPasseMinuit": 0,
+          "statutCirculationOPE": "CREATION"
+        },
+        "listeHoraireProjeteArrivee": [
+          {
+            "dateHeure": "2018-10-23T14:50:00+0200",
+            "dateHeureEmission": "2018-10-23T09:22:19+0000",
+            "pronosticBrut": 300,
+            "pronosticIV": 300,
+            "source": "IRE-GOP"
+          }
+        ],
+        "listeHoraireProjeteDepart": [
+          {
+            "dateHeure": "2018-10-23T14:54:00+0200",
+            "dateHeureEmission": "2018-10-23T09:22:19+0000",
+            "pronosticBrut": 300,
+            "pronosticIV": 300,
+            "source": "IRE-GOP"
+          }
+        ],
+        "listeMotifArrivee": [],
+        "listeMotifDepart": [],
+        "rang": 4,
+        "sourceHoraireProjeteArriveeReference": "IRE-GOP",
+        "sourceHoraireProjeteDepartReference": "IRE-GOP",
+        "typeArret": "CH"
+      },
+      {
         "@id": "2ce15bf7-134d-4cd5-978f-d746d238e008",
         "arretFacultatif": false,
         "categorieStatistiqueArrivee": "LVK",
@@ -346,7 +355,7 @@
         ],
         "listeMotifDepart": [
         ],
-        "rang": 4,
+        "rang": 5,
         "sourceHoraireProjeteArriveeReference": "ESCALE",
         "sourceHoraireProjeteDepartReference": "ESCALE",
         "typeArret": "CH"
@@ -419,7 +428,7 @@
         ],
         "listeMotifDepart": [
         ],
-        "rang": 5,
+        "rang": 6,
         "sourceHoraireProjeteArriveeReference": "ESCALE",
         "sourceHoraireProjeteDepartReference": "ESCALE",
         "typeArret": "CH"
@@ -468,7 +477,7 @@
         ],
         "listeMotifDepart": [
         ],
-        "rang": 6,
+        "rang": 7,
         "sourceHoraireProjeteArriveeReference": "ESCALE",
         "typeArret": "CH"
       }
