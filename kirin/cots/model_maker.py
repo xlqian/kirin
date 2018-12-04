@@ -263,9 +263,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         log_dict.update({'contributor': self.contributor})
         logger.info('metrology', extra=log_dict)
 
-    def _check_stop_time_consistency(self, last_stop_time_depart, projected_stop_time, pdp_code):
-        last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else datetime.fromtimestamp(0,
-                                                                                                           tz.tzutc())
+    @staticmethod
+    def _check_stop_time_consistency(last_stop_time_depart, projected_stop_time, pdp_code):
+        last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else \
+            datetime.fromtimestamp(0,tz.tzutc())
+
         projected_arrival = projected_stop_time.get('Arrivee')
         projected_arrival = projected_arrival if projected_arrival is not None else last_stop_time_depart
 
@@ -275,19 +277,6 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         if not (projected_departure >= projected_arrival >= last_stop_time_depart):
             raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
                                    .format(pdp_code))
-
-        # def _project_stop_time_is_consistent():
-        #     return projected_departure >= projected_arrival if (projected_departure and projected_arrival) else True
-        #
-        # def _last_depart_is_earlier_than_projected():
-        #     if last_stop_time_depart:
-        #         return all((last_stop_time_depart < projected_departure if projected_departure else True,
-        #                    last_stop_time_depart < projected_arrival if projected_arrival else True))
-        #     return True
-        #
-        # if not _project_stop_time_is_consistent() or not _last_depart_is_earlier_than_projected():
-        #     raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
-        #                                    .format(pdp_code))
 
     def _make_trip_update(self, vj, json_train):
         """
