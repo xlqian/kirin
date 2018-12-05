@@ -37,7 +37,7 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
 from sqlalchemy import desc
-from kirin.core.types import ModicitationType
+from kirin.core.types import ModicitationType, TripEffect
 
 db = SQLAlchemy()
 
@@ -49,19 +49,6 @@ meta = sqlalchemy.schema.MetaData(naming_convention={
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
         "pk": "pk_%(table_name)s"
       })
-
-TripEffect = db.Enum(
-    'NO_SERVICE',
-    'REDUCED_SERVICE',
-    'SIGNIFICANT_DELAYS',
-    'DETOUR',
-    'ADDITIONAL_SERVICE',
-    'MODIFIED_SERVICE',
-    'OTHER_EFFECT',
-    'UNKNOWN_EFFECT',
-    'STOP_MOVED',
-    name='trip_effect'
-)
 
 #force the server to use UTC time for each connection checkouted from the pool
 @sqlalchemy.event.listens_for(sqlalchemy.pool.Pool, 'checkout')
@@ -84,6 +71,7 @@ class TimestampMixin(object):
     updated_at = db.Column(db.DateTime(), default=None, onupdate=datetime.datetime.utcnow)
 
 
+Db_TripEffect = db.Enum(*[e.name for e in TripEffect],name='trip_effect')
 Db_ModificationType = db.Enum(*[t.name for t in ModicitationType], name='modification_type')
 
 def get_utc_localized_timestamp_safe(timestamp):
@@ -260,7 +248,7 @@ class TripUpdate(db.Model, TimestampMixin):
                                         collection_class=ordering_list('order'),
                                         cascade='all, delete-orphan')
     company_id = db.Column(db.Text, nullable=True)
-    effect = db.Column(TripEffect, nullable=True)
+    effect = db.Column(Db_TripEffect, nullable=True)
 
     def __init__(self, vj=None, status='none', contributor=None, company_id=None, effect=None):
         self.created_at = datetime.datetime.utcnow()

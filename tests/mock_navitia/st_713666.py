@@ -1,5 +1,5 @@
 # coding=utf-8
-
+#
 # Copyright (c) 2001-2018, Canal TP and/or its affiliates. All rights reserved.
 #
 # This file is part of Navitia,
@@ -29,49 +29,56 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from enum import Enum
-from kirin import kirin_pb2
+import navitia_response
 
+response = navitia_response.NavitiaResponse()
 
-class ModicitationType(Enum):
-    add = 1
-    delete = 2
-    update = 3
-    none = 4
-    deleted_for_detour = 5
-    added_for_detour = 6
+response.query = 'stop_points/?filter=stop_area.has_code("CR-CI-CH", "0087-713666-BV")&count=1'
 
+response.response_code = 200
 
-def stop_time_status_to_protobuf(stop_time_status):
-    return {
-        'add': kirin_pb2.ADDED,
-        'delete': kirin_pb2.DELETED,
-        'update': kirin_pb2.SCHEDULED,
-        'none': kirin_pb2.SCHEDULED,
-        'deleted_for_detour': kirin_pb2.DELETED_FOR_DETOUR,
-        'added_for_detour' : kirin_pb2.ADDED_FOR_DETOUR
-    }.get(stop_time_status, kirin_pb2.SCHEDULED)
-
-
-def get_modification_type_order(modication_type):
-    return {
-        'nochange': 0,
-        'add': 1,
-        'added_for_detour': 2,
-        'delete': 3,
-        'deleted_for_detour': 4,
-        'update': 5,
-    }.get(modication_type, 0)
-
-
-class TripEffect(Enum):
-    NO_SERVICE = 1,
-    REDUCED_SERVICE = 2,
-    SIGNIFICANT_DELAYS = 3,
-    DETOUR = 4,
-    ADDITIONAL_SERVICE = 5,
-    MODIFIED_SERVICE = 6,
-    OTHER_EFFECT = 7,
-    UNKNOWN_EFFECT = 8,
-    STOP_MOVED = 9,
-
+response.json_response = """
+{
+"stop_points": [
+    {
+      "equipments": [],
+      "stop_area": {
+        "codes": [
+          {
+            "type": "CR-CI-CH",
+            "value": "0087-713666-BV"
+          },
+          {
+            "type": "UIC8",
+            "value": "87713666"
+          },
+          {
+            "type": "external_code",
+            "value": "OCE87713666"
+          }
+        ],
+        "name": "Malin",
+        "links": [],
+        "coord": {
+          "lat": "47.666666",
+          "lon": "4.809469"
+        },
+        "label": "Malin",
+        "timezone": "Europe/Paris",
+        "id": "stop_area:OCE:SA:87713666"
+      },
+      "name": "Malin",
+      "links": [],
+      "fare_zone": {
+        "name": "0"
+      },
+      "id": "stop_point:OCE:SP:TrainTER-87713666",
+      "coord": {
+        "lat": "47.666666",
+        "lon": "4.666666"
+      },
+      "label": "Malin"
+    }
+  ]
+}
+"""
