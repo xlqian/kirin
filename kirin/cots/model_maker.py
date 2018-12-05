@@ -317,7 +317,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
-                    setattr(st_update, _status_map[arrival_departure_toggle], 'skipped_for_detour')
+                    setattr(st_update, _status_map[arrival_departure_toggle], 'deleted_for_detour')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added

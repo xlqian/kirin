@@ -31,6 +31,7 @@
 import pytz
 
 from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
+from kirin.core.types import stop_time_status_to_protobuf
 import datetime
 
 
@@ -60,25 +61,13 @@ def convert_to_gtfsrt(trip_updates, incrementality = gtfs_realtime_pb2.FeedHeade
 
 
 def get_st_event(st_status):
-    if st_status in ('delete', 'skipped_for_detour'):
+    if st_status in ('delete', 'deleted_for_detour'):
         return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
     elif st_status in ('add', 'added_for_detour'):
         return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.ADDED
     else:
         # 'update' or 'none' are modeled as 'SCHEDULED'
         return gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SCHEDULED
-
-
-def get_stop_time_event_status(stop_time_status):
-    return {
-        'add': kirin_pb2.ADDED,
-        'delete': kirin_pb2.SKIPPED,
-        'update': kirin_pb2.SCHEDULED,
-        'none': kirin_pb2.SCHEDULED,
-        'skipped_for_detour': kirin_pb2.SKIPPED_FOR_DETOUR,
-        'added_for_detour' : kirin_pb2.ADDED_FOR_DETOUR
-    }.get(stop_time_status, kirin_pb2.SCHEDULED)
-
 
 def fill_stop_times(pb_stop_time, stop_time):
     pb_stop_time.stop_id = stop_time.stop_id
@@ -103,9 +92,9 @@ def fill_stop_times(pb_stop_time, stop_time):
         get_st_event(stop_time.arrival_status)
 
     pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] = \
-        get_stop_time_event_status(stop_time.departure_status)
+        stop_time_status_to_protobuf(stop_time.departure_status)
     pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] = \
-        get_stop_time_event_status(stop_time.arrival_status)
+        stop_time_status_to_protobuf(stop_time.arrival_status)
 
     if stop_time.message:
         pb_stop_time.Extensions[kirin_pb2.stoptime_message] = stop_time.message

@@ -30,11 +30,22 @@
 # www.navitia.io
 
 from enum import Enum
+from kirin import kirin_pb2
 
 class ModicitationType(Enum):
     add = 1
     delete = 2
     update = 3
     none = 4
-    skipped_for_detour = 5
+    deleted_for_detour = 5
     added_for_detour = 6
+
+def stop_time_status_to_protobuf(stop_time_status):
+    return {
+        'add': kirin_pb2.ADDED,
+        'delete': kirin_pb2.DELETED,
+        'update': kirin_pb2.SCHEDULED,
+        'none': kirin_pb2.SCHEDULED,
+        'deleted_for_detour': kirin_pb2.DELETED_FOR_DETOUR,
+        'added_for_detour' : kirin_pb2.ADDED_FOR_DETOUR
+    }.get(stop_time_status, kirin_pb2.SCHEDULED)

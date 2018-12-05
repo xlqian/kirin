@@ -592,7 +592,7 @@ def test_cots_added_stop_time_last_position():
         assert StopTimeUpdate.query.all()[6].departure == datetime(2015, 9, 21, 16, 50)
 
 
-def test_cots_added_for_detour():
+def test_cots_for_detour():
     """
     A new stop time is added for detour in the VJ 96231 at position 3
     """
@@ -605,26 +605,12 @@ def test_cots_added_for_detour():
         assert TripUpdate.query.all()[0].status == 'update'
         stop_time_updates = TripUpdate.query.all()[0].stop_time_updates
         assert len(stop_time_updates) == 7
-        assert stop_time_updates[2].departure_status == 'added_for_detour'
-        assert stop_time_updates[2].arrival_status == 'added_for_detour'
-        assert stop_time_updates[2].arrival == datetime(2015, 9, 21, 15, 45)
-        assert stop_time_updates[2].departure == datetime(2015, 9, 21, 15, 46)
+        assert stop_time_updates[2].departure_status == 'deleted_for_detour'
+        assert stop_time_updates[2].arrival_status == 'deleted_for_detour'
+        assert stop_time_updates[2].arrival == datetime(2015, 9, 21, 15, 40)
+        assert stop_time_updates[2].departure == datetime(2015, 9, 21, 15, 40)
 
-
-def test_cots_skipped_for_detour():
-    """
-    A new stop time is added for detour in the VJ 96231 at position 3
-    """
-    cots_add_file = get_fixture_data('cots_train_96231_skipped_for_detour.json')
-    res = api_post('/cots', data=cots_add_file)
-    assert res == 'OK'
-    with app.app_context():
-        assert len(RealTimeUpdate.query.all()) == 1
-        assert len(TripUpdate.query.all()) == 1
-        assert TripUpdate.query.all()[0].status == 'update'
-        stop_time_updates = TripUpdate.query.all()[0].stop_time_updates
-        assert len(stop_time_updates) == 7
-        assert stop_time_updates[2].departure_status == 'skipped_for_detour'
-        assert stop_time_updates[2].arrival_status == 'skipped_for_detour'
-        assert stop_time_updates[2].arrival == datetime(2015, 9, 21, 15, 45)
-        assert stop_time_updates[2].departure == datetime(2015, 9, 21, 15, 46)
+        assert stop_time_updates[3].departure_status == 'added_for_detour'
+        assert stop_time_updates[3].arrival_status == 'added_for_detour'
+        assert stop_time_updates[3].arrival == datetime(2015, 9, 21, 15, 58)
+        assert stop_time_updates[3].departure == datetime(2015, 9, 21, 15, 58)

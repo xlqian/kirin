@@ -13,7 +13,7 @@ down_revision = '4d9df787c7a7'
 from alembic import op
 
 def upgrade():
-    op.execute("ALTER type modification_type ADD VALUE 'skipped_for_detour'")
+    op.execute("ALTER type modification_type ADD VALUE 'deleted_for_detour'")
     op.execute("ALTER type modification_type ADD VALUE 'added_for_detour'")
 
 def downgrade():
