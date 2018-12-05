@@ -333,30 +333,26 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
-                cots_traveler_time = get_value(pdp,
-                                               'horaireVoyageur{}'.format(arrival_departure_toggle),
-                                               nullable=True)
+                cots_traveler_time = get_value(pdp, 'horaireVoyageur{}'.format(arrival_departure_toggle), nullable=True)
+
                 if cots_traveler_time is None:
                     continue
-                cots_stop_time_status = get_value(cots_traveler_time,
-                                                  'statutCirculationOPE',
-                                                  nullable=True)
+
+                cots_stop_time_status = get_value(cots_traveler_time, 'statutCirculationOPE', nullable=True)
+                base_schedule_datetime = get_value(cots_traveler_time, 'dateHeure', nullable=True)
+
                 if cots_stop_time_status is None:
                     # if no cots_stop_time_status, it is considered an 'update' of the stop_time
                     # (can be a delay, back to normal, normal, ...)
-
-                    base_schedule_datetime = get_value(cots_traveler_time, 'dateHeure', True)
                     if base_schedule_datetime:
                         projected_stop_time[arrival_departure_toggle] = parser.parse(base_schedule_datetime)
 
-                    cots_ref_planned = get_value(pdp,
-                                                 'sourceHoraireProjete{}Reference'.format(
-                                                     arrival_departure_toggle),
+                    cots_ref_planned = get_value(pdp, 'sourceHoraireProjete{}Reference'.format(arrival_departure_toggle),
                                                  nullable=True)
-                    cots_planned_stop_times = get_value(pdp,
-                                                        'listeHoraireProjete{}'.format(arrival_departure_toggle),
+                    cots_planned_stop_times = get_value(pdp, 'listeHoraireProjete{}'.format(arrival_departure_toggle),
                                                         nullable=True)
                     cots_planned_stop_time = _retrieve_projected_time(cots_ref_planned, cots_planned_stop_times)
+
                     if cots_planned_stop_time is None:
                         continue
 
@@ -366,38 +362,35 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                     setattr(st_update, _status_map[arrival_departure_toggle], 'update')
                     setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
-                    highest_st_status = _get_higher_status(highest_st_status, 'update')
+
                     projected_stop_time[arrival_departure_toggle] += as_duration(cots_delay)
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
-                    highest_st_status = _get_higher_status(highest_st_status, 'delete')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     setattr(st_update, _status_map[arrival_departure_toggle], 'deleted_for_detour')
-                    highest_st_status = _get_higher_status(highest_st_status, 'deleted_for_detour')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
                     setattr(st_update, _status_map[arrival_departure_toggle], 'add')
-                    cots_stop_time = get_value(cots_traveler_time, 'dateHeure', nullable=True)
+                    setattr(st_update, _add_map[arrival_departure_toggle], base_schedule_datetime)
 
-                    setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
-                    highest_st_status = _get_higher_status(highest_st_status, 'add')
-
-                    projected_stop_time[arrival_departure_toggle] = parser.parse(cots_stop_time)
+                    projected_stop_time[arrival_departure_toggle] = parser.parse(base_schedule_datetime)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
-                    cots_stop_time = get_value(cots_traveler_time, 'dateHeure', nullable=True)
-                    setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
                     setattr(st_update, _status_map[arrival_departure_toggle], 'added_for_detour')
-
+                    setattr(st_update, _add_map[arrival_departure_toggle], base_schedule_datetime)
 
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
+
+
+                arr_dep_status = getattr(st_update, _status_map[arrival_departure_toggle], 'nochange')
+                highest_st_status = _get_higher_status(highest_st_status, arr_dep_status)
 
             self._check_stop_time_consistency(last_stop_time_depart, projected_stop_time,
                                               pdp_code='-'.join(pdp[key] for key in ['cr', 'ci', 'ch']))
