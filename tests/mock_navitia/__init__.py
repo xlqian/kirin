@@ -50,6 +50,7 @@ import st_713666
 import company_1187
 import empty_company_1180
 import company_OCETH
+import logging
 
 mocks = [
     vj_john.response,
@@ -97,7 +98,7 @@ def mock_navitia_query(self, query, q=None):
     try:
         mock = _mock_navitia_call[query_str]
     except:
-        print("cannot find query in the mock: {}".format(query_str))
+        logging.getLogger(__name__).error("cannot find mock for query : {}".format(query_str))
         raise
 
 
