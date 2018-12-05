@@ -48,6 +48,8 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        # Cots contain delayed stop_times only
+        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
         assert db_trip_delayed.company_id == 'company:OCE:SN'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
@@ -112,6 +114,8 @@ def check_db_870154_partial_removal(contributor=None):
         assert db_trip.vj.get_start_timestamp() == datetime(2018, 11, 2, 9, 54, tzinfo=utc)
         assert db_trip.vj_id == db_trip.vj.id
         assert db_trip.status == 'update'
+        # Cots contain deleted as well as delayed stop_times
+        assert db_trip.effect == 'SIGNIFICANT_DELAYS'
         # 12 stop times must have been created
         assert len(db_trip.stop_time_updates) == 12
 
@@ -151,6 +155,8 @@ def check_db_870154_delay():
         db_trip = TripUpdate.find_by_dated_vj('OCE:SN870154F01001', datetime(2018, 11, 2, 9, 54, tzinfo=utc))
         assert db_trip
         assert db_trip.message == u'Régulation du trafic'
+        # Cots contain deleted as well as delayed stop_times
+        assert db_trip.effect == 'SIGNIFICANT_DELAYS'
 
         # only in "delay-case" departure, arrival at 5th (Viviez-Decazeville)
         # and arrival at 6th stops (Capdenac) are deleted with a cause
@@ -336,6 +342,8 @@ def check_db_96231_mixed_statuses_inside_stops(contributor=None):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        # Cots contain delayed as well as removed stop_times
+        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -408,6 +416,8 @@ def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        # Cots contain removed as well as delayed stop_times
+        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -482,6 +492,7 @@ def check_db_96231_normal(contributor=None):
         assert db_trip_delayed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
+        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
         assert db_trip_delayed.message is None
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
@@ -543,6 +554,7 @@ def check_db_john_trip_removal():
         assert db_trip1_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 10, 37, tzinfo=utc)
         assert db_trip1_removal.vj_id == db_trip1_removal.vj.id
         assert db_trip1_removal.status == 'delete'
+        assert db_trip1_removal.effect == 'NO_SERVICE'
         # full trip removal : no stop_time to precise
         assert len(db_trip1_removal.stop_time_updates) == 0
 
@@ -554,6 +566,7 @@ def check_db_john_trip_removal():
         assert db_trip2_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip2_removal.vj_id == db_trip2_removal.vj.id
         assert db_trip2_removal.status == 'delete'
+        assert db_trip2_removal.effect == 'NO_SERVICE'
         # full trip removal : no stop_time to precise
         assert len(db_trip2_removal.stop_time_updates) == 0
 
@@ -571,6 +584,7 @@ def check_db_96231_trip_removal():
         assert db_trip_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
+        assert db_trip_removal.effect == 'SIGNIFICANT_DELAYS'
         assert db_trip_removal.message is None
         # full trip removal : no stop_time to precise
         assert len(db_trip_removal.stop_time_updates) == 0
@@ -589,6 +603,7 @@ def check_db_6113_trip_removal():
         assert db_trip_removal.vj.get_start_timestamp() == datetime(2015, 10, 6, 10, 37, tzinfo=utc)
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
+        assert db_trip_removal.effect == 'NO_SERVICE'
         print db_trip_removal.message
         assert db_trip_removal.message == u'Accident à un Passage à Niveau'
         # full trip removal : no stop_time to precise
@@ -608,6 +623,7 @@ def check_db_6111_trip_removal_pass_midnight():
         assert db_trip_removal.vj.get_start_timestamp() == datetime(2015, 10, 6, 20, 37, tzinfo=utc)
         assert db_trip_removal.vj_id == db_trip_removal.vj.id
         assert db_trip_removal.status == 'delete'
+        assert db_trip_removal.effect == 'NO_SERVICE'
         print db_trip_removal.message
         assert db_trip_removal.message == u'Accident à un Passage à Niveau'
         # full trip removal : no stop_time to precise
@@ -647,6 +663,7 @@ def check_db_96231_partial_removal(contributor=None):
         assert db_trip_partial_removed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_partial_removed.vj_id == db_trip_partial_removed.vj.id
         assert db_trip_partial_removed.status == 'update'
+        assert db_trip_partial_removed.effect == 'SIGNIFICANT_DELAYS'
         # 6 stop times must have been created
         assert len(db_trip_partial_removed.stop_time_updates) == 6
 
@@ -719,6 +736,7 @@ def check_db_840427_partial_removal(contributor=None):
         assert db_trip_partial_removed.vj.get_start_timestamp() == datetime(2017, 3, 18, 13, 5, tzinfo=utc)
         assert db_trip_partial_removed.vj_id == db_trip_partial_removed.vj.id
         assert db_trip_partial_removed.status == 'update'
+        assert db_trip_partial_removed.effect == 'DETOUR'
 
         # 7 stop times must have been created
         assert len(db_trip_partial_removed.stop_time_updates) == 7

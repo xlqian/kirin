@@ -33,7 +33,7 @@ from __future__ import absolute_import, print_function, division
 
 import logging
 from datetime import datetime
-from dateutil import parser
+from dateutil import parser, tz
 from flask.globals import current_app
 from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 # For perf benches:
@@ -44,8 +44,30 @@ from kirin.core import model
 from kirin.cots.message_handler import MessageHandler
 from kirin.exceptions import InvalidArguments
 from kirin.utils import record_internal_failure
+from enum import Enum
 
 DEFAULT_COMPANY_ID = "1187"
+
+
+class Effect(Enum):
+    NO_SERVICE = 0
+    REDUCED_SERVICE = 1
+    SIGNIFICANT_DELAYS = 2
+    DETOUR = 3
+    ADDITIONAL_SERVICE = 4
+    MODIFIED_SERVICE = 5
+    OTHER_EFFECT = 6
+    UNKNOWN_EFFECT = 7
+    STOP_MOVED = 8
+
+
+status_order = {
+    'nochange': 0,
+    'add': 1,
+    'delete': 2,
+    'update': 3
+}
+
 
 def get_value(sub_json, key, nullable=False):
     """
@@ -164,6 +186,24 @@ def _retrieve_projected_time(source_ref, list_proj_time):
     return None
 
 
+def _get_higher_status(st1, st2):
+    return max([st1, st2], key=lambda st: status_order[st])
+
+
+def _get_effect_by_stop_time_status(status):
+    """
+    :param status: status value of stop_time
+    :return: the corresponding value for trip_update effect
+    """
+    status_to_effect = {
+        'nochange': 'UNKNOWN_EFFECT',
+        'add': 'MODIFIED_SERVICE',
+        'delete': 'DETOUR',
+        'update': 'SIGNIFICANT_DELAYS'
+    }
+    return status_to_effect.get(status, 'UNKNOWN_EFFECT')
+
+
 class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
     def __init__(self, nav, contributor=None):
@@ -223,6 +263,21 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         log_dict.update({'contributor': self.contributor})
         logger.info('metrology', extra=log_dict)
 
+    @staticmethod
+    def _check_stop_time_consistency(last_stop_time_depart, projected_stop_time, pdp_code):
+        last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else \
+            datetime.fromtimestamp(0,tz.tzutc())
+
+        projected_arrival = projected_stop_time.get('Arrivee')
+        projected_arrival = projected_arrival if projected_arrival is not None else last_stop_time_depart
+
+        projected_departure = projected_stop_time.get('Depart')
+        projected_departure = projected_departure if projected_departure is not None else projected_arrival
+
+        if not (projected_departure >= projected_arrival >= last_stop_time_depart):
+            raise InvalidArguments('invalid cots: stop_point\'s({}) time is not consistent'
+                                   .format(pdp_code))
+
     def _make_trip_update(self, vj, json_train):
         """
         create the new TripUpdate object
@@ -243,22 +298,36 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             # the whole trip is deleted
             trip_update.status = 'delete'
             trip_update.stop_time_updates = []
+            trip_update.effect = Effect.NO_SERVICE.name
             return trip_update
 
         elif trip_status == 'AJOUTEE':
             # the trip is created from scratch
             # not handled yet
             self._record_and_log(logger, 'nouvelleVersion/statutOperationnel == "AJOUTEE" is not handled (yet)')
+            trip_update.effect = Effect.ADDITIONAL_SERVICE.name
             return trip_update
 
-        # all other status is considered an 'update' of the trip
+        # all other status is considered an 'update' of the trip_update and effect is calculated
+        # from stop_time status list. This part is also done in kraken and is to be deleted later
+        # Ordered stop_time status= 'nochange', 'add', 'delete', 'update'
+        # 'nochange' or 'update' -> SIGNIFICANT_DELAYS, add -> MODIFIED_SERVICE, delete = DETOUR
         trip_update.status = 'update'
+        trip_update.effect = Effect.MODIFIED_SERVICE.name
 
+        # Initialize stop_time status to nochange
+        highest_st_status = 'nochange'
         pdps = _retrieve_interesting_pdp(get_value(json_train, 'listePointDeParcours'))
+
+        # this variable is used to memoize the last stop_time's departure in order to check the stop_time consistency
+        # ex. stop_time[i].arrival/departure must be greater than stop_time[i-1].departure
+        last_stop_time_depart = None
+
         # manage realtime information stop_time by stop_time
         for pdp in pdps:
             # retrieve navitia's stop_point corresponding to the current COTS pdp
             nav_stop, log_dict = self._get_navitia_stop_point(pdp, vj.navitia_vj)
+            projected_stop_time = {'Arrivee': None, 'Depart': None}
 
             if log_dict:
                 record_internal_failure(log_dict['log'], contributor=self.contributor)
@@ -280,6 +349,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             _status_map = {'Arrivee': 'arrival_status', 'Depart': 'departure_status'}
             _delay_map = {'Arrivee': 'arrival_delay', 'Depart': 'departure_delay'}
             _add_map = {'Arrivee': 'arrival', 'Depart': 'departure'}
+
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
                 cots_traveler_time = get_value(pdp,
@@ -293,6 +363,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                 if cots_stop_time_status is None:
                     # if no cots_stop_time_status, it is considered an 'update' of the stop_time
                     # (can be a delay, back to normal, normal, ...)
+
+                    base_schedule_datetime = get_value(cots_traveler_time, 'dateHeure', True)
+                    if base_schedule_datetime:
+                        projected_stop_time[arrival_departure_toggle] = parser.parse(base_schedule_datetime)
+
                     cots_ref_planned = get_value(pdp,
                                                  'sourceHoraireProjete{}Reference'.format(
                                                      arrival_departure_toggle),
@@ -310,14 +385,18 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
                     setattr(st_update, _status_map[arrival_departure_toggle], 'update')
                     setattr(st_update, _delay_map[arrival_departure_toggle], as_duration(cots_delay))
+                    highest_st_status = _get_higher_status(highest_st_status, 'update')
+                    projected_stop_time[arrival_departure_toggle] += as_duration(cots_delay)
 
                 elif cots_stop_time_status == 'SUPPRESSION':
                     # partial delete
                     setattr(st_update, _status_map[arrival_departure_toggle], 'delete')
+                    highest_st_status = _get_higher_status(highest_st_status, 'delete')
 
                 elif cots_stop_time_status == 'SUPPRESSION_DETOURNEMENT':
                     # stop_time is replaced by another one
                     setattr(st_update, _status_map[arrival_departure_toggle], 'deleted_for_detour')
+                    highest_st_status = _get_higher_status(highest_st_status, 'deleted_for_detour')
 
                 elif cots_stop_time_status == 'CREATION':
                     # new stop_time added
@@ -326,6 +405,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                'dateHeure',
                                                nullable=True)
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
+                    highest_st_status = _get_higher_status(highest_st_status, 'add')
+                    projected_stop_time[arrival_departure_toggle] = parser.parse(cots_stop_time)
 
                 elif cots_stop_time_status == 'DETOURNEMENT':
                     cots_stop_time = get_value(cots_traveler_time,
@@ -334,10 +415,17 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     setattr(st_update, _add_map[arrival_departure_toggle], cots_stop_time)
                     setattr(st_update, _status_map[arrival_departure_toggle], 'added_for_detour')
 
+
                 else:
                     raise InvalidArguments('invalid value {} for field horaireVoyageur{}/statutCirculationOPE'.
                                            format(cots_stop_time_status, arrival_departure_toggle))
 
+            self._check_stop_time_consistency(last_stop_time_depart, projected_stop_time,
+                                              pdp_code='-'.join(pdp[key] for key in ['cr', 'ci', 'ch']))
+            last_stop_time_depart = projected_stop_time['Depart']
+
+        # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)
+        trip_update.effect = _get_effect_by_stop_time_status(highest_st_status)
         return trip_update
 
     def _get_navitia_stop_point(self, pdp, nav_vj):

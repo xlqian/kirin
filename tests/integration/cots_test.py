@@ -548,6 +548,7 @@ def test_cots_added_stop_time():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
@@ -567,6 +568,7 @@ def test_cots_added_stop_time_first_position():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[0].arrival_status == 'none'
@@ -585,6 +587,7 @@ def test_cots_added_stop_time_last_position():
         assert len(RealTimeUpdate.query.all()) == 1
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'SIGNIFICANT_DELAYS'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[6].departure_status == 'none'
@@ -614,3 +617,41 @@ def test_cots_for_detour():
         assert stop_time_updates[3].arrival_status == 'added_for_detour'
         assert stop_time_updates[3].arrival == datetime(2015, 9, 21, 15, 58)
         assert stop_time_updates[3].departure == datetime(2015, 9, 21, 15, 58)
+
+
+def test_cots_add_stop_time_without_delay():
+    """
+    A new stop time is added in the VJ 96231 without delay
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_without_delay.json')
+
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
+        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
+        assert StopTimeUpdate.query.all()[3].departure_status == 'add'
+        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
+
+
+def test_cots_added_stop_time_earlier_than_previous():
+    """
+    A new stop time is added in the VJ 96231 whose arrival/departure is earlier
+    than the previous one.
+
+    This cots should be rejected
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_add_stop_time_earlier_than_previous.json')
+    res, status = api_post('/cots', data=cots_add_file, check=False)
+    assert status == 400
+    assert res.get('message') == 'Invalid arguments'
+    with app.app_context():
+        assert RealTimeUpdate.query.first().error == \
+               'invalid cots: stop_point\'s(0087-713065-BV) time is not consistent'
+
