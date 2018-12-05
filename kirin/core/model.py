@@ -37,7 +37,7 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 import sqlalchemy
 from sqlalchemy import desc
-from kirin.core.types import ModicitationType, TripEffect
+from kirin.core.types import ModificitationType, TripEffect
 
 db = SQLAlchemy()
 
@@ -72,7 +72,7 @@ class TimestampMixin(object):
 
 
 Db_TripEffect = db.Enum(*[e.name for e in TripEffect],name='trip_effect')
-Db_ModificationType = db.Enum(*[t.name for t in ModicitationType], name='modification_type')
+Db_ModificationType = db.Enum(*[t.name for t in ModificitationType], name='modification_type')
 
 def get_utc_localized_timestamp_safe(timestamp):
     '''

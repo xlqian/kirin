@@ -33,7 +33,7 @@ from enum import Enum
 from kirin import kirin_pb2
 
 
-class ModicitationType(Enum):
+class ModificitationType(Enum):
     add = 1
     delete = 2
     update = 3
