@@ -119,8 +119,7 @@ def test_wrong_gtfs_rt_post():
     res, status = api_post('/gtfs_rt', check=False, data='bob')
 
     assert status == 400
-
-    print res.get('error') == 'invalid'
+    assert 'invalid protobuf' in res.get('error')
 
 
 def test_gtfs_rt_post_no_data():
