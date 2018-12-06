@@ -67,8 +67,8 @@ def handle(proto, navitia_wrapper, contributor):
 
     real_time_update, log_dict = core.handle(rt_update, trip_updates, contributor)
 
-    # After merging trip_updates information of gtfs-rt, navitia and kirin database, if there is no new information
-    # destinated to navitia, update real_time_update with status = 'KO' and a proper error message.
+    # After merging trip_updates information of gtfs-rt, navitia and kirin database, if there is no new
+    # information destined to navitia, update real_time_update with status = 'KO' and a proper error message.
     if not real_time_update.trip_updates and real_time_update.status == 'OK':
         real_time_update.status = 'KO'
         real_time_update.error = 'No new information destinated to navitia for this gtfs-rt ' \
@@ -135,8 +135,8 @@ class KirinModelBuilder(object):
         """
         If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
         On the other hand:
-        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging informations
-        with that of navitia stop
+        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging
+        informations with that of navitia stop
         2. For the first stop point absent in trip_update.stop_time_updates we create a stop_time_update
         with no delay for that stop
         """
@@ -166,12 +166,12 @@ class KirinModelBuilder(object):
                         break
 
                     tu_stop.stop_sequence = vj_stop_order
-                    st_update = self._make_stoptime_update(tu_stop, vj_stop_point)
+                    st_update = _make_stoptime_update(tu_stop, vj_stop_point)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
                 else:
-                    #Initialize stops absent in trip_updates but present in vj
-                    st_update = self._init_stop_update(vj_stop_point, vj_stop_order)
+                    # Initialize stops absent in trip_updates but present in vj
+                    st_update = _init_stop_update(vj_stop_point, vj_stop_order)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
 
@@ -180,7 +180,7 @@ class KirinModelBuilder(object):
                 vj_stop_order -= 1
 
             if is_tu_valid:
-                #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
+                # Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
                 trip_update.effect = get_effect_by_stop_time_status(highest_st_status)
                 trip_updates.append(trip_update)
@@ -246,23 +246,25 @@ class KirinModelBuilder(object):
 
         return self._make_db_vj(vj_source_code, aware_since_dt, aware_until_dt)
 
-    def _init_stop_update(self, nav_stop, stop_sequence):
-        st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
-                                         dep_status='none', arr_status='none', order=stop_sequence)
-        return st_update
 
-    def _make_stoptime_update(self, input_st_update, nav_stop):
-        # TODO handle delay uncertainty
-        # TODO handle schedule_relationship
-        def read_delay(st_event):
-            if st_event and st_event.delay:
-                return datetime.timedelta(seconds=st_event.delay)
-        dep_delay = read_delay(input_st_update.departure)
-        arr_delay = read_delay(input_st_update.arrival)
-        dep_status = ModificationType.none.name if dep_delay is None else ModificationType.update.name
-        arr_status = ModificationType.none.name if arr_delay is None else ModificationType.update.name
-        st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status,
-                                         order=input_st_update.stop_sequence)
+def _init_stop_update(nav_stop, stop_sequence):
+    st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
+                                     dep_status='none', arr_status='none', order=stop_sequence)
+    return st_update
 
-        return st_update
+
+def _make_stoptime_update(input_st_update, nav_stop):
+    # TODO handle delay uncertainty
+    # TODO handle schedule_relationship
+    def read_delay(st_event):
+        if st_event and st_event.delay:
+            return datetime.timedelta(seconds=st_event.delay)
+    dep_delay = read_delay(input_st_update.departure)
+    arr_delay = read_delay(input_st_update.arrival)
+    dep_status = ModificationType.none.name if dep_delay is None else ModificationType.update.name
+    arr_status = ModificationType.none.name if arr_delay is None else ModificationType.update.name
+    st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
+                                     dep_status=dep_status, arr_status=arr_status,
+                                     order=input_st_update.stop_sequence)
+
+    return st_update

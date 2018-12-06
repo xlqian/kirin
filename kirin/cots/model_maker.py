@@ -156,7 +156,7 @@ def _retrieve_projected_time(source_ref, list_proj_time):
 
         # if a reference is provided but impossible to retrieve corresponding element, reject whole COTS feed
         raise InvalidArguments('invalid json, impossible to find source "{s}" in any json dict '
-                               'of list: {l}'.format(s=source_ref, l=ujson.dumps(list_proj_time)))
+                               'of list: {list}'.format(s=source_ref, list=ujson.dumps(list_proj_time)))
 
     elif list_proj_time:
         # if no source-reference exists, but only one element in the list, we take it
@@ -164,7 +164,7 @@ def _retrieve_projected_time(source_ref, list_proj_time):
             return list_proj_time[0]
         # if list has multiple elements but no source-reference, reject whole COTS feed
         raise InvalidArguments('invalid json, impossible no source but multiple json dicts '
-                               'in list: {l}'.format(l=ujson.dumps(list_proj_time)))
+                               'in list: {list}'.format(list=ujson.dumps(list_proj_time)))
 
     return None
 
@@ -251,7 +251,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
     @staticmethod
     def _check_stop_time_consistency(last_stop_time_depart, projected_stop_time, pdp_code):
         last_stop_time_depart = last_stop_time_depart if last_stop_time_depart is not None else \
-            datetime.fromtimestamp(0,tz.tzutc())
+            datetime.fromtimestamp(0, tz.tzutc())
 
         projected_arrival = projected_stop_time.get('Arrivee')
         projected_arrival = projected_arrival if projected_arrival is not None else last_stop_time_depart
@@ -337,7 +337,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
 
             # compute realtime information and fill st_update for arrival and departure
             for arrival_departure_toggle in ['Arrivee', 'Depart']:
-                cots_traveler_time = get_value(pdp, 'horaireVoyageur{}'.format(arrival_departure_toggle), nullable=True)
+                cots_traveler_time = get_value(pdp, 'horaireVoyageur{}'.format(arrival_departure_toggle),
+                                               nullable=True)
 
                 if cots_traveler_time is None:
                     continue
@@ -351,9 +352,11 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                     if base_schedule_datetime:
                         projected_stop_time[arrival_departure_toggle] = parser.parse(base_schedule_datetime)
 
-                    cots_ref_planned = get_value(pdp, 'sourceHoraireProjete{}Reference'.format(arrival_departure_toggle),
+                    cots_ref_planned = get_value(pdp,
+                                                 'sourceHoraireProjete{}Reference'.format(arrival_departure_toggle),
                                                  nullable=True)
-                    cots_planned_stop_times = get_value(pdp, 'listeHoraireProjete{}'.format(arrival_departure_toggle),
+                    cots_planned_stop_times = get_value(pdp,
+                                                        'listeHoraireProjete{}'.format(arrival_departure_toggle),
                                                         nullable=True)
                     cots_planned_stop_time = _retrieve_projected_time(cots_ref_planned, cots_planned_stop_times)
 

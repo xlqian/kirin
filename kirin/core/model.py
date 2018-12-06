@@ -51,7 +51,8 @@ meta = sqlalchemy.schema.MetaData(naming_convention={
         "pk": "pk_%(table_name)s"
       })
 
-#force the server to use UTC time for each connection checkouted from the pool
+
+# force the server to use UTC time for each connection checkouted from the pool
 @sqlalchemy.event.listens_for(sqlalchemy.pool.Pool, 'checkout')
 def set_utc_on_connect(dbapi_con, connection_record, connection_proxy):
     c = dbapi_con.cursor()
@@ -75,14 +76,15 @@ class TimestampMixin(object):
 Db_TripEffect = db.Enum(*[e.name for e in TripEffect],name='trip_effect')
 Db_ModificationType = db.Enum(*[t.name for t in ModificationType], name='modification_type')
 
+
 def get_utc_timezoned_timestamp_safe(timestamp):
-    '''
+    """
     Return a UTC-localized timestamp (easier to manipulate)
     Result is a changed datetime if it was in another timezone,
         or just explicitly timezoned in UTC otherwise.
     :param timestamp: datetime considered UTC if not timezoned
     :return: datetime brought to UTC
-    '''
+    """
     if timestamp.tzinfo is None or timestamp.tzinfo.utcoffset(timestamp) is None:
         return utc.localize(timestamp)
     else:
@@ -223,6 +225,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                 self.arrival_delay != other.arrival_delay or
                 self.arrival_status != other.arrival_status)
 
+
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
                                     db.Column('real_time_update_id',
@@ -274,7 +277,7 @@ class TripUpdate(db.Model, TimestampMixin):
     @classmethod
     def find_by_dated_vj(cls, navitia_trip_id, start_timestamp):
         return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_trip_id == navitia_trip_id,
-                                              VehicleJourney.start_timestamp == start_timestamp).first()
+                                                     VehicleJourney.start_timestamp == start_timestamp).first()
 
     @classmethod
     def find_by_dated_vjs(cls, id_timestamp_tuples):
@@ -373,7 +376,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
             sql = sql.order_by(desc(cls.created_at))
             row = sql.first()
             if row:
-                date = row[2] if row[2] else row[0] #update if exist, otherwise created
+                date = row[2] if row[2] else row[0]  # update if exist, otherwise created
                 result['last_update'][c] = date.strftime('%Y-%m-%dT%H:%M:%SZ')
                 if row[1] == 'OK':
                     result['last_valid_update'][c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')

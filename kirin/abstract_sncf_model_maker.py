@@ -48,7 +48,7 @@ def to_navitia_str(dt):
     return dt.strftime("%Y%m%dT%H%M%S%z")
 
 
-def headsigns(str):
+def headsigns(str_headsign):
     """
     we remove leading 0 for the headsigns and handle the train's parity.
     The parity is the number after the '/', it gives an alternative train number.
@@ -67,7 +67,7 @@ def headsigns(str):
     ['2038', '12345']
 
     """
-    h = str.lstrip('0')
+    h = str_headsign.lstrip('0')
     if '/' not in h:
         return [h]
     signs = h.split('/', 1)
