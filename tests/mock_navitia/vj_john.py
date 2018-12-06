@@ -124,6 +124,8 @@ response.json_response = '''{
             "stop_times": [
                 {
                     "arrival_time": "172100",
+                    "utc_arrival_time": "152100",
+                    "utc_departure_time": "152100",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87212027:0"
                     },
@@ -176,6 +178,8 @@ response.json_response = '''{
                 },
                 {
                     "arrival_time": "173800",
+                    "utc_arrival_time": "153800",
+                    "utc_departure_time": "154000",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87214056:1"
                     },
@@ -228,6 +232,8 @@ response.json_response = '''{
                 },
                 {
                     "arrival_time": "175100",
+                    "utc_arrival_time": "155100",
+                    "utc_departure_time": "155300",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182014:2"
                     },
@@ -280,6 +286,8 @@ response.json_response = '''{
                 },
                 {
                     "arrival_time": "181400",
+                    "utc_arrival_time": "161400",
+                    "utc_departure_time": "161600",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182063:3"
                     },
@@ -332,6 +340,8 @@ response.json_response = '''{
                 },
                 {
                     "arrival_time": "183000",
+                    "utc_arrival_time": "163000",
+                    "utc_departure_time": "163100",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182139:4"
                     },
@@ -384,6 +394,8 @@ response.json_response = '''{
                 },
                 {
                     "arrival_time": "183900",
+                    "utc_arrival_time": "163900",
+                    "utc_departure_time": "163900",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-85000109:5"
                     },
@@ -520,12 +532,14 @@ response.json_response = '''{
             ],
             "stop_times": [
                 {
-                    "arrival_time": "123700",
+                    "arrival_time": "153700",
+                    "utc_arrival_time": "133700",
+                    "utc_departure_time": "133700",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
                     },
                     "headsign": "JOHNDOE",
-                    "departure_time": "123700",
+                    "departure_time": "153700",
                     "stop_point": {
                         "codes": [
                             {
@@ -568,12 +582,14 @@ response.json_response = '''{
                     }
                 },
                 {
-                    "arrival_time": "152100",
+                    "arrival_time": "182100",
+                    "utc_arrival_time": "162100",
+                    "utc_departure_time": "162400",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87318964:1"
                     },
                     "headsign": "JOHNDOE",
-                    "departure_time": "152400",
+                    "departure_time": "182400",
                     "stop_point": {
                         "codes": [
                             {
@@ -616,12 +632,14 @@ response.json_response = '''{
                     }
                 },
                 {
-                    "arrival_time": "154300",
+                    "arrival_time": "184300",
+                    "utc_arrival_time": "164300",
+                    "utc_departure_time": "164600",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87319012:2"
                     },
                     "headsign": "JOHNDOE",
-                    "departure_time": "154600",
+                    "departure_time": "184600",
                     "stop_point": {
                         "codes": [
                             {
@@ -664,12 +682,14 @@ response.json_response = '''{
                     }
                 },
                 {
-                    "arrival_time": "160300",
+                    "arrival_time": "190300",
+                    "utc_arrival_time": "170300",
+                    "utc_departure_time": "170300",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
                     },
                     "headsign": "JOHNDOE",
-                    "departure_time": "160300",
+                    "departure_time": "190300",
                     "stop_point": {
                         "codes": [
                             {

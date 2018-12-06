@@ -120,6 +120,8 @@ response.json_response = """{
             "stop_times": [
                 {
                     "arrival_time": "223700",
+                    "utc_arrival_time": "203700",
+                    "utc_departure_time": "203700",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
                     },
@@ -168,6 +170,8 @@ response.json_response = """{
                 },
                 {
                     "arrival_time": "060300",
+                    "utc_arrival_time": "040300",
+                    "utc_departure_time": "040300",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
                     },

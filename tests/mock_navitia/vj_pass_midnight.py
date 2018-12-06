@@ -86,6 +86,8 @@ response.json_response = '''
                 {
                     "arrival_time": "233000",
                     "departure_time": "233000",
+                    "utc_arrival_time": "033000",
+                    "utc_departure_time": "033000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:14"
@@ -125,6 +127,8 @@ response.json_response = '''
                 {
                     "arrival_time": "235900",
                     "departure_time": "000000",
+                    "utc_arrival_time": "035900",
+                    "utc_departure_time": "040000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:15"
@@ -164,6 +168,8 @@ response.json_response = '''
                 {
                     "arrival_time": "000000",
                     "departure_time": "000000",
+                    "utc_arrival_time": "040000",
+                    "utc_departure_time": "040000",
                     "headsign": "R:vj1",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:15-bis"
@@ -203,6 +209,8 @@ response.json_response = '''
                 {
                     "arrival_time": "000000",
                     "departure_time": "000100",
+                    "utc_arrival_time": "040000",
+                    "utc_departure_time": "040100",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:16"
@@ -242,6 +250,8 @@ response.json_response = '''
                 {
                     "arrival_time": "003000",
                     "departure_time": "003000",
+                    "utc_arrival_time": "043000",
+                    "utc_departure_time": "043000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:17"

@@ -547,11 +547,11 @@ def check_db_john_trip_removal():
         assert len(TripUpdate.query.all()) >= 2
         assert len(StopTimeUpdate.query.all()) >= 0
         db_trip1_removal = TripUpdate.find_by_dated_vj('trip:OCETGV-87686006-87751008-2:25768',
-                                                       datetime(2015, 9, 21, 10, 37, tzinfo=utc))
+                                                       datetime(2015, 9, 21, 13, 37, tzinfo=utc))
         assert db_trip1_removal
 
         assert db_trip1_removal.vj.navitia_trip_id == 'trip:OCETGV-87686006-87751008-2:25768'
-        assert db_trip1_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 10, 37, tzinfo=utc)
+        assert db_trip1_removal.vj.get_start_timestamp() == datetime(2015, 9, 21, 13, 37, tzinfo=utc)
         assert db_trip1_removal.vj_id == db_trip1_removal.vj.id
         assert db_trip1_removal.status == 'delete'
         assert db_trip1_removal.effect == 'NO_SERVICE'

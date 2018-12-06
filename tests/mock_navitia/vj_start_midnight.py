@@ -86,6 +86,8 @@ response.json_response = '''
                 {
                     "arrival_time": "000000",
                     "departure_time": "000000",
+                    "utc_arrival_time": "050000",
+                    "utc_departure_time": "050000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:14"
@@ -125,6 +127,8 @@ response.json_response = '''
                 {
                     "arrival_time": "001000",
                     "departure_time": "001000",
+                    "utc_arrival_time": "051000",
+                    "utc_departure_time": "051000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:15"
@@ -164,6 +168,8 @@ response.json_response = '''
                 {
                     "arrival_time": "002000",
                     "departure_time": "002000",
+                    "utc_arrival_time": "052000",
+                    "utc_departure_time": "052000",
                     "headsign": "R:vj1", 
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:16"
