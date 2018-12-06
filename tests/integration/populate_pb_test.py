@@ -31,12 +31,11 @@
 from datetime import timedelta
 
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
-from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time
+from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time, fill_stop_times
 import datetime
 from kirin import app, db
 from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
 from tests.check_utils import _dt
-
 
 def test_populate_pb_with_one_stop_time():
     """
@@ -358,3 +357,31 @@ def test_populate_pb_with_full_dataset():
         assert pb_trip_update.Extensions[kirin_pb2.effect] == gtfs_realtime_pb2.Alert.DETOUR
 
         assert len(feed_entity.entity[0].trip_update.stop_time_update) == 0
+
+
+def test_populate_pb_no_status_stop_times_status():
+    st_no_status = StopTimeUpdate( {'id': 'id1'}, dep_status='none', arr_status='none')
+    pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
+
+    fill_stop_times(pb_stop_time, st_no_status)
+
+    assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.SCHEDULED
+    assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.SCHEDULED
+
+def test_populate_pb_added_for_detour_stop_times_status():
+    st_added_status = StopTimeUpdate({'id': 'id1'}, dep_status='added_for_detour', arr_status='added_for_detour')
+    pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
+
+    fill_stop_times(pb_stop_time, st_added_status)
+
+    assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED_FOR_DETOUR
+    assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED_FOR_DETOUR
+
+def test_populate_pb_skipped_for_detour_stop_times_status():
+    st_added_status = StopTimeUpdate({'id': 'id1'}, dep_status='deleted_for_detour', arr_status='deleted_for_detour')
+    pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
+
+    fill_stop_times(pb_stop_time, st_added_status)
+
+    assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED_FOR_DETOUR
+    assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED_FOR_DETOUR

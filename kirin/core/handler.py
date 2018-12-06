@@ -216,12 +216,12 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
         new_time = (base_time + input_delay) if base_time else None
         status = input_status
         delay = input_delay
-    elif input_status == 'delete':
+    elif input_status in ('delete', 'deleted_for_detour'):
         # passing status 'delete' on the stop_time
         # Note: we keep providing base_schedule stop_time to better identify the stop_time
         # in the vj (for lollipop lines for example)
         status = input_status
-    elif input_status == 'add':
+    elif input_status in ('add', 'added_for_detour'):
         status = input_status
         new_time = base_time
     else:
@@ -323,7 +323,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             for order, st in enumerate(new_trip_update.stop_time_updates):
                 # Find corresponding stop_time in the theoretical VJ
                 vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
-                if vj_st is None and st.departure_status == 'add' or st.arrival_status == 'add':
+                if vj_st is None and st.departure_status in ('add', 'added_for_detour')  \
+                        or st.arrival_status in ('add', 'added_for_detour'):
                     # It is an added stop_time, create a new stop time
                     st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
                     added_st = {
