@@ -19,9 +19,6 @@ def upgrade():
     op.execute("ALTER type modification_type ADD VALUE 'added_for_detour'")
 
 def downgrade():
-    """
-    Postgresql doesn't support the removal of a specific enum value
-    """
     op.execute("ALTER TABLE stop_time_update ALTER COLUMN departure_status TYPE text")
     op.execute("ALTER TABLE stop_time_update ALTER COLUMN arrival_status TYPE text")
     op.execute("ALTER TABLE trip_update ALTER COLUMN status TYPE text")
