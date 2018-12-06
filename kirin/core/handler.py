@@ -231,11 +231,11 @@ def _get_update_info_of_stop_time(base_time, input_status, input_delay):
 
 def _make_stop_time_update(base_arrival, base_departure, last_departure, input_st, stop_point, order):
     dep, dep_status, dep_delay = _get_update_info_of_stop_time(base_departure,
-                                                   input_st.departure_status,
-                                                   input_st.departure_delay)
+                                                               input_st.departure_status,
+                                                               input_st.departure_delay)
     arr, arr_status, arr_delay = _get_update_info_of_stop_time(base_arrival,
-                                                   input_st.arrival_status,
-                                                   input_st.arrival_delay)
+                                                               input_st.arrival_status,
+                                                               input_st.arrival_delay)
 
     # in case where arrival/departure time are None
     if arr is None:
