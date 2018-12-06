@@ -247,21 +247,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
                                    'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
-        # retrieve first base-schedule departure
-        str_time_start = None
-        for p in pdps:
-            if not _is_fully_added_pdp(p):
-                str_time_start = get_value(get_value(p, 'horaireVoyageurDepart'), 'dateHeure')
-                break
-        vj_start = parser.parse(str_time_start, dayfirst=False, yearfirst=True, ignoretz=False)
+        # retrieve base-schedule's first departure and last arrival
+        def get_first_fully_added(list_pdps, hour_obj_name):
+            p = next(p for p in list_pdps if not _is_fully_added_pdp(p))
+            str_time = get_value(get_value(p, hour_obj_name), 'dateHeure') if p else None
+            return parser.parse(str_time, dayfirst=False, yearfirst=True, ignoretz=False) if str_time else None
 
-        # retrieve last base-schedule arrival
-        str_time_end = None
-        for p in reversed(pdps):
-            if not _is_fully_added_pdp(p):
-                str_time_end = get_value(get_value(p, 'horaireVoyageurArrivee'), 'dateHeure')
-                break
-        vj_end = parser.parse(str_time_end, dayfirst=False, yearfirst=True, ignoretz=False)
+        vj_start = get_first_fully_added(pdps, 'horaireVoyageurDepart')
+        vj_end = get_first_fully_added(reversed(pdps), 'horaireVoyageurArrivee')
 
         return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
