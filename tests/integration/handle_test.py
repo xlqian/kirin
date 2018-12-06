@@ -31,6 +31,8 @@
 from datetime import timedelta
 
 import pytest
+from pytz import utc
+
 from kirin.core.handler import handle
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 import datetime
@@ -42,9 +44,10 @@ def create_trip_update(id, trip_id, circulation_date, stops, status='update'):
     trip_update = TripUpdate(VehicleJourney({
             'trip': {'id': trip_id},
             'stop_times': [
-                {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                {'utc_arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
             ]},
-            circulation_date),
+            utc.localize(datetime.datetime.combine(circulation_date, datetime.time(7, 10))),
+            utc.localize(datetime.datetime.combine(circulation_date, datetime.time(9, 10)))),
         status)
     trip_update.id = id
     for stop in stops:
@@ -99,13 +102,19 @@ def setup_database():
 @pytest.fixture()
 def navitia_vj():
     return {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1',
-         'stop_area': {'timezone': 'UTC'}}},
-        {'arrival_time': datetime.time(9, 5), 'departure_time': datetime.time(9, 10),
+        {'utc_arrival_time': None, 'utc_departure_time': datetime.time(8, 10),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'UTC'}}},
+        {'utc_arrival_time': datetime.time(9, 5), 'utc_departure_time': datetime.time(9, 10),
          'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'UTC'}}},
-        {'arrival_time': datetime.time(10, 5), 'departure_time': None, 'stop_point': {'id': 'sa:3',
-         'stop_area': {'timezone': 'UTC'}}}
+        {'utc_arrival_time': datetime.time(10, 5), 'utc_departure_time': None,
+         'stop_point': {'id': 'sa:3', 'stop_area': {'timezone': 'UTC'}}}
     ]}
+
+
+def _create_db_vj(navitia_vj):
+    return VehicleJourney(navitia_vj,
+                          utc.localize(datetime.datetime(2015, 9, 8, 7, 10, 0)),
+                          utc.localize(datetime.datetime(2015, 9, 8, 11, 5, 0)))
 
 
 def test_handle_basic():
@@ -122,13 +131,13 @@ def test_handle_basic():
 def test_handle_new_vj():
     """an easy one: we have one vj with only one stop time updated"""
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10), 'stop_point': {'id': 'sa:1',
-         'stop_area': {'timezone': 'UTC'}}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None, 'stop_point': {'id': 'sa:2',
-         'stop_area': {'timezone': 'UTC'}}}
+        {'utc_arrival_time': None, 'utc_departure_time': datetime.time(8, 10),
+         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'UTC'}}},
+        {'utc_arrival_time': datetime.time(9, 10), 'utc_departure_time': None,
+         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'UTC'}}}
     ]}
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         st = StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates.append(st)
@@ -170,16 +179,19 @@ def test_past_midnight():
     integration of a past midnight
     """
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': datetime.time(22, 10), 'departure_time': datetime.time(22, 15),
-         'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'UTC'}}},
+        {'utc_arrival_time': datetime.time(22, 10), 'utc_departure_time': datetime.time(22, 15),
+         'stop_point': {'id': 'sa:1'}},
         # arrive at sa:2 at 23:10 and leave the day after
-        {'arrival_time': datetime.time(23, 10), 'departure_time': datetime.time(2, 15),
+        {'utc_arrival_time': datetime.time(23, 10), 'utc_departure_time': datetime.time(2, 15),
          'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'UTC'}}},
-        {'arrival_time': datetime.time(3, 20), 'departure_time': datetime.time(3, 25),
+        {'utc_arrival_time': datetime.time(3, 20), 'utc_departure_time': datetime.time(3, 25),
          'stop_point': {'id': 'sa:3', 'stop_area': {'timezone': 'UTC'}}}
     ]}
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 21, 15, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 9, 4, 20, 0)))
+        trip_update = TripUpdate(vj, status='update')
         st = StopTimeUpdate({'id': 'sa:2'}, departure_delay=timedelta(minutes=31), dep_status='update', order=1)
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates.append(st)
@@ -213,7 +225,7 @@ def test_handle_new_trip_out_of_order(navitia_vj):
     so we have to reorder the stop times in the resulting trip_update
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         st = StopTimeUpdate({'id': 'sa:2'},
                             departure_delay=timedelta(minutes=40), dep_status='update',
                             arrival_delay=timedelta(minutes=44), arr_status='update', order=1)
@@ -248,7 +260,7 @@ def test_manage_consistency(navitia_vj):
     expected result   08:10-08:10     10:15-10:15     11:10-11:10
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         st = StopTimeUpdate({'id': 'sa:2'},
                             arrival_delay=timedelta(minutes=70), dep_status='update',
                             departure_delay=timedelta(minutes=10), arr_status='update', order=1)
@@ -290,7 +302,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
     update kirin       -      *9:15-9:20*      -
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         st = StopTimeUpdate({'id': 'sa:2'},
                             arrival_delay=timedelta(minutes=10), dep_status='update',
                             departure_delay=timedelta(minutes=10), arr_status='update', order=1)
@@ -363,7 +375,7 @@ def test_handle_update_vj(setup_database, navitia_vj):
 def test_simple_delay(navitia_vj):
     """Test on delay when there is nothing in the db"""
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         st = StopTimeUpdate({'id': 'sa:1'},
                             departure_delay=timedelta(minutes=10), dep_status='update',
                             arrival_delay=timedelta(minutes=5), arr_status='update', order=0)
@@ -454,7 +466,7 @@ def test_multiple_delays(setup_database, navitia_vj):
     update kirin      8:20*   *9:07-9:10     10:05
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             # Note: the delay is based of the navitia's vj
@@ -479,14 +491,14 @@ def test_multiple_delays_in_2_updates(navitia_vj):
     same test as test_multiple_delays, but with nothing in the db and with 2 trip updates
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
         ]
         handle(real_time_update, [trip_update], 'kisio-digital')
 
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=10), dep_status='update'),
@@ -514,7 +526,7 @@ def test_delays_then_cancellation(setup_database, navitia_vj):
     update kirin                   -
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='delete')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         res, _ = handle(real_time_update, [trip_update], 'kisio-digital')
 
@@ -530,14 +542,14 @@ def test_delays_then_cancellation_in_2_updates(navitia_vj):
     Same test as above, but with nothing in the db, and with 2 updates
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:1'}, departure_delay=timedelta(minutes=5), dep_status='update'),
         ]
         handle(real_time_update, [trip_update], 'kisio-digital')
 
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='delete')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         res, _ = handle(real_time_update, [trip_update], 'kisio-digital')
 
@@ -605,7 +617,7 @@ def test_cancellation_then_delay(navitia_vj):
         db.session.commit()
 
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update', order=2),
@@ -620,12 +632,12 @@ def test_cancellation_then_delay_in_2_updates(navitia_vj):
     same as test_cancellation_then_delay, but with a clear db and in 2 updates
     """
     with app.app_context():
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='delete')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='delete')
         trip_update.stop_time_updates = []
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         handle(real_time_update, [trip_update], 'kisio-digital')
 
-        trip_update = TripUpdate(VehicleJourney(navitia_vj, datetime.date(2015, 9, 8)), status='update')
+        trip_update = TripUpdate(_create_db_vj(navitia_vj), status='update')
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         trip_update.stop_time_updates = [
             StopTimeUpdate({'id': 'sa:3'}, arrival_delay=timedelta(minutes=40), arr_status='update', order=2),

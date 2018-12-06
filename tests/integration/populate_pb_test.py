@@ -30,11 +30,13 @@
 # www.navitia.io
 from datetime import timedelta
 
+from pytz import utc
+
 from kirin.core.model import RealTimeUpdate, TripUpdate, VehicleJourney, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt, to_posix_time, fill_stop_times
 import datetime
 from kirin import app, db
-from kirin import gtfs_realtime_pb2, kirin_pb2, chaos_pb2
+from kirin import gtfs_realtime_pb2, kirin_pb2
 from tests.check_utils import _dt
 
 def test_populate_pb_with_one_stop_time():
@@ -44,15 +46,17 @@ def test_populate_pb_with_one_stop_time():
     Verify protobuf
     """
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10),
+        {'utc_arrival_time': None, 'utc_departure_time': datetime.time(6, 10),
          'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None,
+        {'utc_arrival_time': datetime.time(7, 10), 'utc_departure_time': None,
          'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}}
         ]}
 
     with app.app_context():
         trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 5, 10, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 8, 8, 10, 0)))
         trip_update.vj = vj
         st = StopTimeUpdate({'id': 'sa:1'}, departure=_dt("8:15"), arrival=None)
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
@@ -90,15 +94,17 @@ def test_populate_pb_with_two_stop_time():
 
     #we add another impacted stop time to the Model
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': datetime.time(8, 10),
+        {'utc_arrival_time': None, 'utc_departure_time': datetime.time(6, 10),
          'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
-        {'arrival_time': datetime.time(9, 10), 'departure_time': None,
-         'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}}
+        {'utc_arrival_time': datetime.time(7, 10), 'utc_departure_time': None,
+         'stop_point': {'id': 'sa:2'}}
         ]}
 
     with app.app_context():
         trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 5, 10, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 8, 8, 10, 0)))
         trip_update.vj = vj
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         real_time_update.trip_updates.append(trip_update)
@@ -167,19 +173,21 @@ def test_populate_pb_with_deleted_stop_time():
     #we add another impacted stop time to the Model
     from datetime import time
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'}, 'stop_times': [
-        {'arrival_time': None, 'departure_time': time(8, 11),
+        {'utc_arrival_time': None, 'utc_departure_time': time(6, 11),
          'stop_point': {'id': 'sa:1', 'stop_area': {'timezone': 'Europe/Paris'}}},
-        {'arrival_time': time(9, 10), 'departure_time': time(9, 11),
+        {'utc_arrival_time': time(7, 10), 'utc_departure_time': time(7, 11),
          'stop_point': {'id': 'sa:2', 'stop_area': {'timezone': 'Europe/Paris'}}},
-        {'arrival_time': time(10, 10), 'departure_time': time(10, 11),
+        {'utc_arrival_time': time(8, 10), 'utc_departure_time': time(8, 11),
          'stop_point': {'id': 'sa:3', 'stop_area': {'timezone': 'Europe/Paris'}}},
-        {'arrival_time': time(11, 10), 'departure_time': None,
+        {'utc_arrival_time': time(9, 10), 'utc_departure_time': None,
          'stop_point': {'id': 'sa:4', 'stop_area': {'timezone': 'Europe/Paris'}}}
         ]}
 
     with app.app_context():
         trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 5, 11, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 8, 10, 10, 0)))
         trip_update.vj = vj
         real_time_update = RealTimeUpdate(raw_data=None, connector='ire', contributor='realtime.ire')
         real_time_update.trip_updates.append(trip_update)
@@ -279,12 +287,14 @@ def test_populate_pb_with_cancelation():
     """
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'},
                   'stop_times': [
-                      {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                      {'utc_arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
                   ]}
 
     with app.app_context():
         trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 7, 10, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 8, 11, 5, 0)))
         trip_update.vj = vj
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'
@@ -322,12 +332,14 @@ def test_populate_pb_with_full_dataset():
     """
     navitia_vj = {'trip': {'id': 'vehicle_journey:1'},
                   'stop_times': [
-                      {'arrival_time': datetime.time(8, 10), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                      {'utc_arrival_time': datetime.time(8, 10)}
                   ]}
 
     with app.app_context():
         trip_update = TripUpdate()
-        vj = VehicleJourney(navitia_vj, datetime.date(2015, 9, 8))
+        vj = VehicleJourney(navitia_vj,
+                            utc.localize(datetime.datetime(2015, 9, 8, 7, 10, 0)),
+                            utc.localize(datetime.datetime(2015, 9, 8, 9, 10, 0)))
         trip_update.vj = vj
         trip_update.status = 'delete'
         trip_update.message = 'Message Test'

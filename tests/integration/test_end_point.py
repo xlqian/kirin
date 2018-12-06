@@ -28,11 +28,12 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from pytz import utc
 
 from tests.check_utils import api_get
 from kirin.core import model
 from kirin import app
-from datetime import date, datetime, time
+from datetime import datetime, time
 import pytest
 
 
@@ -71,21 +72,24 @@ def setup_database():
         vj1 = model.VehicleJourney({
             'trip': {'id': 'vj:1'},
             'stop_times': [
-                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+                {'utc_arrival_time': time(9, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
             ]},
-            date(2015, 11, 4))
+            utc.localize(datetime(2015, 11, 4, 8, 0, 0)),
+            utc.localize(datetime(2015, 11, 4, 10, 0, 0)))
         vj2 = model.VehicleJourney({
             'trip': {'id': 'vj:2'},
             'stop_times': [
-                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+                {'utc_arrival_time': time(9, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
             ]},
-            date(2015, 11, 4))
+            utc.localize(datetime(2015, 11, 4, 8, 0, 0)),
+            utc.localize(datetime(2015, 11, 4, 10, 0, 0)))
         vj3 = model.VehicleJourney({
             'trip': {'id': 'vj:3'},
             'stop_times': [
-                {'arrival_time': time(10, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
+                {'utc_arrival_time': time(9, 0), 'stop_point': {'stop_area': {'timezone': 'Europe/Paris'}}}
             ]},
-            date(2015, 11, 4))
+            utc.localize(datetime(2015, 11, 4, 8, 0, 0)),
+            utc.localize(datetime(2015, 11, 4, 10, 0, 0)))
         tu1 = model.TripUpdate(vj1, contributor='realtime.ire')
         tu2 = model.TripUpdate(vj2, contributor='realtime.ire')
         tu3 = model.TripUpdate(vj3, contributor='realtime.sherbrooke')
