@@ -32,9 +32,10 @@ import navitia_response
 
 response = navitia_response.NavitiaResponse()
 
-response.query = 'vehicle_journeys/?filter=vehicle_journey.has_code(source, Code-lollipop)' \
-                 '&depth=2&since=20120615T120000Z&until=20120615T190000Z'
-#resquest time is UTC -> 12:00 is 08:00 local time in Sherbrooke
+response.queries = [
+    'vehicle_journeys/?filter=vehicle_journey.has_code(source, Code-lollipop)&depth=2&since=20120615T120000Z&until=20120615T190000Z'
+        #resquest time is UTC -> 12:00 is 08:00 local time in Sherbrooke
+]
 
 response.response_code = 200
 

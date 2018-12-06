@@ -49,7 +49,7 @@ def stop_time_status_to_protobuf(stop_time_status):
         'update': kirin_pb2.SCHEDULED,
         'none': kirin_pb2.SCHEDULED,
         'deleted_for_detour': kirin_pb2.DELETED_FOR_DETOUR,
-        'added_for_detour' : kirin_pb2.ADDED_FOR_DETOUR
+        'added_for_detour': kirin_pb2.ADDED_FOR_DETOUR
     }.get(stop_time_status, kirin_pb2.SCHEDULED)
 
 

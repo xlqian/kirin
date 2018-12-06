@@ -270,8 +270,8 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         trip_message_id = get_value(json_train, 'idMotifInterneReference', nullable=True)
         if trip_message_id:
             trip_update.message = self.message_handler.get_message(index=trip_message_id)
-        cot_company_id = get_value(json_train, 'codeCompagnieTransporteur', nullable=True) or DEFAULT_COMPANY_ID
-        trip_update.company_id = self._get_navitia_company(cot_company_id)
+        cots_company_id = get_value(json_train, 'codeCompagnieTransporteur', nullable=True) or DEFAULT_COMPANY_ID
+        trip_update.company_id = self._get_navitia_company(cots_company_id)
 
         trip_status = get_value(json_train, 'statutOperationnel')
 
@@ -416,14 +416,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                                       ch=get_value(pdp, 'ch'),
                                                       nav_vj=nav_vj)
         if not nav_st:
-            nav_stop, log_dict = self.request_navitia_stop_point(cr=get_value(pdp, 'cr'),
-                                                                 ci=get_value(pdp, 'ci'),
-                                                                 ch=get_value(pdp, 'ch'))
+            nav_stop, log_dict = self._request_navitia_stop_point(cr=get_value(pdp, 'cr'),
+                                                                  ci=get_value(pdp, 'ci'),
+                                                                  ch=get_value(pdp, 'ch'))
         else:
             nav_stop = nav_st.get('stop_point', None)
         return nav_stop, log_dict
 
-    def request_navitia_stop_point(self, cr, ci, ch):
+    def _request_navitia_stop_point(self, cr, ci, ch):
         external_code = '{}-{}-{}'.format(cr, ci, ch)
         stop_points = self.navitia.stop_points(q={
             'filter': 'stop_area.has_code("CR-CI-CH", "{}")'.format(external_code),
@@ -440,9 +440,9 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         If the company doesn't exist in navitia, another request is made to
         find company for key="RefProd" and value="1187"
         """
-        return self.request_navitia_company(code) or self.request_navitia_company(DEFAULT_COMPANY_ID)
+        return self._request_navitia_company(code) or self._request_navitia_company(DEFAULT_COMPANY_ID)
 
-    def request_navitia_company(self, code):
+    def _request_navitia_company(self, code):
         companies = self.navitia.companies(q={
             'filter': 'company.has_code("RefProd", "{}")'.format(code),
             'count': '1'
