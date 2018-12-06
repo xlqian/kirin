@@ -73,8 +73,7 @@ mocks = [
 ]
 _mock_navitia_call = {}
 for r in mocks:
-    for q in r.queries:
-        _mock_navitia_call[q] = r
+    map(lambda q: _mock_navitia_call.update({q: r}), r.queries)
 
 
 def mock_navitia_query(self, query, q=None):
