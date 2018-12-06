@@ -33,6 +33,7 @@ import logging
 from datetime import datetime
 from dateutil import parser
 from flask.globals import current_app
+from pytz import utc, timezone
 
 from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 from kirin.core import model
@@ -130,12 +131,13 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
     def _get_vjs(self, xml_train):
         train_numbers = get_value(xml_train, 'NumeroTrain')
 
-        # to get the date of the vj we use the start/end of the vj + some tolerance
-        # since the ire data and navitia data might not be synchronized
-        vj_start = as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart'))
-        vj_end = as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus'))
+        # stop_times are considered in Paris timezone for IRE
+        paris_tz = timezone('Europe/Paris')
+        # to get the date of the vj we use the start/end of the vj
+        vj_start = paris_tz.localize(as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart')))
+        vj_end = paris_tz.localize(as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus')))
 
-        return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
+        return self._get_navitia_vjs(train_numbers, vj_start.astimezone(utc), vj_end.astimezone(utc))
 
     def _make_trip_update(self, vj, xml_modification):
         """

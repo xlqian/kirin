@@ -100,17 +100,21 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         self.navitia = nav
         self.contributor = contributor
 
-    def _get_navitia_vjs(self, headsign_str, since_dt, until_dt):
+    def _get_navitia_vjs(self, headsign_str, aware_since_dt, aware_until_dt):
         """
         Search for navitia's vehicle journeys with given headsigns, in the period provided
+        :param aware_since_dt: timezone-aware datetime that starts the search period.
+            Typically the datetime of first stop_time.
+        :param aware_until_dt: timezone-aware datetime that ends the search period.
+            Typically the datetime of last stop_time.
         """
         log = logging.getLogger(__name__)
 
         vjs = {}
         # to get the date of the vj we use the start/end of the vj + some tolerance
         # since the SNCF data and navitia data might not be synchronized
-        extended_since_dt = since_dt - timedelta(hours=1)
-        extended_until_dt = until_dt + timedelta(hours=1)
+        extended_since_dt = aware_since_dt - timedelta(hours=1)
+        extended_until_dt = aware_until_dt + timedelta(hours=1)
 
         # using a set to deduplicate
         # one headsign_str (ex: "96320/1") can lead to multiple headsigns (ex: ["96320", "96321"])
@@ -119,7 +123,7 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         # So we do one VJ search for each headsign to ensure we get it, then deduplicate VJs
         for train_number in headsigns(headsign_str):
 
-            log.debug('searching for vj {} on {} in navitia'.format(train_number, since_dt))
+            log.debug('searching for vj {} on {} in navitia'.format(train_number, aware_since_dt))
 
             navitia_vjs = self.navitia.vehicle_journeys(q={
                 'headsign': train_number,
@@ -137,8 +141,14 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
                 record_internal_failure('missing train', contributor=self.contributor)
 
             for nav_vj in navitia_vjs:
-                vj = model.VehicleJourney(nav_vj, since_dt.date())
-                vjs[nav_vj['id']] = vj
+
+                try:
+                    vj = model.VehicleJourney(nav_vj, extended_since_dt, extended_until_dt)
+                    vjs[nav_vj['id']] = vj
+                except Exception as e:
+                    logging.getLogger(__name__).exception(
+                        'Error while creating kirin VJ of {}: {}'.format(nav_vj.get('id'), e))
+                    record_internal_failure('Error while creating kirin VJ', contributor=self.contributor)
 
         if not vjs:
             raise ObjectNotFound('no train found for headsign(s) {}'.format(headsign_str))

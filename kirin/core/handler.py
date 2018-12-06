@@ -41,7 +41,6 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
-from kirin.utils import get_timezone
 
 
 def persist(real_time_update):
@@ -139,30 +138,24 @@ def find_st_in_vj(st_id, vj_sts):
     return next((vj_st for vj_st in vj_sts if vj_st.get('stop_point', {}).get('id') == st_id), None)
 
 
-def convert_to_local_time(timezone, utc_time):
+def extract_str_utc_time(str_time):
     """
     Return local time according to UTC time and timezone
-    :param timezone: timezone info (type: datetime.tzinfo)
-    :param utc_time: UTC time (type: datetime.datetime)
+    :param str_time: UTC time (type: datetime.datetime)
     :return: local time (type: datetime.time)
 
     >>> utc_time = '20181108T093000+0000'
-    >>> timezone = pytz.timezone('Europe/Paris')
-    >>> convert_to_local_time(timezone, utc_time)
-    datetime.time(10, 30)
+    >>> extract_str_utc_time(utc_time)
+    datetime.time(9, 30)
     >>> utc_time = '20181108T093000+0100'
-    >>> convert_to_local_time(timezone, utc_time)
-    datetime.time(9, 30)
+    >>> extract_str_utc_time(utc_time)
+    datetime.time(8, 30)
     >>> utc_time = '20181108T093000+0900'
-    >>> timezone = pytz.timezone('Asia/Tokyo')
-    >>> convert_to_local_time(timezone, utc_time)
-    datetime.time(9, 30)
-    >>> utc_time = '20181108T093000+0000'
-    >>> convert_to_local_time(timezone, utc_time)
-    datetime.time(18, 30)
+    >>> extract_str_utc_time(utc_time)
+    datetime.time(0, 30)
     """
-    if utc_time:
-        return parser.parse(utc_time).astimezone(timezone).time()
+    if str_time:
+        return parser.parse(str_time).astimezone(pytz.utc).time()
 
 
 def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
@@ -200,12 +193,10 @@ def handle(real_time_update, trip_updates, contributor, is_new_complete=False):
     return real_time_update, log_dict
 
 
-def _get_datetime(local_circulation_date, time, timezone):
-    dt = datetime.datetime.combine(local_circulation_date, time)
-    dt = timezone.localize(dt).astimezone(pytz.UTC)
+def _get_datetime(utc_circulation_date, utc_time):
     # in the db, dt with timezone cannot coexist with dt without timezone
-    # since at the beginning there was dt without tz, we need to erase the tz info
-    return dt.replace(tzinfo=None)
+    # since at the beginning there was dt without tz, we keep naive dt
+    return datetime.datetime.combine(utc_circulation_date, utc_time)
 
 
 def _get_update_info_of_stop_time(base_time, input_status, input_delay):
@@ -315,7 +306,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
     last_nav_dep = None
     last_departure = None
-    local_circulation_date = new_trip_update.vj.get_local_circulation_date()
+    utc_circulation_date = new_trip_update.vj.get_utc_circulation_date()
 
     def get_next_stop():
         if is_new_complete:
@@ -326,11 +317,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                 if vj_st is None and st.departure_status in ('add', 'added_for_detour')  \
                         or st.arrival_status in ('add', 'added_for_detour'):
                     # It is an added stop_time, create a new stop time
-                    st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
                     added_st = {
                         'stop_point': st.navitia_stop,
-                        'departure_time': convert_to_local_time(st_timezone, st.departure),
-                        'arrival_time': convert_to_local_time(st_timezone, st.arrival),
+                        'utc_departure_time': extract_str_utc_time(st.departure),
+                        'utc_arrival_time': extract_str_utc_time(st.arrival),
                         'departure_status': st.departure_status,
                         'arrival_status': st.arrival_status
                     }
@@ -350,24 +340,23 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             continue
 
         # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
-        nav_departure_time = navitia_stop.get('departure_time')
-        nav_arrival_time = navitia_stop.get('arrival_time')
-        timezone = get_timezone(navitia_stop)
+        utc_nav_departure_time = navitia_stop.get('utc_departure_time')
+        utc_nav_arrival_time = navitia_stop.get('utc_arrival_time')
 
         # we compute the arrival time and departure time on base schedule and take past mid-night into
         # consideration
         base_arrival = base_departure = None
-        if nav_arrival_time is not None:
-            if last_nav_dep is not None and last_nav_dep > nav_arrival_time:
+        if utc_nav_arrival_time is not None:
+            if last_nav_dep is not None and last_nav_dep > utc_nav_arrival_time:
                 # last departure is after arrival, it's a past-midnight
-                local_circulation_date += timedelta(days=1)
-            base_arrival = _get_datetime(local_circulation_date, nav_arrival_time, timezone)
+                utc_circulation_date += timedelta(days=1)
+            base_arrival = _get_datetime(utc_circulation_date, utc_nav_arrival_time)
 
-        if nav_departure_time is not None:
-            if nav_arrival_time is not None and nav_arrival_time > nav_departure_time:
+        if utc_nav_departure_time is not None:
+            if utc_nav_arrival_time is not None and utc_nav_arrival_time > utc_nav_departure_time:
                 # departure is before arrival, it's a past-midnight
-                local_circulation_date += timedelta(days=1)
-            base_departure = _get_datetime(local_circulation_date, nav_departure_time, timezone)
+                utc_circulation_date += timedelta(days=1)
+            base_departure = _get_datetime(utc_circulation_date, utc_nav_departure_time)
 
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id, nav_order)
@@ -429,7 +418,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
-        last_nav_dep = nav_departure_time
+        last_nav_dep = utc_nav_departure_time
 
     if has_changes:
         res.stop_time_updates = res_stoptime_updates

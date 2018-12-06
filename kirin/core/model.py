@@ -28,7 +28,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from copy import deepcopy
+from datetime import timedelta
 from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
@@ -38,6 +38,7 @@ import datetime
 import sqlalchemy
 from sqlalchemy import desc
 from kirin.core.types import ModificationType, TripEffect
+from kirin.exceptions import ObjectNotFound
 
 db = SQLAlchemy()
 
@@ -74,7 +75,7 @@ class TimestampMixin(object):
 Db_TripEffect = db.Enum(*[e.name for e in TripEffect],name='trip_effect')
 Db_ModificationType = db.Enum(*[t.name for t in ModificationType], name='modification_type')
 
-def get_utc_localized_timestamp_safe(timestamp):
+def get_utc_timezoned_timestamp_safe(timestamp):
     '''
     Return a UTC-localized timestamp (easier to manipulate)
     Result is a changed datetime if it was in another timezone,
@@ -96,42 +97,51 @@ class VehicleJourney(db.Model):
     navitia_trip_id = db.Column(db.Text, nullable=False)
 
     # ! DO NOT USE attribute directly !
-    # timestamp of VJ's start
-    start_timestamp = db.Column(db.DateTime, nullable=False) # ! USE get_start_timestamp() !
+    # timestamp of VJ's start (stored in UTC to be safe with db without timezone)
+    start_timestamp = db.Column(db.DateTime, nullable=False)  # ! USE get_start_timestamp() !
     db.Index('start_timestamp_idx', start_timestamp)
 
     db.UniqueConstraint(navitia_trip_id, start_timestamp,
                         name='vehicle_journey_navitia_trip_id_start_timestamp_idx')
 
-    def __init__(self, navitia_vj, local_circulation_date):
-        from kirin.utils import get_timezone
-
+    def __init__(self, navitia_vj, aware_since_dt, aware_until_dt):
+        """
+        Build a circulation (VJ on a given day) from:
+            * the navitia VJ (circulation times without a specific day)
+            * a datetime that's close but BEFORE the start of the circulation considered
+        From those the starting datetime of the circulation is built to be the closest one after the
+        given aware_datetime_right_before_start.
+        :param navitia_vj: json dict of navitia's response when looking for a VJ.
+        :param aware_since_dt: timezone-aware datetime BEFORE start of considered circulation,
+            typically the "since" parameter of the search in navitia (UTC recommended).
+        :param aware_until_dt: timezone-aware datetime AFTER start of considered circulation,
+            typically the "until" parameter of the search in navitia (UTC recommended).
+        """
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
 
+        # compute start_timestamp (in UTC) from first stop_time, to be the closest AFTER provided
+        # aware_datetime_right_before_start.
         first_stop_time = navitia_vj.get('stop_times', [{}])[0]
-        start_time = first_stop_time['arrival_time']
+        start_time = first_stop_time['utc_arrival_time']
         if start_time is None:
-            start_time = first_stop_time['departure_time']
-        tzinfo = get_timezone(first_stop_time)
-        self.start_timestamp = tzinfo.localize(datetime.datetime.combine(local_circulation_date,
-                                                                         start_time)
-                                               ).astimezone(utc)
+            start_time = first_stop_time['utc_departure_time']
+        utc_since = aware_since_dt.astimezone(utc)
+        self.start_timestamp = utc.localize(datetime.datetime.combine(utc_since.date(), start_time))
+        if self.start_timestamp < utc_since:
+            self.start_timestamp += timedelta(days=1)
+        # simple consistency check (for now): the start timestamp must also be BEFORE aware_until_dt
+        utc_until = aware_until_dt.astimezone(utc)
+        if utc_until < self.start_timestamp:
+            msg = 'impossible to calculate the circulate date of vj: {} on period[{}, {}]'.format(
+                        navitia_vj.get('id'), utc_since, utc_until)
+            raise ObjectNotFound(msg)
+
         self.navitia_vj = navitia_vj  # Not persisted
 
     def get_start_timestamp(self):
-        return get_utc_localized_timestamp_safe(self.start_timestamp)
-
-    def get_local_circulation_date(self):
-        from kirin.utils import get_timezone
-
-        if self.navitia_vj is None:
-            return None
-
-        first_stop_time = self.navitia_vj.get('stop_times', [{}])[0]
-        tzinfo = get_timezone(first_stop_time)
-        return self.get_start_timestamp().astimezone(tzinfo).date()
+        return get_utc_timezoned_timestamp_safe(self.start_timestamp)
 
     def get_utc_circulation_date(self):
         return self.get_start_timestamp().date()

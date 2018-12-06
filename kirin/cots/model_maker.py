@@ -35,6 +35,8 @@ import logging
 from datetime import datetime
 from dateutil import parser, tz
 from flask.globals import current_app
+from pytz import utc
+
 from kirin.abstract_sncf_model_maker import AbstractSNCFKirinModelBuilder, get_navitia_stop_time_sncf
 # For perf benches:
 # https://artem.krylysov.com/blog/2015/09/29/benchmark-python-json-libraries/
@@ -238,7 +240,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         vj_start = get_first_fully_added(pdps, 'horaireVoyageurDepart')
         vj_end = get_first_fully_added(reversed(pdps), 'horaireVoyageurArrivee')
 
-        return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
+        return self._get_navitia_vjs(train_numbers, vj_start.astimezone(utc), vj_end.astimezone(utc))
 
     def _record_and_log(self, logger, log_str):
         log_dict = {'log': log_str}
