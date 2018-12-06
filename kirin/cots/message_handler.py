@@ -120,7 +120,7 @@ class MessageHandler:
 
     @app.cache.memoize(timeout=app.config.get('COTS_PAR_IV_TIMEOUT_TOKEN', 60*60))
     def _get_access_token(self):
-        headers = {'X-API-Key': self.api_key}
+        headers = {'X-API-Key': str(self.api_key)}
         data = {'client_id': self.client_id,
                 'client_secret': self.client_secret,
                 'grant_type': self.grant_type}
