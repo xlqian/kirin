@@ -33,7 +33,6 @@ import navitia_response
 response = navitia_response.NavitiaResponse()
 
 response.queries = [
-    'vehicle_journeys/?depth=2&since=20151006T221600&headsign=6111&show_codes=true&until=20151007T073400',
     'vehicle_journeys/?depth=2&since=20151006T201600+0000&headsign=6111&show_codes=true&until=20151007T053400+0000'
 ]
 
