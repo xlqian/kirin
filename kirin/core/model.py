@@ -111,8 +111,7 @@ class VehicleJourney(db.Model):
         Build a circulation (VJ on a given day) from:
             * the navitia VJ (circulation times without a specific day)
             * a datetime that's close but BEFORE the start of the circulation considered
-        From those the starting datetime of the circulation is built to be the closest one after the
-        given aware_datetime_right_before_start.
+        This builds starting-datetime of the circulation to be the closest one after aware_since_dt.
         :param navitia_vj: json dict of navitia's response when looking for a VJ.
         :param aware_since_dt: timezone-aware datetime BEFORE start of considered circulation,
             typically the "since" parameter of the search in navitia (UTC recommended).
@@ -126,9 +125,9 @@ class VehicleJourney(db.Model):
         # compute start_timestamp (in UTC) from first stop_time, to be the closest AFTER provided
         # aware_datetime_right_before_start.
         first_stop_time = navitia_vj.get('stop_times', [{}])[0]
-        start_time = first_stop_time['utc_arrival_time']
+        start_time = first_stop_time['utc_arrival_time']  # converted in datetime.time() in python wrapper
         if start_time is None:
-            start_time = first_stop_time['utc_departure_time']
+            start_time = first_stop_time['utc_departure_time']  # converted in datetime.time() in python wrapper
         utc_since = aware_since_dt.astimezone(utc)
         self.start_timestamp = utc.localize(datetime.datetime.combine(utc_since.date(), start_time))
         if self.start_timestamp < utc_since:
