@@ -93,6 +93,24 @@ def basic_gtfs_rt_data():
 
     return feed
 
+@pytest.fixture()
+def basic_gtfs_rt_data_without_delays():
+    feed = gtfs_realtime_pb2.FeedMessage()
+
+    feed.header.gtfs_realtime_version = "1.0"
+    feed.header.incrementality = gtfs_realtime_pb2.FeedHeader.FULL_DATASET
+    feed.header.timestamp = to_posix_time(datetime.datetime(year=2012, month=6, day=15, hour=15))
+
+    entity = feed.entity.add()
+    entity.id = 'bob'
+    trip_update = entity.trip_update
+    trip_update.trip.trip_id = "Code-R-vj1"
+
+    stu = trip_update.stop_time_update.add()
+    stu.stop_sequence = 4
+    stu.stop_id = "Code-StopR4"
+
+    return feed
 
 def test_wrong_gtfs_rt_post():
     """
@@ -117,6 +135,25 @@ def test_gtfs_rt_post_no_data():
         assert len(RealTimeUpdate.query.all()) == 0
         assert len(TripUpdate.query.all()) == 0
         assert len(StopTimeUpdate.query.all()) == 0
+
+
+def test_gtfs_effect(basic_gtfs_rt_data, basic_gtfs_rt_data_without_delays):
+    """
+    2 possibilities :
+        - if there is no delay field (delay is optional in StopTimeEvent), effect = 'UNKNOWN_EFFECT'
+        - if not effect = 'SIGNIFICANT_DELAYS'
+    """
+    with app.app_context():
+        data = ''
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data_without_delays)
+        assert len(trip_updates) == 1
+        assert trip_updates[0].effect == 'UNKNOWN_EFFECT'
+
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data)
+        assert len(trip_updates) == 1
+        assert trip_updates[0].effect == 'SIGNIFICANT_DELAYS'
 
 
 def test_gtfs_model_builder(basic_gtfs_rt_data):
