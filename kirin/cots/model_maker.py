@@ -167,6 +167,23 @@ def _retrieve_projected_time(source_ref, list_proj_time):
     return None
 
 
+def _is_fully_added_pdp(pdp):
+    """
+    Check if a projected arrival/departure object is fully created
+    """
+    # retrieve expressed statuses
+    dep_arr_statuses = []
+    for arrival_departure_toggle in ['Arrivee', 'Depart']:
+        cots_traveler_time = get_value(pdp,
+                                       'horaireVoyageur{}'.format(arrival_departure_toggle),
+                                       nullable=True)
+        if cots_traveler_time:
+            dep_arr_statuses.append(get_value(cots_traveler_time, 'statutCirculationOPE', nullable=True))
+
+    # if there are expressed cots_traveler_times and all are 'CREATION', pdp is fully added
+    return dep_arr_statuses and all(s == 'CREATION' for s in dep_arr_statuses)
+
+
 def _get_higher_status(st1, st2):
     return max([st1, st2], key=get_modification_type_order)
 
@@ -230,11 +247,14 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             raise InvalidArguments('invalid json, "listePointDeParcours" has no valid stop_time in '
                                    'json elt {elt}'.format(elt=ujson.dumps(json_train)))
 
-        str_time_start = get_value(get_value(pdps[0], 'horaireVoyageurDepart'), 'dateHeure')
-        vj_start = parser.parse(str_time_start, dayfirst=False, yearfirst=True, ignoretz=False)
+        # retrieve base-schedule's first departure and last arrival
+        def get_first_fully_added(list_pdps, hour_obj_name):
+            p = next(p for p in list_pdps if not _is_fully_added_pdp(p))
+            str_time = get_value(get_value(p, hour_obj_name), 'dateHeure') if p else None
+            return parser.parse(str_time, dayfirst=False, yearfirst=True, ignoretz=False) if str_time else None
 
-        str_time_end = get_value(get_value(pdps[-1], 'horaireVoyageurArrivee'), 'dateHeure')
-        vj_end = parser.parse(str_time_end, dayfirst=False, yearfirst=True, ignoretz=False)
+        vj_start = get_first_fully_added(pdps, 'horaireVoyageurDepart')
+        vj_end = get_first_fully_added(reversed(pdps), 'horaireVoyageurArrivee')
 
         return self._get_navitia_vjs(train_numbers, vj_start, vj_end)
 
