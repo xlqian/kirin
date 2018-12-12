@@ -35,7 +35,7 @@ import pytz
 
 from kirin import core
 from kirin.core import model
-from kirin.core.types import get_modification_type_order
+from kirin.core.types import get_higher_status, get_effect_by_stop_time_status
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update, floor_datetime
 from kirin import new_relic
@@ -128,9 +128,6 @@ class KirinModelBuilder(object):
 
         return trip_updates
 
-    def _get_higher_status(self, st1, st2):
-        return max([st1, st2], key=get_modification_type_order)
-
     def _get_stop_code(self, nav_stop):
         for c in nav_stop.get('codes', []):
             if c['type'] == self.stop_code_key:
@@ -174,7 +171,7 @@ class KirinModelBuilder(object):
                     tu_stop.stop_sequence = vj_stop_order
                     st_update, status = self._make_stoptime_update(tu_stop, vj_stop_point)
                     if st_update is not None:
-                        highest_st_status = self._get_higher_status(highest_st_status, status)
+                        highest_st_status = get_higher_status(highest_st_status, status)
                         trip_update.stop_time_updates.append(st_update)
                 else:
                     #Initialize stops absent in trip_updates but present in vj
@@ -187,6 +184,7 @@ class KirinModelBuilder(object):
             if is_tu_valid:
                 #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
+                trip_update.effect = get_effect_by_stop_time_status(highest_st_status)
                 trip_updates.append(trip_update)
             else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
