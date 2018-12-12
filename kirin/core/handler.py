@@ -41,6 +41,7 @@ from kirin.core import model
 from kirin.core.model import TripUpdate, StopTimeUpdate
 from kirin.core.populate_pb import convert_to_gtfsrt
 from kirin.exceptions import MessageNotPublished
+from kirin.core.types import ModificationType
 
 
 def persist(real_time_update):
@@ -59,6 +60,10 @@ def log_stu_modif(trip_update, stu, string_additional_info):
                     date=trip_update.vj.get_utc_circulation_date(),
                     order=stu.order,
                     add_info=string_additional_info))
+
+
+def is_deleted(status):
+    return status in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
 
 
 def manage_consistency(trip_update):
@@ -123,7 +128,8 @@ def manage_consistency(trip_update):
             log_stu_modif(trip_update, stu, "departure = {a} and departure_delay = {a_d}".format(
                                                         a=stu.departure, a_d=stu.departure_delay))
 
-        previous_stu = stu
+        if not is_deleted(stu.departure_status):
+            previous_stu = stu
 
     return True
 
@@ -201,18 +207,18 @@ def _get_datetime(utc_circulation_date, utc_time):
 
 def _get_update_info_of_stop_time(base_time, input_status, input_delay):
     new_time = None
-    status = 'none'
+    status = ModificationType.none.name
     delay = timedelta(0)
-    if input_status == 'update':
+    if input_status == ModificationType.update.name:
         new_time = (base_time + input_delay) if base_time else None
         status = input_status
         delay = input_delay
-    elif input_status in ('delete', 'deleted_for_detour'):
+    elif input_status in (ModificationType.delete.name, ModificationType.deleted_for_detour.name):
         # passing status 'delete' on the stop_time
         # Note: we keep providing base_schedule stop_time to better identify the stop_time
         # in the vj (for lollipop lines for example)
         status = input_status
-    elif input_status in ('add', 'added_for_detour'):
+    elif input_status in (ModificationType.add.name, ModificationType.added_for_detour.name):
         status = input_status
         new_time = base_time
     else:
@@ -300,7 +306,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
         res.message = new_trip_update.message
     res.contributor = new_trip_update.contributor
 
-    if res.status == 'delete':
+    if res.status == ModificationType.delete.name:
         # for trip cancellation, we delete all stoptimes update
         res.stop_time_updates = []
         return res
@@ -318,8 +324,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                 if vj_st:
                     yield order, vj_st
                 else:
-                    if st.departure_status in ('add', 'added_for_detour')  \
-                            or st.arrival_status in ('add', 'added_for_detour'):
+                    if st.departure_status in (ModificationType.add.name,
+                                               ModificationType.added_for_detour.name)  \
+                            or st.arrival_status in (ModificationType.add.name,
+                                                     ModificationType.added_for_detour.name):
                         # It is an added stop_time, create a new stop time
                         st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
                         added_st = {
@@ -330,8 +338,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                             'arrival_status': st.arrival_status
                         }
                         yield order, added_st
-                    elif st.departure_status in('delete', 'deleted_for_detour') \
-                            or st.arrival_status in ('delete', 'deleted_for_detour'):
+                    elif st.departure_status in(ModificationType.delete.name,
+                                                ModificationType.deleted_for_detour.name) \
+                            or st.arrival_status in (ModificationType.delete.name,
+                                                     ModificationType.deleted_for_detour.name):
                         # Check in Bdd if the stop time was added
                         if db_trip_update is not None:
 
@@ -453,7 +463,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
         # For a stop_time deleted or deleted_for_detour, we don't use previous value for
         # arrival and departure time consistency
-        if res_st.arrival_status not in ('deleted', 'deleted_for_detour'):
+        if not is_deleted(res_st.departure_status):
             last_nav_dep = utc_nav_departure_time
 
     # This is always the effect inside the new trip_update (input data feed).
