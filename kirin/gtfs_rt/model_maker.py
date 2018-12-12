@@ -35,6 +35,7 @@ import pytz
 
 from kirin import core
 from kirin.core import model
+from kirin.core.types import get_modification_type_order
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update, floor_datetime
 from kirin import new_relic
@@ -127,6 +128,9 @@ class KirinModelBuilder(object):
 
         return trip_updates
 
+    def _get_higher_status(self, st1, st2):
+        return max([st1, st2], key=get_modification_type_order)
+
     def _get_stop_code(self, nav_stop):
         for c in nav_stop.get('codes', []):
             if c['type'] == self.stop_code_key:
@@ -143,6 +147,8 @@ class KirinModelBuilder(object):
         """
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
         trip_updates = []
+        # Initialize stop_time status to nochange
+        highest_st_status = 'nochange'
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
@@ -166,8 +172,9 @@ class KirinModelBuilder(object):
                         break
 
                     tu_stop.stop_sequence = vj_stop_order
-                    st_update = self._make_stoptime_update(tu_stop, vj_stop_point)
+                    st_update, status = self._make_stoptime_update(tu_stop, vj_stop_point)
                     if st_update is not None:
+                        highest_st_status = self._get_higher_status(highest_st_status, status)
                         trip_update.stop_time_updates.append(st_update)
                 else:
                     #Initialize stops absent in trip_updates but present in vj
@@ -284,10 +291,11 @@ class KirinModelBuilder(object):
                 return datetime.timedelta(seconds=st_event.delay)
         dep_delay = read_delay(input_st_update.departure)
         arr_delay = read_delay(input_st_update.arrival)
-        dep_status = 'none' if dep_delay is None else 'update'
-        arr_status = 'none' if arr_delay is None else 'update'
+        highest_status = 'none'
+        dep_status = 'none' if dep_delay is None else 'update'; highest_status = 'update'
+        arr_status = 'none' if arr_delay is None else 'update'; highest_status = 'update'
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
                                          dep_status=dep_status, arr_status=arr_status,
                                          order=input_st_update.stop_sequence)
 
-        return st_update
+        return st_update, highest_status
