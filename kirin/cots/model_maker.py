@@ -397,7 +397,7 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
                                               pdp_code='-'.join(pdp[key] for key in ['cr', 'ci', 'ch']))
             last_stop_time_depart = projected_stop_time['Depart']
 
-        # Calculates effect from stop_time status list (this work is also done in kraken and has to be deleted)
+        # Calculates effect from stop_time status list(this work is also done in kraken and has to be deleted)
         trip_update.effect = get_effect_by_stop_time_status(highest_st_status)
         return trip_update
 
