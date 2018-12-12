@@ -115,7 +115,7 @@ def check_db_870154_partial_removal(contributor=None):
         assert db_trip.vj_id == db_trip.vj.id
         assert db_trip.status == 'update'
         # Cots contain deleted as well as delayed stop_times
-        assert db_trip.effect == 'SIGNIFICANT_DELAYS'
+        assert db_trip.effect == 'REDUCED_SERVICE'
         # 12 stop times must have been created
         assert len(db_trip.stop_time_updates) == 12
 
@@ -156,7 +156,7 @@ def check_db_870154_delay():
         assert db_trip
         assert db_trip.message == u'Régulation du trafic'
         # Cots contain deleted as well as delayed stop_times
-        assert db_trip.effect == 'SIGNIFICANT_DELAYS'
+        assert db_trip.effect == 'REDUCED_SERVICE'
 
         # only in "delay-case" departure, arrival at 5th (Viviez-Decazeville)
         # and arrival at 6th stops (Capdenac) are deleted with a cause
@@ -343,7 +343,7 @@ def check_db_96231_mixed_statuses_inside_stops(contributor=None):
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
         # Cots contain delayed as well as removed stop_times
-        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+        assert db_trip_delayed.effect == 'REDUCED_SERVICE'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -417,7 +417,7 @@ def check_db_96231_mixed_statuses_delay_removal_delay(contributor=None):
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
         # Cots contain removed as well as delayed stop_times
-        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+        assert db_trip_delayed.effect == 'REDUCED_SERVICE'
         # 6 stop times must have been created
         assert len(db_trip_delayed.stop_time_updates) == 6
 
@@ -736,7 +736,7 @@ def check_db_840427_partial_removal(contributor=None):
         assert db_trip_partial_removed.vj.get_start_timestamp() == datetime(2017, 3, 18, 13, 5, tzinfo=utc)
         assert db_trip_partial_removed.vj_id == db_trip_partial_removed.vj.id
         assert db_trip_partial_removed.status == 'update'
-        assert db_trip_partial_removed.effect == 'DETOUR'
+        assert db_trip_partial_removed.effect == 'REDUCED_SERVICE'
 
         # 7 stop times must have been created
         assert len(db_trip_partial_removed.stop_time_updates) == 7
