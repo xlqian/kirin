@@ -290,8 +290,14 @@ class KirinModelBuilder(object):
         dep_delay = read_delay(input_st_update.departure)
         arr_delay = read_delay(input_st_update.arrival)
         highest_status = 'none'
-        dep_status = 'none' if dep_delay is None else 'update'; highest_status = 'update'
-        arr_status = 'none' if arr_delay is None else 'update'; highest_status = 'update'
+        if dep_delay is None:
+            dep_status = 'none'
+        else:
+            highest_status = dep_status = 'update'
+        if arr_delay is None:
+            arr_status = 'none'
+        else:
+            highest_status = arr_status = 'update'
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
                                          dep_status=dep_status, arr_status=arr_status,
                                          order=input_st_update.stop_sequence)
