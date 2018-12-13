@@ -137,26 +137,7 @@ def test_gtfs_rt_post_no_data():
         assert len(StopTimeUpdate.query.all()) == 0
 
 
-def test_gtfs_effect(basic_gtfs_rt_data, basic_gtfs_rt_data_without_delays):
-    """
-    2 possibilities :
-        - if there is no delay field (delay is optional in StopTimeEvent), effect = 'UNKNOWN_EFFECT'
-        - if not, effect = 'SIGNIFICANT_DELAYS'
-    """
-    with app.app_context():
-        data = ''
-        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
-        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data_without_delays)
-        assert len(trip_updates) == 1
-        assert trip_updates[0].effect == 'UNKNOWN_EFFECT'
-
-        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
-        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data)
-        assert len(trip_updates) == 1
-        assert trip_updates[0].effect == 'SIGNIFICANT_DELAYS'
-
-
-def test_gtfs_model_builder(basic_gtfs_rt_data):
+def test_gtfs_model_builder(basic_gtfs_rt_data, basic_gtfs_rt_data_without_delays):
     """
     test the model builder with a simple gtfs-rt
 
@@ -176,6 +157,7 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
 
         assert len(trip_updates) == 1
         assert len(trip_updates[0].stop_time_updates) == 4
+        assert trip_updates[0].effect == 'SIGNIFICANT_DELAYS'
 
         #stop_time_update created with no delay
         first_stop = trip_updates[0].stop_time_updates[0]
@@ -205,6 +187,11 @@ def test_gtfs_model_builder(basic_gtfs_rt_data):
         feed = convert_to_gtfsrt(trip_updates)
         assert feed.entity[0].trip_update.trip.start_date == u'20120615' #must be UTC start date
 
+        # if there is no delay field (delay is optional in StopTimeEvent), effect = 'UNKNOWN_EFFECT'
+        rt_update = RealTimeUpdate(data, connector='gtfs-rt', contributor='realtime.gtfs')
+        trip_updates = gtfs_rt.KirinModelBuilder(dumb_nav_wrapper()).build(rt_update, basic_gtfs_rt_data_without_delays)
+        assert len(trip_updates) == 1
+        assert trip_updates[0].effect == 'UNKNOWN_EFFECT'
 
 def test_gtfs_rt_simple_delay(basic_gtfs_rt_data, mock_rabbitmq):
     """
