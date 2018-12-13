@@ -144,10 +144,10 @@ class KirinModelBuilder(object):
         """
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
         trip_updates = []
-        highest_st_status = ModificationType.none.name
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
+            highest_st_status = ModificationType.none.name
 
             is_tu_valid = True
             vj_stop_order = len(vj.navitia_vj.get('stop_times', [])) - 1
