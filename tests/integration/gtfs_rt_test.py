@@ -141,7 +141,7 @@ def test_gtfs_effect(basic_gtfs_rt_data, basic_gtfs_rt_data_without_delays):
     """
     2 possibilities :
         - if there is no delay field (delay is optional in StopTimeEvent), effect = 'UNKNOWN_EFFECT'
-        - if not effect = 'SIGNIFICANT_DELAYS'
+        - if not, effect = 'SIGNIFICANT_DELAYS'
     """
     with app.app_context():
         data = ''
