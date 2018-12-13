@@ -144,7 +144,6 @@ class KirinModelBuilder(object):
         """
         vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
         trip_updates = []
-        # Initialize stop_time status to nochange
         highest_st_status = 'none'
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
