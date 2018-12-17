@@ -35,6 +35,7 @@ import pytz
 
 from kirin import core
 from kirin.core import model
+from kirin.core.types import ModificationType, get_higher_status, get_effect_by_stop_time_status
 from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
 from kirin.utils import make_navitia_wrapper, make_rt_update, floor_datetime
 from kirin import new_relic
@@ -146,6 +147,7 @@ class KirinModelBuilder(object):
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
             trip_update.contributor = self.contributor
+            highest_st_status = ModificationType.none.name
 
             is_tu_valid = True
             vj_stop_order = len(vj.navitia_vj.get('stop_times', [])) - 1
@@ -175,11 +177,14 @@ class KirinModelBuilder(object):
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
 
+                for status in [st_update.departure_status, st_update.arrival_status]:
+                    highest_st_status = get_higher_status(highest_st_status, status)
                 vj_stop_order -= 1
 
             if is_tu_valid:
                 #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
+                trip_update.effect = get_effect_by_stop_time_status(highest_st_status)
                 trip_updates.append(trip_update)
             else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
@@ -284,8 +289,8 @@ class KirinModelBuilder(object):
                 return datetime.timedelta(seconds=st_event.delay)
         dep_delay = read_delay(input_st_update.departure)
         arr_delay = read_delay(input_st_update.arrival)
-        dep_status = 'none' if dep_delay is None else 'update'
-        arr_status = 'none' if arr_delay is None else 'update'
+        dep_status = ModificationType.none.name if dep_delay is None else ModificationType.update.name
+        arr_status = ModificationType.none.name if arr_delay is None else ModificationType.update.name
         st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
                                          dep_status=dep_status, arr_status=arr_status,
                                          order=input_st_update.stop_sequence)
