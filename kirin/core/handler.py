@@ -140,18 +140,18 @@ def find_st_in_vj(st_id, vj_sts):
 
 def extract_str_utc_time(str_time):
     """
-    Return local time according to UTC time and timezone
-    :param str_time: UTC time (type: datetime.datetime)
-    :return: local time (type: datetime.time)
+    Return UTC time of day from given str
+    :param str_time: datetime+timezone (type: str)
+    :return: corresponding time of day in UTC timezone (type: datetime.time)
 
-    >>> utc_time = '20181108T093000+0000'
-    >>> extract_str_utc_time(utc_time)
+    >>> str_time = '20181108T093000+0000'
+    >>> extract_str_utc_time(str_time)
     datetime.time(9, 30)
-    >>> utc_time = '20181108T093000+0100'
-    >>> extract_str_utc_time(utc_time)
+    >>> str_time = '20181108T093000+0100'
+    >>> extract_str_utc_time(str_time)
     datetime.time(8, 30)
-    >>> utc_time = '20181108T093000+0900'
-    >>> extract_str_utc_time(utc_time)
+    >>> str_time = '20181108T093000+0900'
+    >>> extract_str_utc_time(str_time)
     datetime.time(0, 30)
     """
     if str_time:
