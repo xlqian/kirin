@@ -237,10 +237,10 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
             str_time = get_value(get_value(p, hour_obj_name), 'dateHeure') if p else None
             return parser.parse(str_time, dayfirst=False, yearfirst=True, ignoretz=False) if str_time else None
 
-        vj_start = get_first_fully_added(pdps, 'horaireVoyageurDepart')
-        vj_end = get_first_fully_added(reversed(pdps), 'horaireVoyageurArrivee')
+        utc_vj_start = get_first_fully_added(pdps, 'horaireVoyageurDepart').astimezone(utc)
+        utc_vj_end = get_first_fully_added(reversed(pdps), 'horaireVoyageurArrivee').astimezone(utc)
 
-        return self._get_navitia_vjs(train_numbers, vj_start.astimezone(utc), vj_end.astimezone(utc))
+        return self._get_navitia_vjs(train_numbers, utc_vj_start, utc_vj_end)
 
     def _record_and_log(self, logger, log_str):
         log_dict = {'log': log_str}

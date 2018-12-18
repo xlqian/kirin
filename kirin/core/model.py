@@ -106,7 +106,7 @@ class VehicleJourney(db.Model):
     db.UniqueConstraint(navitia_trip_id, start_timestamp,
                         name='vehicle_journey_navitia_trip_id_start_timestamp_idx')
 
-    def __init__(self, navitia_vj, aware_since_dt, aware_until_dt):
+    def __init__(self, navitia_vj, utc_since_dt, utc_until_dt):
         """
         Create a circulation (VJ on a given day) from:
             * the navitia VJ (circulation times without a specific day)
@@ -121,10 +121,10 @@ class VehicleJourney(db.Model):
               actual start-timestamp:        |                |                | 03T02:00       |
 
         :param navitia_vj: json dict of navitia's response when looking for a VJ.
-        :param aware_since_dt: timezone-aware datetime BEFORE start of considered circulation,
-            typically the "since" parameter of the search in navitia (UTC recommended).
-        :param aware_until_dt: timezone-aware datetime AFTER start of considered circulation,
-            typically the "until" parameter of the search in navitia (UTC recommended).
+        :param utc_since_dt: UTC datetime BEFORE start of considered circulation,
+            typically the "since" parameter of the search in navitia.
+        :param utc_until_dt: UTC datetime AFTER start of considered circulation,
+            typically the "until" parameter of the search in navitia.
         """
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
@@ -136,17 +136,15 @@ class VehicleJourney(db.Model):
         start_time = first_stop_time['utc_arrival_time']  # converted in datetime.time() in python wrapper
         if start_time is None:
             start_time = first_stop_time['utc_departure_time']  # converted in datetime.time() in python wrapper
-        utc_since = aware_since_dt.astimezone(utc)
-        self.start_timestamp = utc.localize(datetime.datetime.combine(utc_since.date(), start_time))
+        self.start_timestamp = utc.localize(datetime.datetime.combine(utc_since_dt.date(), start_time))
         # if since = 20010102T2300 and start_time = 0200, actual start_timestamp = 20010103T0200.
         # So adding one day to start_timestamp obtained (20010102T0200) if it's before since.
-        if self.start_timestamp < utc_since:
+        if self.start_timestamp < utc_since_dt:
             self.start_timestamp += timedelta(days=1)
         # simple consistency check (for now): the start timestamp must also be BEFORE aware_until_dt
-        utc_until = aware_until_dt.astimezone(utc)
-        if utc_until < self.start_timestamp:
+        if utc_until_dt < self.start_timestamp:
             msg = 'impossible to calculate the circulation date of vj: {} on period [{}, {}]'.format(
-                        navitia_vj.get('id'), utc_since, utc_until)
+                        navitia_vj.get('id'), utc_since_dt, utc_until_dt)
             raise ObjectNotFound(msg)
 
         self.navitia_vj = navitia_vj  # Not persisted

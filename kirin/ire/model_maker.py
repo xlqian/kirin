@@ -134,10 +134,12 @@ class KirinModelBuilder(AbstractSNCFKirinModelBuilder):
         # stop_times are considered in Paris timezone for IRE
         paris_tz = timezone('Europe/Paris')
         # to get the date of the vj we use the start/end of the vj
-        vj_start = paris_tz.localize(as_date(get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart')))
-        vj_end = paris_tz.localize(as_date(get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus')))
+        str_local_vj_start = get_value(xml_train, 'OrigineTheoriqueTrain/DateHeureDepart')
+        utc_vj_start = paris_tz.localize(as_date(str_local_vj_start)).astimezone(utc)
+        str_local_vj_end = get_value(xml_train, 'TerminusTheoriqueTrain/DateHeureTerminus')
+        utc_vj_end = paris_tz.localize(as_date(str_local_vj_end)).astimezone(utc)
 
-        return self._get_navitia_vjs(train_numbers, vj_start.astimezone(utc), vj_end.astimezone(utc))
+        return self._get_navitia_vjs(train_numbers, utc_vj_start, utc_vj_end)
 
     def _make_trip_update(self, vj, xml_modification):
         """
