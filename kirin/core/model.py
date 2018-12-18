@@ -111,7 +111,10 @@ class VehicleJourney(db.Model):
         Create a circulation (VJ on a given day) from:
             * the navitia VJ (circulation times without a specific day)
             * a datetime that's close but BEFORE the start of the circulation considered
-        This processes start-timestamp of the circulation to be the closest one after aware_since_dt.
+
+        As Navitia doesn't return the start-timestamp that matches the search period (only a time, no date),
+        Kirin needs to re-process it here:
+        This processes start-timestamp of the circulation to be the closest one after utc_since_dt.
 
                                  day:       01               02               03               04
                                 hour:      00:00            00:00            00:00            00:00
@@ -130,8 +133,7 @@ class VehicleJourney(db.Model):
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
 
-        # compute start_timestamp (in UTC) from first stop_time, to be the closest AFTER provided
-        # aware_datetime_right_before_start.
+        # compute start_timestamp (in UTC) from first stop_time, to be the closest AFTER provided utc_since_dt.
         first_stop_time = navitia_vj.get('stop_times', [{}])[0]
         start_time = first_stop_time['utc_arrival_time']  # converted in datetime.time() in python wrapper
         if start_time is None:
@@ -141,7 +143,7 @@ class VehicleJourney(db.Model):
         # So adding one day to start_timestamp obtained (20010102T0200) if it's before since.
         if self.start_timestamp < utc_since_dt:
             self.start_timestamp += timedelta(days=1)
-        # simple consistency check (for now): the start timestamp must also be BEFORE aware_until_dt
+        # simple consistency check (for now): the start timestamp must also be BEFORE utc_until_dt
         if utc_until_dt < self.start_timestamp:
             msg = 'impossible to calculate the circulation date of vj: {} on period [{}, {}]'.format(
                         navitia_vj.get('id'), utc_since_dt, utc_until_dt)
