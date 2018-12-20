@@ -33,7 +33,6 @@ import navitia_response
 response = navitia_response.NavitiaResponse()
 
 response.queries = [
-    'vehicle_journeys/?depth=2&since=20151006T221600&headsign=6111&show_codes=true&until=20151007T073400',
     'vehicle_journeys/?depth=2&since=20151006T201600+0000&headsign=6111&show_codes=true&until=20151007T053400+0000'
 ]
 
@@ -120,6 +119,8 @@ response.json_response = """{
             "stop_times": [
                 {
                     "arrival_time": "223700",
+                    "utc_arrival_time": "203700",
+                    "utc_departure_time": "203700",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
                     },
@@ -168,6 +169,8 @@ response.json_response = """{
                 },
                 {
                     "arrival_time": "060300",
+                    "utc_arrival_time": "040300",
+                    "utc_departure_time": "040300",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
                     },

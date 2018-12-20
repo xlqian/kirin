@@ -48,7 +48,7 @@ def to_navitia_str(dt):
     return dt.strftime("%Y%m%dT%H%M%S%z")
 
 
-def headsigns(str):
+def headsigns(str_headsign):
     """
     we remove leading 0 for the headsigns and handle the train's parity.
     The parity is the number after the '/', it gives an alternative train number.
@@ -67,7 +67,7 @@ def headsigns(str):
     ['2038', '12345']
 
     """
-    h = str.lstrip('0')
+    h = str_headsign.lstrip('0')
     if '/' not in h:
         return [h]
     signs = h.split('/', 1)
@@ -100,17 +100,21 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         self.navitia = nav
         self.contributor = contributor
 
-    def _get_navitia_vjs(self, headsign_str, since_dt, until_dt):
+    def _get_navitia_vjs(self, headsign_str, utc_since_dt, utc_until_dt):
         """
         Search for navitia's vehicle journeys with given headsigns, in the period provided
+        :param utc_since_dt: UTC datetime that starts the search period.
+            Typically the supposed datetime of first base-schedule stop_time.
+        :param utc_until_dt: UTC datetime that ends the search period.
+            Typically the supposed datetime of last base-schedule stop_time.
         """
         log = logging.getLogger(__name__)
 
         vjs = {}
         # to get the date of the vj we use the start/end of the vj + some tolerance
         # since the SNCF data and navitia data might not be synchronized
-        extended_since_dt = since_dt - timedelta(hours=1)
-        extended_until_dt = until_dt + timedelta(hours=1)
+        extended_since_dt = utc_since_dt - timedelta(hours=1)
+        extended_until_dt = utc_until_dt + timedelta(hours=1)
 
         # using a set to deduplicate
         # one headsign_str (ex: "96320/1") can lead to multiple headsigns (ex: ["96320", "96321"])
@@ -119,7 +123,8 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
         # So we do one VJ search for each headsign to ensure we get it, then deduplicate VJs
         for train_number in headsigns(headsign_str):
 
-            log.debug('searching for vj {} on {} in navitia'.format(train_number, since_dt))
+            log.debug('searching for vj {} during period [{} - {}] in navitia'.format(
+                            train_number, extended_since_dt, extended_until_dt))
 
             navitia_vjs = self.navitia.vehicle_journeys(q={
                 'headsign': train_number,
@@ -137,8 +142,14 @@ class AbstractSNCFKirinModelBuilder(six.with_metaclass(ABCMeta, object)):
                 record_internal_failure('missing train', contributor=self.contributor)
 
             for nav_vj in navitia_vjs:
-                vj = model.VehicleJourney(nav_vj, since_dt.date())
-                vjs[nav_vj['id']] = vj
+
+                try:
+                    vj = model.VehicleJourney(nav_vj, extended_since_dt, extended_until_dt)
+                    vjs[nav_vj['id']] = vj
+                except Exception as e:
+                    logging.getLogger(__name__).exception(
+                        'Error while creating kirin VJ of {}: {}'.format(nav_vj.get('id'), e))
+                    record_internal_failure('Error while creating kirin VJ', contributor=self.contributor)
 
         if not vjs:
             raise ObjectNotFound('no train found for headsign(s) {}'.format(headsign_str))

@@ -29,21 +29,19 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 import datetime
-from kirin import gtfs_realtime_pb2
 import logging
-import pytz
 
+from pytz import utc
 from kirin import core
 from kirin.core import model
 from kirin.core.types import ModificationType, get_higher_status, get_effect_by_stop_time_status
-from kirin.exceptions import KirinException, InvalidArguments, ObjectNotFound
-from kirin.utils import make_navitia_wrapper, make_rt_update, floor_datetime
-from kirin import new_relic
+from kirin.exceptions import KirinException
+from kirin.utils import make_rt_update, floor_datetime
 from kirin.utils import record_internal_failure, record_call
-from kirin.utils import get_timezone
 from kirin import app
 import itertools
 import calendar
+
 
 def handle(proto, navitia_wrapper, contributor):
     data = str(proto)  # temp, for the moment, we save the protobuf as text
@@ -69,8 +67,8 @@ def handle(proto, navitia_wrapper, contributor):
 
     real_time_update, log_dict = core.handle(rt_update, trip_updates, contributor)
 
-    # After merging trip_updates information of gtfs-rt, navitia and kirin database, if there is no new information
-    # destinated to navitia, update real_time_update with status = 'KO' and a proper error message.
+    # After merging trip_updates information of gtfs-rt, navitia and kirin database, if there is no new
+    # information destined to navitia, update real_time_update with status = 'KO' and a proper error message.
     if not real_time_update.trip_updates and real_time_update.status == 'OK':
         real_time_update.status = 'KO'
         real_time_update.error = 'No new information destinated to navitia for this gtfs-rt ' \
@@ -109,16 +107,16 @@ class KirinModelBuilder(object):
 
         The TripUpdates are not yet associated with the RealTimeUpdate
         """
-        data_time = datetime.datetime.utcfromtimestamp(data.header.timestamp)
+        utc_data_time = utc.localize(datetime.datetime.utcfromtimestamp(data.header.timestamp))
         self.log.debug("Start processing GTFS-rt: timestamp = {} ({})"
-                       .format(data.header.timestamp, data_time))
+                       .format(data.header.timestamp, utc_data_time))
 
         trip_updates = []
 
         for entity in data.entity:
             if not entity.trip_update:
                 continue
-            tu = self._make_trip_updates(entity.trip_update, data_time=data_time)
+            tu = self._make_trip_updates(entity.trip_update, utc_data_time=utc_data_time)
             trip_updates.extend(tu)
 
         if not trip_updates:
@@ -133,16 +131,16 @@ class KirinModelBuilder(object):
             if c['type'] == self.stop_code_key:
                 return c['value']
 
-    def _make_trip_updates(self, input_trip_update, data_time):
+    def _make_trip_updates(self, input_trip_update, utc_data_time):
         """
         If trip_update.stop_time_updates is not a strict ending subset of vj.stop_times we reject the trip update
         On the other hand:
-        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging informations
-        with that of navitia stop
+        1. For the stop point present in trip_update.stop_time_updates we create a trip_update merging
+        informations with that of navitia stop
         2. For the first stop point absent in trip_update.stop_time_updates we create a stop_time_update
         with no delay for that stop
         """
-        vjs = self._get_navitia_vjs(input_trip_update.trip, data_time=data_time)
+        vjs = self._get_navitia_vjs(input_trip_update.trip, utc_data_time=utc_data_time)
         trip_updates = []
         for vj in vjs:
             trip_update = model.TripUpdate(vj=vj)
@@ -168,12 +166,12 @@ class KirinModelBuilder(object):
                         break
 
                     tu_stop.stop_sequence = vj_stop_order
-                    st_update = self._make_stoptime_update(tu_stop, vj_stop_point)
+                    st_update = _make_stoptime_update(tu_stop, vj_stop_point)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
                 else:
-                    #Initialize stops absent in trip_updates but present in vj
-                    st_update = self._init_stop_update(vj_stop_point, vj_stop_order)
+                    # Initialize stops absent in trip_updates but present in vj
+                    st_update = _init_stop_update(vj_stop_point, vj_stop_order)
                     if st_update is not None:
                         trip_update.stop_time_updates.append(st_update)
 
@@ -182,13 +180,13 @@ class KirinModelBuilder(object):
                 vj_stop_order -= 1
 
             if is_tu_valid:
-                #Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
+                # Since vj.stop_times are managed in reversed order, we re sort stop_time_updates by order.
                 trip_update.stop_time_updates.sort(cmp=lambda x, y: cmp(x.order, y.order))
                 trip_update.effect = get_effect_by_stop_time_status(highest_st_status)
                 trip_updates.append(trip_update)
             else:
                 self.log.error('stop_time_update do not match with stops in navitia for trip : {} timestamp: {}'
-                               .format(input_trip_update.trip.trip_id, calendar.timegm(data_time.utctimetuple())))
+                               .format(input_trip_update.trip.trip_id, calendar.timegm(utc_data_time.utctimetuple())))
                 record_internal_failure('stop_time_update do not match with stops in navitia',
                                         contributor=self.contributor)
                 del trip_update.stop_time_updates[:]
@@ -201,19 +199,19 @@ class KirinModelBuilder(object):
         return '{}.{}.{}'.format(self.__class__, self.navitia.url, self.instance_data_pub_date)
 
     @app.cache.memoize(timeout=1200)
-    def _make_db_vj(self, vj_source_code, since, until):
+    def _make_db_vj(self, vj_source_code, utc_since_dt, utc_until_dt):
         navitia_vjs = self.navitia.vehicle_journeys(q={
             'filter': 'vehicle_journey.has_code({}, {})'.format(self.stop_code_key, vj_source_code),
-            'since': to_str(since),
-            'until': to_str(until),
+            'since': to_str(utc_since_dt),
+            'until': to_str(utc_until_dt),
             'depth': '2',  # we need this depth to get the stoptime's stop_area
         })
 
         if not navitia_vjs:
             self.log.info('impossible to find vj {t} on [{s}, {u}]'
                           .format(t=vj_source_code,
-                                  s=since,
-                                  u=until))
+                                  s=utc_since_dt,
+                                  u=utc_until_dt))
             record_internal_failure('missing vj', contributor=self.contributor)
             return []
 
@@ -221,8 +219,8 @@ class KirinModelBuilder(object):
             vj_ids = [vj.get('id') for vj in navitia_vjs]
             self.log.info('too many vjs found for {t} on [{s}, {u}]: {ids}'
                           .format(t=vj_source_code,
-                                  s=since,
-                                  u=until,
+                                  s=utc_since_dt,
+                                  u=utc_until_dt,
                                   ids=vj_ids
                                   ))
             record_internal_failure('duplicate vjs', contributor=self.contributor)
@@ -230,69 +228,43 @@ class KirinModelBuilder(object):
 
         nav_vj = navitia_vjs[0]
 
-        # Now we compute the real circulate_date of VJ from since, until and vj's first stop_time
-        # We do this to prevent cases like pass midnight when [since, until] is too large
-        # we need local timezone circulate_date (and it's sometimes different from UTC date)
-        first_stop_time = nav_vj.get('stop_times', [{}])[0]
-        tzinfo = get_timezone(first_stop_time)
-
-        # 'since' and 'until' must have a timezone before being converted to local timezone
-        local_since = pytz.utc.localize(since).astimezone(tzinfo)
-        local_until = pytz.utc.localize(until).astimezone(tzinfo)
-
-        circulate_date = None
-
-        if local_since.date() == local_until.date():
-            circulate_date = local_since.date()
-        else:
-            arrival_time = first_stop_time['arrival_time']
-            # At first, we suppose that the circulate_date is local_since's date
-            if local_since <= tzinfo.localize(datetime.datetime.combine(local_since.date(),
-                                                                       arrival_time)) <= local_until:
-                circulate_date = local_since.date()
-            elif local_since <= tzinfo.localize(datetime.datetime.combine(local_until.date(),
-                                                                         arrival_time)) <= local_until:
-                circulate_date = local_until.date()
-
-        if circulate_date is None:
-            self.log.error('impossible to calculate the circulate date (local) of vj: {}'.format(nav_vj.get('id')))
-            record_internal_failure('impossible to calculate the circulate date of vj', contributor=self.contributor)
-            return []
-
         try:
-            vj = model.VehicleJourney(nav_vj, circulate_date)
+            vj = model.VehicleJourney(nav_vj, utc_since_dt, utc_until_dt)
             return [vj]
         except Exception as e:
             self.log.exception('Error while creating kirin VJ of {}: {}'.format(nav_vj.get('id'), e))
             record_internal_failure('Error while creating kirin VJ', contributor=self.contributor)
             return []
 
-    def _get_navitia_vjs(self, trip, data_time):
+    def _get_navitia_vjs(self, trip, utc_data_time):
         vj_source_code = trip.trip_id
 
-        since = floor_datetime(data_time - self.period_filter_tolerance)
-        until = floor_datetime(data_time + self.period_filter_tolerance + datetime.timedelta(hours=1))
-        self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(vj_source_code, since, until))
+        utc_since_dt = floor_datetime(utc_data_time - self.period_filter_tolerance)
+        utc_until_dt = floor_datetime(utc_data_time + self.period_filter_tolerance + datetime.timedelta(hours=1))
+        self.log.debug('searching for vj {} on [{}, {}] in navitia'.format(
+                            vj_source_code, utc_since_dt, utc_until_dt))
 
-        return self._make_db_vj(vj_source_code, since, until)
+        return self._make_db_vj(vj_source_code, utc_since_dt, utc_until_dt)
 
-    def _init_stop_update(self, nav_stop, stop_sequence):
-        st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
-                                         dep_status='none', arr_status='none', order=stop_sequence)
-        return st_update
 
-    def _make_stoptime_update(self, input_st_update, nav_stop):
-        # TODO handle delay uncertainty
-        # TODO handle schedule_relationship
-        def read_delay(st_event):
-            if st_event and st_event.delay:
-                return datetime.timedelta(seconds=st_event.delay)
-        dep_delay = read_delay(input_st_update.departure)
-        arr_delay = read_delay(input_st_update.arrival)
-        dep_status = ModificationType.none.name if dep_delay is None else ModificationType.update.name
-        arr_status = ModificationType.none.name if arr_delay is None else ModificationType.update.name
-        st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
-                                         dep_status=dep_status, arr_status=arr_status,
-                                         order=input_st_update.stop_sequence)
+def _init_stop_update(nav_stop, stop_sequence):
+    st_update = model.StopTimeUpdate(nav_stop, departure_delay=None, arrival_delay=None,
+                                     dep_status='none', arr_status='none', order=stop_sequence)
+    return st_update
 
-        return st_update
+
+def _make_stoptime_update(input_st_update, nav_stop):
+    # TODO handle delay uncertainty
+    # TODO handle schedule_relationship
+    def read_delay(st_event):
+        if st_event and st_event.delay:
+            return datetime.timedelta(seconds=st_event.delay)
+    dep_delay = read_delay(input_st_update.departure)
+    arr_delay = read_delay(input_st_update.arrival)
+    dep_status = ModificationType.none.name if dep_delay is None else ModificationType.update.name
+    arr_status = ModificationType.none.name if arr_delay is None else ModificationType.update.name
+    st_update = model.StopTimeUpdate(nav_stop, departure_delay=dep_delay, arrival_delay=arr_delay,
+                                     dep_status=dep_status, arr_status=arr_status,
+                                     order=input_st_update.stop_sequence)
+
+    return st_update

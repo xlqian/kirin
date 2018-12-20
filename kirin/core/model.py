@@ -28,7 +28,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
-from copy import deepcopy
+from datetime import timedelta
 from pytz import utc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import backref, deferred
@@ -38,6 +38,7 @@ import datetime
 import sqlalchemy
 from sqlalchemy import desc
 from kirin.core.types import ModificationType, TripEffect
+from kirin.exceptions import ObjectNotFound
 
 db = SQLAlchemy()
 
@@ -50,7 +51,8 @@ meta = sqlalchemy.schema.MetaData(naming_convention={
         "pk": "pk_%(table_name)s"
       })
 
-#force the server to use UTC time for each connection checkouted from the pool
+
+# force the server to use UTC time for each connection checkouted from the pool
 @sqlalchemy.event.listens_for(sqlalchemy.pool.Pool, 'checkout')
 def set_utc_on_connect(dbapi_con, connection_record, connection_proxy):
     c = dbapi_con.cursor()
@@ -74,14 +76,15 @@ class TimestampMixin(object):
 Db_TripEffect = db.Enum(*[e.name for e in TripEffect],name='trip_effect')
 Db_ModificationType = db.Enum(*[t.name for t in ModificationType], name='modification_type')
 
-def get_utc_localized_timestamp_safe(timestamp):
-    '''
+
+def get_utc_timezoned_timestamp_safe(timestamp):
+    """
     Return a UTC-localized timestamp (easier to manipulate)
     Result is a changed datetime if it was in another timezone,
         or just explicitly timezoned in UTC otherwise.
     :param timestamp: datetime considered UTC if not timezoned
     :return: datetime brought to UTC
-    '''
+    """
     if timestamp.tzinfo is None or timestamp.tzinfo.utcoffset(timestamp) is None:
         return utc.localize(timestamp)
     else:
@@ -96,42 +99,60 @@ class VehicleJourney(db.Model):
     navitia_trip_id = db.Column(db.Text, nullable=False)
 
     # ! DO NOT USE attribute directly !
-    # timestamp of VJ's start
-    start_timestamp = db.Column(db.DateTime, nullable=False) # ! USE get_start_timestamp() !
+    # timestamp of VJ's start (stored in UTC to be safe with db without timezone)
+    start_timestamp = db.Column(db.DateTime, nullable=False)  # ! USE get_start_timestamp() !
     db.Index('start_timestamp_idx', start_timestamp)
 
     db.UniqueConstraint(navitia_trip_id, start_timestamp,
                         name='vehicle_journey_navitia_trip_id_start_timestamp_idx')
 
-    def __init__(self, navitia_vj, local_circulation_date):
-        from kirin.utils import get_timezone
+    def __init__(self, navitia_vj, utc_since_dt, utc_until_dt):
+        """
+        Create a circulation (VJ on a given day) from:
+            * the navitia VJ (circulation times without a specific day)
+            * a datetime that's close but BEFORE the start of the circulation considered
 
+        As Navitia doesn't return the start-timestamp that matches the search period (only a time, no date),
+        Kirin needs to re-process it here:
+        This processes start-timestamp of the circulation to be the closest one after utc_since_dt.
+
+                                 day:       01               02               03               04
+                                hour:      00:00            00:00            00:00            00:00
+          navitia VJ starts everyday:        | 02:00          | 02:00          | 02:00          | 02:00
+        search period [since, until]:        |                |            [23:00       09:00]  |
+                                             |                |                |   ^            |
+              actual start-timestamp:        |                |                | 03T02:00       |
+
+        :param navitia_vj: json dict of navitia's response when looking for a VJ.
+        :param utc_since_dt: UTC datetime BEFORE start of considered circulation,
+            typically the "since" parameter of the search in navitia.
+        :param utc_until_dt: UTC datetime AFTER start of considered circulation,
+            typically the "until" parameter of the search in navitia.
+        """
         self.id = gen_uuid()
         if 'trip' in navitia_vj and 'id' in navitia_vj['trip']:
             self.navitia_trip_id = navitia_vj['trip']['id']
 
+        # compute start_timestamp (in UTC) from first stop_time, to be the closest AFTER provided utc_since_dt.
         first_stop_time = navitia_vj.get('stop_times', [{}])[0]
-        start_time = first_stop_time['arrival_time']
+        start_time = first_stop_time['utc_arrival_time']  # converted in datetime.time() in python wrapper
         if start_time is None:
-            start_time = first_stop_time['departure_time']
-        tzinfo = get_timezone(first_stop_time)
-        self.start_timestamp = tzinfo.localize(datetime.datetime.combine(local_circulation_date,
-                                                                         start_time)
-                                               ).astimezone(utc)
+            start_time = first_stop_time['utc_departure_time']  # converted in datetime.time() in python wrapper
+        self.start_timestamp = utc.localize(datetime.datetime.combine(utc_since_dt.date(), start_time))
+        # if since = 20010102T2300 and start_time = 0200, actual start_timestamp = 20010103T0200.
+        # So adding one day to start_timestamp obtained (20010102T0200) if it's before since.
+        if self.start_timestamp < utc_since_dt:
+            self.start_timestamp += timedelta(days=1)
+        # simple consistency check (for now): the start timestamp must also be BEFORE utc_until_dt
+        if utc_until_dt < self.start_timestamp:
+            msg = 'impossible to calculate the circulation date of vj: {} on period [{}, {}]'.format(
+                        navitia_vj.get('id'), utc_since_dt, utc_until_dt)
+            raise ObjectNotFound(msg)
+
         self.navitia_vj = navitia_vj  # Not persisted
 
     def get_start_timestamp(self):
-        return get_utc_localized_timestamp_safe(self.start_timestamp)
-
-    def get_local_circulation_date(self):
-        from kirin.utils import get_timezone
-
-        if self.navitia_vj is None:
-            return None
-
-        first_stop_time = self.navitia_vj.get('stop_times', [{}])[0]
-        tzinfo = get_timezone(first_stop_time)
-        return self.get_start_timestamp().astimezone(tzinfo).date()
+        return get_utc_timezoned_timestamp_safe(self.start_timestamp)
 
     def get_utc_circulation_date(self):
         return self.get_start_timestamp().date()
@@ -213,6 +234,7 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                 self.arrival_delay != other.arrival_delay or
                 self.arrival_status != other.arrival_status)
 
+
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
                                     db.Column('real_time_update_id',
@@ -264,7 +286,7 @@ class TripUpdate(db.Model, TimestampMixin):
     @classmethod
     def find_by_dated_vj(cls, navitia_trip_id, start_timestamp):
         return cls.query.join(VehicleJourney).filter(VehicleJourney.navitia_trip_id == navitia_trip_id,
-                                              VehicleJourney.start_timestamp == start_timestamp).first()
+                                                     VehicleJourney.start_timestamp == start_timestamp).first()
 
     @classmethod
     def find_by_dated_vjs(cls, id_timestamp_tuples):
@@ -363,7 +385,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
             sql = sql.order_by(desc(cls.created_at))
             row = sql.first()
             if row:
-                date = row[2] if row[2] else row[0] #update if exist, otherwise created
+                date = row[2] if row[2] else row[0]  # update if exist, otherwise created
                 result['last_update'][c] = date.strftime('%Y-%m-%dT%H:%M:%SZ')
                 if row[1] == 'OK':
                     result['last_valid_update'][c] = row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -383,7 +405,7 @@ class RealTimeUpdate(db.Model, TimestampMixin):
             outerjoin(associate_realtimeupdate_tripupdate).\
             filter(cls.connector.in_(connectors)).\
             filter(cls.created_at <= until).\
-            filter(associate_realtimeupdate_tripupdate.c.real_time_update_id == None)
+            filter(associate_realtimeupdate_tripupdate.c.real_time_update_id is None)
         cls.query.filter(cls.id.in_(sub_query)).delete(synchronize_session=False)
         db.session.commit()
 

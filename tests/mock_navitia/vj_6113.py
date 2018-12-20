@@ -33,7 +33,6 @@ import navitia_response
 response = navitia_response.NavitiaResponse()
 
 response.queries = [
-    'vehicle_journeys/?depth=2&since=20151006T121600&headsign=6113&show_codes=true&until=20151006T173400',
     'vehicle_journeys/?depth=2&since=20151006T101600+0000&headsign=6113&show_codes=true&until=20151006T153400+0000'
 ]
 
@@ -120,6 +119,8 @@ response.json_response = """{
             "stop_times": [
                 {
                     "arrival_time": "123700",
+                    "utc_arrival_time": "103700",
+                    "utc_departure_time": "103700",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87686006:0"
                     },
@@ -168,6 +169,8 @@ response.json_response = """{
                 },
                 {
                     "arrival_time": "152100",
+                    "utc_arrival_time": "132100",
+                    "utc_departure_time": "132400",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87318964:1"
                     },
@@ -216,6 +219,8 @@ response.json_response = """{
                 },
                 {
                     "arrival_time": "154300",
+                    "utc_arrival_time": "134300",
+                    "utc_departure_time": "134600",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87319012:2"
                     },
@@ -264,6 +269,8 @@ response.json_response = """{
                 },
                 {
                     "arrival_time": "160300",
+                    "utc_arrival_time": "140300",
+                    "utc_departure_time": "140300",
                     "journey_pattern_point": {
                         "id": "OCE:TGV-87751008-87686006-4066:OCE:SP:TGV-87751008:3"
                     },

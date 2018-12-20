@@ -123,12 +123,12 @@ response.json_response = """{
             ],
             "stop_times": [
                 {
-                    "arrival_time": "172100",
+                    "utc_arrival_time": "152100",
+                    "utc_departure_time": "152100",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87212027:0"
                     },
                     "headsign": "96231",
-                    "departure_time": "172100",
                     "stop_point": {
                         "codes": [
                             {
@@ -175,12 +175,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "173800",
+                    "utc_arrival_time": "153800",
+                    "utc_departure_time": "154000",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87214056:1"
                     },
                     "headsign": "96231",
-                    "departure_time": "174000",
                     "stop_point": {
                         "codes": [
                             {
@@ -227,12 +227,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "175100",
+                    "utc_arrival_time": "155100",
+                    "utc_departure_time": "155300",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182014:2"
                     },
                     "headsign": "96231",
-                    "departure_time": "175300",
                     "stop_point": {
                         "codes": [
                             {
@@ -279,12 +279,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "181400",
+                    "utc_arrival_time": "161400",
+                    "utc_departure_time": "161600",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182063:3"
                     },
                     "headsign": "96231",
-                    "departure_time": "181600",
                     "stop_point": {
                         "codes": [
                             {
@@ -331,12 +331,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "183000",
+                    "utc_arrival_time": "163000",
+                    "utc_departure_time": "163100",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-87182139:4"
                     },
                     "headsign": "96231",
-                    "departure_time": "183100",
                     "stop_point": {
                         "codes": [
                             {
@@ -383,12 +383,12 @@ response.json_response = """{
                     }
                 },
                 {
-                    "arrival_time": "183900",
+                    "utc_arrival_time": "163900",
+                    "utc_departure_time": "163900",
                     "journey_pattern_point": {
                         "id": "OCE:Train TER-85000109-87212027-1721:OCE:SP:Train TER-85000109:5"
                     },
                     "headsign": "96231",
-                    "departure_time": "183900",
                     "stop_point": {
                         "codes": [
                             {

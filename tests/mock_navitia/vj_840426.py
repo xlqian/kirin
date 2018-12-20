@@ -33,7 +33,6 @@ import navitia_response
 response = navitia_response.NavitiaResponse()
 
 response.queries = [
-    'vehicle_journeys/?depth=2&since=20170318T130500&headsign=840427&show_codes=true&until=20170318T171600',
     'vehicle_journeys/?depth=2&since=20170318T120500+0000&headsign=840427&show_codes=true&until=20170318T161600+0000'
 ]
 
@@ -189,6 +188,8 @@ response.json_response = """
                 {
                     "arrival_time": "140500",
                     "departure_time": "140500",
+                    "utc_arrival_time": "130500",
+                    "utc_departure_time": "130500",
                     "headsign": "840427",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83888"
@@ -239,6 +240,8 @@ response.json_response = """
                 {
                     "arrival_time": "145100",
                     "departure_time": "145300",
+                    "utc_arrival_time": "135100",
+                    "utc_departure_time": "135300",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83889"
@@ -289,6 +292,8 @@ response.json_response = """
                 {
                     "arrival_time": "150200",
                     "departure_time": "150300",
+                    "utc_arrival_time": "140200",
+                    "utc_departure_time": "140300",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83890"
@@ -351,6 +356,8 @@ response.json_response = """
                 {
                     "arrival_time": "152200",
                     "departure_time": "152400",
+                    "utc_arrival_time": "142200",
+                    "utc_departure_time": "142400",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83891"
@@ -401,6 +408,8 @@ response.json_response = """
                 {
                     "arrival_time": "154400",
                     "departure_time": "154500",
+                    "utc_arrival_time": "144400",
+                    "utc_departure_time": "144500",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83892"
@@ -451,6 +460,8 @@ response.json_response = """
                 {
                     "arrival_time": "155800",
                     "departure_time": "155900",
+                    "utc_arrival_time": "145800",
+                    "utc_departure_time": "145900",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83893"
@@ -501,6 +512,8 @@ response.json_response = """
                 {
                     "arrival_time": "161600",
                     "departure_time": "161600",
+                    "utc_arrival_time": "151600",
+                    "utc_departure_time": "151600",
                     "headsign": "840426",
                     "journey_pattern_point": {
                         "id": "journey_pattern_point:83894"

@@ -82,8 +82,7 @@ def test_wrong_cots_post():
     res, status = api_post('/cots', check=False, data='{}')
 
     assert status == 400
-
-    print res.get('error') == 'invalid'
+    assert 'No object' in res.get('error')
 
 
 def test_cots_post_no_data():

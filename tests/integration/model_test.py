@@ -28,6 +28,7 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
+from pytz import utc
 
 from kirin.core.model import VehicleJourney, TripUpdate, StopTimeUpdate, RealTimeUpdate
 from kirin import db, app
@@ -39,9 +40,10 @@ def create_trip_update(vj_id, trip_id, circulation_date):
     trip_update = TripUpdate()
     vj = VehicleJourney({'trip': {'id': trip_id},
             'stop_times': [
-                {'arrival_time': datetime.time(8, 0), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
+                {'utc_arrival_time': datetime.time(8, 0), 'stop_point': {'stop_area': {'timezone': 'UTC'}}}
             ]},
-            circulation_date)
+            utc.localize(datetime.datetime.combine(circulation_date, datetime.time(7, 0))),
+            utc.localize(datetime.datetime.combine(circulation_date, datetime.time(9, 0))))
     vj.id = vj_id
     trip_update.vj = vj
 

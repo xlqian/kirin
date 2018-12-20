@@ -40,9 +40,11 @@ import vj_840426
 import vj_R_vj1
 import vj_R_vj2
 import vj_pass_midnight
+import vj_pass_midnight_utc
 import vj_lollipop
 import vj_bad_order
 import vj_start_midnight
+import vj_start_midnight_utc
 import st_713065
 import st_713666
 import company_1187
@@ -62,9 +64,11 @@ mocks = [
     vj_R_vj1.response,
     vj_R_vj2.response,
     vj_pass_midnight.response,
+    vj_pass_midnight_utc.response,
     vj_lollipop.response,
     vj_bad_order.response,
     vj_start_midnight.response,
+    vj_start_midnight_utc.response,
     st_713065.response,
     st_713666.response,
     company_1187.response,
@@ -95,7 +99,6 @@ def mock_navitia_query(self, query, q=None):
     except:
         logging.getLogger(__name__).error("cannot find mock for query : {}".format(query_str))
         raise
-
 
     return json.loads(mock.json_response), mock.response_code
 
