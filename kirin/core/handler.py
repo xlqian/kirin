@@ -314,20 +314,37 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             for order, st in enumerate(new_trip_update.stop_time_updates):
                 # Find corresponding stop_time in the theoretical VJ
                 vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
-                if vj_st is None and st.departure_status in ('add', 'added_for_detour')  \
-                        or st.arrival_status in ('add', 'added_for_detour'):
-                    # It is an added stop_time, create a new stop time
-                    added_st = {
-                        'stop_point': st.navitia_stop,
-                        'utc_departure_time': extract_str_utc_time(st.departure),
-                        'utc_arrival_time': extract_str_utc_time(st.arrival),
-                        'departure_status': st.departure_status,
-                        'arrival_status': st.arrival_status
-                    }
-                    yield order, added_st
-                else:
+                if vj_st:
                     yield order, vj_st
+                else:
+                    if st.departure_status in ('add', 'added_for_detour')  \
+                            or st.arrival_status in ('add', 'added_for_detour'):
+                        # It is an added stop_time, create a new stop time
+                        st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                        added_st = {
+                            'stop_point': st.navitia_stop,
+                            'utc_departure_time': extract_str_utc_time(st.departure),
+                            'utc_arrival_time': extract_str_utc_time(st.arrival),
+                            'departure_status': st.departure_status,
+                            'arrival_status': st.arrival_status
+                        }
+                        yield order, added_st
+                    elif st.departure_status in('delete', 'deleted_for_detour') \
+                            or st.arrival_status in ('delete', 'deleted_for_detour'):
+                        # Check in Bdd if the stop time was added
+                        if db_trip_update is not None:
 
+                            is_deleteable = db_trip_update.deleteable(st.stop_id)
+                            if is_deleteable:
+                                st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                                deleted_st = {
+                                    'stop_point': st.navitia_stop,
+                                    'utc_departure_time': extract_str_utc_time(st.departure),
+                                    'utc_arrival_time': extract_str_utc_time(st.arrival),
+                                    'departure_status': st.departure_status,
+                                    'arrival_status': st.arrival_status
+                                }
+                                yield order, deleted_st
         else:
             # Iterate on the theoretical VJ if the new trip update doesn't list all stop_times
             for order, vj_st in enumerate(navitia_vj.get('stop_times', [])):
@@ -396,7 +413,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             Then      : For IRE, we do nothing but only update stop time's order
                         For gtfs-rt, according to the specification, we should use the delay from the previous
                         stop time, which will be handled sooner by the connector-specified model maker
-                        
+
                         *** Here, we MUST NOT do anything, only update stop time's order ***
             """
             db_st = db_trip_update.find_stop(stop_id, nav_order)
