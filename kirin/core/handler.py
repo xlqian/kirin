@@ -341,14 +341,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                                                ModificationType.added_for_detour.name)  \
                             or st.arrival_status in (ModificationType.add.name,
                                                      ModificationType.added_for_detour.name):
-                        # It is an added stop_time, create a new stop time
-                        st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                        # It is an added stop_time, create a new "fake" Navitia stop time
                         added_st = {
                             'stop_point': st.navitia_stop,
                             'utc_departure_time': extract_str_utc_time(st.departure),
                             'utc_arrival_time': extract_str_utc_time(st.arrival),
-                            'departure_status': st.departure_status,
-                            'arrival_status': st.arrival_status
                         }
                         yield order, added_st
                     elif st.departure_status in(ModificationType.delete.name,
@@ -360,13 +357,11 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
                             is_deleteable = db_trip_update.deleteable(st.stop_id)
                             if is_deleteable:
-                                st_timezone = pytz.timezone(st.navitia_stop.get('stop_area').get('timezone'))
+                                # It is an added stop_time, create a new "fake" Navitia stop time
                                 deleted_st = {
                                     'stop_point': st.navitia_stop,
                                     'utc_departure_time': extract_str_utc_time(st.departure),
                                     'utc_arrival_time': extract_str_utc_time(st.arrival),
-                                    'departure_status': st.departure_status,
-                                    'arrival_status': st.arrival_status
                                 }
                                 yield order, deleted_st
                             else:
