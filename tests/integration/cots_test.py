@@ -558,13 +558,24 @@ def test_cots_added_stop_time():
 def test_cots_added_and_deleted_stop_time():
 
     """
-
+    Aim : Highlighting the deleted mechanism.
+          Deleted is possible only if the stop_time was added before
     """
+
+    # If added wasn't done before delete will not work
+
+    cots_deleted_file = get_fixture_data('cots_train_96231_deleted.json')
+    res = api_post('/cots', data=cots_deleted_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 0
+
     cots_add_file = get_fixture_data('cots_train_96231_add.json')
     res = api_post('/cots', data=cots_add_file)
     assert res == 'OK'
     with app.app_context():
-        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
@@ -582,7 +593,7 @@ def test_cots_added_and_deleted_stop_time():
     res = api_post('/cots', data=cots_deleted_file)
     assert res == 'OK'
     with app.app_context():
-        assert len(RealTimeUpdate.query.all()) == 2
+        assert len(RealTimeUpdate.query.all()) == 3
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
@@ -600,7 +611,7 @@ def test_cots_added_and_deleted_stop_time():
     res = api_post('/cots', data=cots_deleted_file)
     assert res == 'OK'
     with app.app_context():
-        assert len(RealTimeUpdate.query.all()) == 3
+        assert len(RealTimeUpdate.query.all()) == 4
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
