@@ -401,12 +401,12 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                                 logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
                                                "because it doesn't exist in kirin Bdd. "
                                                "Nav vj {nav_id} - Company {comp_id}".format(
-                                                   stop_id=st_.stop_id,
+                                                   stop_id=st.stop_id,
                                                    nav_id=new_trip_update.vj.navitia_trip_id,
                                                    comp_id=new_trip_update.company_id))
                         else:
                             logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
-                                           "because we didn't added this stop_time before. "
+                                           "because it wasn't added before. "
                                            "Nav vj {nav_id} - Company {comp_id}".format(
                                                stop_id=st.stop_id,
                                                nav_id=new_trip_update.vj.navitia_trip_id,
@@ -510,8 +510,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
 
-    # This is always the effect inside the new trip_update (input data feed).
-    # It is already compute inside build function (KirinModelBuilder)
+    # Use effect inside the new trip_update (input data feed).
+    # It is already computed inside build function (KirinModelBuilder)
+    # TODO: process this effect after the merge, as effect should have memory of what's been done before
+    #       in case of differential RT feed (that's the case on GTFS-RT)
     res.effect = new_trip_update.effect
 
     if has_changes:
