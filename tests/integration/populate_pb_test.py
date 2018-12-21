@@ -389,6 +389,15 @@ def test_populate_pb_added_for_detour_stop_times_status():
     assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED_FOR_DETOUR
     assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED_FOR_DETOUR
 
+def test_populate_pb_added_stop_times_status():
+    st_added_status = StopTimeUpdate({'id': 'id1'}, dep_status='add', arr_status='add')
+    pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
+
+    fill_stop_times(pb_stop_time, st_added_status)
+
+    assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED
+    assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.ADDED
+
 def test_populate_pb_skipped_for_detour_stop_times_status():
     st_added_status = StopTimeUpdate({'id': 'id1'}, dep_status='deleted_for_detour', arr_status='deleted_for_detour')
     pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
@@ -397,3 +406,13 @@ def test_populate_pb_skipped_for_detour_stop_times_status():
 
     assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED_FOR_DETOUR
     assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED_FOR_DETOUR
+
+def test_populate_pb_deleted_stop_times_status():
+    st_added_status = StopTimeUpdate({'id': 'id1'}, dep_status='delete', arr_status='delete')
+    pb_stop_time = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate()
+
+    fill_stop_times(pb_stop_time, st_added_status)
+
+    assert pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED
+    assert pb_stop_time.arrival.Extensions[kirin_pb2.stop_time_event_status] == kirin_pb2.DELETED
+

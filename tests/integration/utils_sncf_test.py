@@ -659,7 +659,7 @@ def check_db_96231_partial_removal(contributor=None):
         assert db_trip_partial_removed.vj.get_start_timestamp() == datetime(2015, 9, 21, 15, 21, tzinfo=utc)
         assert db_trip_partial_removed.vj_id == db_trip_partial_removed.vj.id
         assert db_trip_partial_removed.status == 'update'
-        assert db_trip_partial_removed.effect == 'SIGNIFICANT_DELAYS'
+        assert db_trip_partial_removed.effect == 'REDUCED_SERVICE'
         # 6 stop times must have been created
         assert len(db_trip_partial_removed.stop_time_updates) == 6
 

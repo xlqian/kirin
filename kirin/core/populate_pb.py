@@ -98,7 +98,7 @@ def fill_stop_times(pb_stop_time, stop_time):
 
     '''
     TODO: kirin_pb2.stop_time_event_relationship needs to be removed once
-    kirin_pb2.stop_time_event_status is deployed on production 
+    kirin_pb2.stop_time_event_status is deployed on production
     '''
     pb_stop_time.departure.Extensions[kirin_pb2.stop_time_event_relationship] = \
         get_st_event(stop_time.departure_status)
