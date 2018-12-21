@@ -291,6 +291,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     we DO NOT HANDLE changes in navitia's schedule for the moment
     it will need to be handled, but it will be done after
     """
+    logger = logging.getLogger(__name__)
     res = db_trip_update if db_trip_update else new_trip_update
     res_stoptime_updates = []
 
@@ -345,6 +346,20 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                                     'arrival_status': st.arrival_status
                                 }
                                 yield order, deleted_st
+                            else:
+                                logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
+                                               "because it doesn't exist in kirin Bdd. "
+                                               "Nav vj {nav_id} - Company {comp_id}".format(
+                                                   stop_id=st_.stop_id,
+                                                   nav_id=new_trip_update.vj.navitia_trip_id,
+                                                   comp_id=new_trip_update.company_id))
+                        else:
+                            logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
+                                           "because we didn't added this stop_time before. "
+                                           "Nav vj {nav_id} - Company {comp_id}".format(
+                                               stop_id=st.stop_id,
+                                               nav_id=new_trip_update.vj.navitia_trip_id,
+                                               comp_id=new_trip_update.company_id))
         else:
             # Iterate on the theoretical VJ if the new trip update doesn't list all stop_times
             for order, vj_st in enumerate(navitia_vj.get('stop_times', [])):
@@ -436,6 +451,10 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
         last_departure = res_st.departure
         res_stoptime_updates.append(res_st)
         last_nav_dep = utc_nav_departure_time
+
+    # This is always the effect inside the new trip_update (input data feed).
+    # It is already compute inside build function (KirinModelBuilder)
+    res.effect = new_trip_update.effect
 
     if has_changes:
         res.stop_time_updates = res_stoptime_updates

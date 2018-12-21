@@ -559,10 +559,10 @@ def test_cots_added_and_deleted_stop_time():
 
     """
     Aim : Highlighting the deleted mechanism.
-          Deleted is possible only if the stop_time was added before
+          Delete is possible only if the stop_time was there added before
     """
 
-    # If added wasn't done before delete will not work
+    # If add wasn't done before, the deletion will not work
 
     cots_deleted_file = get_fixture_data('cots_train_96231_deleted.json')
     res = api_post('/cots', data=cots_deleted_file)
@@ -587,7 +587,7 @@ def test_cots_added_and_deleted_stop_time():
         assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
         created_at_for_add =  StopTimeUpdate.query.all()[3].created_at
 
-    # At this point the trip_update is valid. We added new Stop_time in data base
+    # At this point the trip_update is valid. We adde new Stop_time in data base
 
     cots_deleted_file = get_fixture_data('cots_train_96231_deleted.json')
     res = api_post('/cots', data=cots_deleted_file)
@@ -596,7 +596,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(RealTimeUpdate.query.all()) == 3
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
-        assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
+        assert TripUpdate.query.all()[0].effect == 'REDUCED_SERVICE'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
@@ -614,7 +614,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(RealTimeUpdate.query.all()) == 4
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
-        assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
+        assert TripUpdate.query.all()[0].effect == 'REDUCED_SERVICE'
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
