@@ -422,7 +422,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             logging.getLogger(__name__).warning('No stop point found (order:{}'.format(nav_order))
             continue
 
-        # TODO handle forbidden pickup/dropoff (in those case set departure/arrival at None)
+        # TODO handle forbidden pickup/drop-off (in those case set departure/arrival at None)
         utc_nav_departure_time = navitia_stop.get('utc_departure_time')
         utc_nav_arrival_time = navitia_stop.get('utc_arrival_time')
 
@@ -455,7 +455,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
         if db_trip_update is not None and new_st is not None:
             """
             First case: we already have recorded the delay and we find update info in the new trip update
-            Then      : we should probably update it or not if the input info is exactly the same as the one in db
+            Then      : we should probably update it or not if the input info is exactly the same as the
+                        one in db.
             """
             db_st = db_trip_update.find_stop(stop_id, nav_order)
             new_st_update = _make_stop_time_update(base_arrival,
