@@ -63,10 +63,6 @@ def log_stu_modif(trip_update, stu, string_additional_info):
                     add_info=string_additional_info))
 
 
-def is_deleted(status):
-    return status in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
-
-
 def manage_consistency(trip_update):
     """
     receive a TripUpdate, then manage and adjust its consistency
@@ -118,7 +114,7 @@ def manage_consistency(trip_update):
             log_stu_modif(trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
         # not considering deleted arrival
-        if not is_deleted(stu.arrival_status):
+        if stu.is_stop_event_served('arrival'):
             # if arrival is before previous stop-event's time:
             # push arrival time so that its delay is the same than for previous time
             if previous_stop_event.time is not None and previous_stop_event.time > stu.arrival:
@@ -132,7 +128,7 @@ def manage_consistency(trip_update):
             previous_stop_event = TimeDelayTuple(time=stu.arrival, delay=stu.arrival_delay)
 
         # not considering deleted departure (same logic as before)
-        if not is_deleted(stu.departure_status):
+        if stu.is_stop_event_served('departure'):
             # if departure is before previous stop-event's time:
             # push departure time so that its delay is the same than for previous time
             if previous_stop_event.time is not None and previous_stop_event.time > stu.departure:
@@ -286,22 +282,18 @@ def is_stop_event_served(nav_stop, nav_order, event_name, new_stu, db_tu):
     stop_id = nav_stop.get('stop_point', {}).get('id')
     # the new_stu prevails if provided
     if new_stu is not None:
-        if is_deleted(getattr(new_stu, '{}_status'.format(event_name), ModificationType.none.name)):
-            return False
-        else:
-            return True
+        return new_stu.is_stop_event_served(event_name)
     # 'undecided' if new_stu has no info about given stop, checking in previous TripUpdate
     if db_tu is not None:
         db_stu = db_tu.find_stop(stop_id, nav_order)
         if db_stu is not None:
-            if is_deleted(getattr(db_stu, '{}_status'.format(event_name), ModificationType.none.name)):
-                return False
-            else:
-                return True
+            return db_stu.is_stop_event_served(event_name)
         # 'undecided' if StopTime is not part of the TripUpdate (may happen if whole trip is deleted)
 
     # on navitia's VJ simply test that the time field is provided
     # TODO: check forbidden pickup/drop-off when Navitia provides info
+    if nav_stop is None:
+        return False
     event_time_field = 'utc_{}_time'.format(event_name)
     return event_time_field in nav_stop and nav_stop.get(event_time_field, None) is not None
 

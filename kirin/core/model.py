@@ -93,7 +93,7 @@ def get_utc_timezoned_timestamp_safe(timestamp):
 
 class VehicleJourney(db.Model):
     """
-    Vehicle Journey
+    Base-schedule Vehicle Journey on a given day (navitia VJ + UTC datetime of first stop)
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
@@ -234,6 +234,12 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                 self.arrival_delay != other.arrival_delay or
                 self.arrival_status != other.arrival_status)
 
+    def is_stop_event_served(self, event_name):
+        if not hasattr(self, '{}_status'.format(event_name)):
+            raise Exception('StopTimeUpdate has no attribute "{}_status"'.format(event_name))
+        status = getattr(self, '{}_status'.format(event_name), ModificationType.none.name)
+        return status not in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
+
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
@@ -251,7 +257,9 @@ associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupd
 
 class TripUpdate(db.Model, TimestampMixin):
     """
-    Update information for Vehicule Journey
+    Update information for Vehicle Journey
+    In db, this contains a COMPLETE trip and associated RT information
+    (result of all received RT feeds on base trip)
     """
     vj_id = db.Column(postgresql.UUID,
                       db.ForeignKey('vehicle_journey.id', ondelete='CASCADE'),
