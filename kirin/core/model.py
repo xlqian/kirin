@@ -240,6 +240,12 @@ class StopTimeUpdate(db.Model, TimestampMixin):
         status = getattr(self, '{}_status'.format(event_name), ModificationType.none.name)
         return status not in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
 
+    def is_stop_event_added(self, event_name):
+        if not hasattr(self, '{}_status'.format(event_name)):
+            raise Exception('StopTimeUpdate has no attribute "{}_status"'.format(event_name))
+        status = getattr(self, '{}_status'.format(event_name), ModificationType.none.name)
+        return status in (ModificationType.add.name, ModificationType.added_for_detour.name)
+
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
@@ -343,20 +349,6 @@ class TripUpdate(db.Model, TimestampMixin):
         return next((st for st in self.stop_time_updates
                      if st.stop_id == stop_id), None)
 
-    def deleteable(self, stop_id):
-        """
-        Stop_time is deleteable only if last stop_time.departure_status or stop_time.arrival_status is not
-        deleted
-        """
-        last = None
-        for st in self.stop_time_updates:
-            if  st.stop_id == stop_id:
-                last = st
-        if last is not None:
-            return not last.departure_status in ('delete', 'deleted_for_detour') \
-                    or last.arrival_status in ('delete', 'deleted_for_detour')
-        else:
-            return False
 
 class RealTimeUpdate(db.Model, TimestampMixin):
     """

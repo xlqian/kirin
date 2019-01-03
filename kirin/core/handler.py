@@ -269,23 +269,24 @@ def _make_stop_time_update(base_arrival, base_departure, last_departure, input_s
                           order=order)
 
 
-def is_stop_event_served(nav_stop, nav_order, event_name, new_stu, db_tu):
+def is_stop_event_served(event_name, stop_id, stop_order, nav_stop, db_tu, new_stu):
     """
     Returns True if the considered stop_time event (arrival or departure) is currently served
-    :param nav_stop: id of the stop point
-    :param nav_order: order of the stop_time in the trip
+    Stop-event identifiers:
     :param event_name: status' attribute name to look for ('arrival' or 'departure')
-    :param new_stu: new StopTimeUpdate being process
+    :param stop_id: id of the stop point
+    :param stop_order: order of the stop_time in the trip
+    Different RT information available:
+    :param nav_stop: Navitia stop point
     :param db_tu: TripUpdate in db (from previous processing)
+    :param new_stu: new StopTimeUpdate being process
     """
-
-    stop_id = nav_stop.get('stop_point', {}).get('id')
     # the new_stu prevails if provided
     if new_stu is not None:
         return new_stu.is_stop_event_served(event_name)
     # 'undecided' if new_stu has no info about given stop, checking in previous TripUpdate
     if db_tu is not None:
-        db_stu = db_tu.find_stop(stop_id, nav_order)
+        db_stu = db_tu.find_stop(stop_id, stop_order)
         if db_stu is not None:
             return db_stu.is_stop_event_served(event_name)
         # 'undecided' if StopTime is not part of the TripUpdate (may happen if whole trip is deleted)
@@ -296,6 +297,56 @@ def is_stop_event_served(nav_stop, nav_order, event_name, new_stu, db_tu):
         return False
     event_time_field = 'utc_{}_time'.format(event_name)
     return event_time_field in nav_stop and nav_stop.get(event_time_field, None) is not None
+
+
+def is_stop_event_valid_new_add(event_name, stop_id, stop_order, nav_stop, db_tu, new_stu):
+    """
+    Returns True if the considered stop_time event in new_stu (arrival or departure) is a valid add.
+    Stop-event identifiers:
+    :param event_name: status' attribute name to look for ('arrival' or 'departure')
+    :param stop_id: id of the stop point
+    :param stop_order: order of the stop_time in the trip
+    Different RT information available:
+    :param nav_stop: Navitia stop point
+    :param db_tu: TripUpdate in db (from previous processing)
+    :param new_stu: new StopTimeUpdate being process
+    """
+    logger = logging.getLogger(__name__)
+    # stop-event should be an ADD in new_stu
+    if new_stu is None or not new_stu.is_stop_event_added(event_name):
+        return False
+    # it should NOT be served in navitia or in db
+    if is_stop_event_served(event_name=event_name, stop_id=stop_id, stop_order=stop_order,
+                            nav_stop=nav_stop, db_tu=db_tu, new_stu=None):
+        logger.warning("Can't add stop_time {stop_id}, because it is ALREADY served in "
+                       "kirin db or Navitia base-schedule VJ.".format(stop_id=new_stu.stop_id))
+        return False
+    return True
+
+
+def is_stop_event_valid_new_change(event_name, stop_id, stop_order, nav_stop, db_tu, new_stu):
+    """
+    Returns True if the considered stop_time event in new_stu (arrival or departure) is a valid change.
+    Stop-event identifiers:
+    :param event_name: status' attribute name to look for ('arrival' or 'departure')
+    :param stop_id: id of the stop point
+    :param stop_order: order of the stop_time in the trip
+    Different RT information available:
+    :param nav_stop: Navitia stop point
+    :param db_tu: TripUpdate in db (from previous processing)
+    :param new_stu: new StopTimeUpdate being process
+    """
+    logger = logging.getLogger(__name__)
+    # stop-event should NOT be an add in new_stu
+    if new_stu is None or new_stu.is_stop_event_added(event_name):
+        return False
+    # it should ALREADY be served in navitia or in db
+    if not is_stop_event_served(event_name=event_name, stop_id=stop_id, stop_order=stop_order,
+                                nav_stop=nav_stop, db_tu=db_tu, new_stu=None):
+        logger.warning("Can't modify stop_time {stop_id}, because it is NOT served in "
+                       "kirin db nor in Navitia base-schedule VJ.".format(stop_id=new_stu.stop_id))
+        return False
+    return True
 
 
 def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
@@ -335,7 +386,6 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     we DO NOT HANDLE changes in navitia's schedule for the moment
     it will need to be handled, but it will be done after
     """
-    logger = logging.getLogger(__name__)
     res = db_trip_update if db_trip_update else new_trip_update
     res_stoptime_updates = []
 
@@ -345,7 +395,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     res.contributor = new_trip_update.contributor
 
     if res.status == ModificationType.delete.name:
-        # for trip cancellation, we delete all stoptimes update
+        # for trip cancellation, we delete all StopTimeUpdates
         res.stop_time_updates = []
         return res
 
@@ -356,53 +406,30 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
     def get_next_stop():
         if is_new_complete:
             # Iterate on the new trip update stop_times if it is complete (all stop_times present in it)
-            for order, st in enumerate(new_trip_update.stop_time_updates):
+            for order, new_stu in enumerate(new_trip_update.stop_time_updates):
                 # Find corresponding stop_time in the theoretical VJ
-                vj_st = find_st_in_vj(st.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
+                vj_st = find_st_in_vj(new_stu.stop_id, new_trip_update.vj.navitia_vj.get('stop_times', []))
                 if vj_st:
                     yield order, vj_st
                 else:
-                    if st.departure_status in (ModificationType.add.name,
-                                               ModificationType.added_for_detour.name)  \
-                            or st.arrival_status in (ModificationType.add.name,
-                                                     ModificationType.added_for_detour.name):
-                        # It is an added stop_time, create a new "fake" Navitia stop time
+                    # selection of extra iterable stop-times
+                    sp_id = new_stu.stop_id
+                    if is_stop_event_valid_new_add(event_name='arrival', stop_id=sp_id, stop_order=order,
+                                                   nav_stop=None, db_tu=db_trip_update, new_stu=new_stu) or \
+                        is_stop_event_valid_new_add(event_name='departure', stop_id=sp_id, stop_order=order,
+                                                    nav_stop=None, db_tu=db_trip_update, new_stu=new_stu) or \
+                        is_stop_event_valid_new_change(event_name='arrival', stop_id=sp_id, stop_order=order,
+                                                       nav_stop=None, db_tu=db_trip_update, new_stu=new_stu) or \
+                        is_stop_event_valid_new_change(event_name='departure', stop_id=sp_id, stop_order=order,
+                                                       nav_stop=None, db_tu=db_trip_update, new_stu=new_stu):
+                        # It is an added stop_time or a modification on a previously added stop_time, create a
+                        # new "fake" Navitia stop time (even if it's not in navitia kirin needs to iterate on it)
                         added_st = {
-                            'stop_point': st.navitia_stop,
-                            'utc_departure_time': extract_str_utc_time(st.departure),
-                            'utc_arrival_time': extract_str_utc_time(st.arrival),
+                            'stop_point': new_stu.navitia_stop,
+                            'utc_departure_time': extract_str_utc_time(new_stu.departure),
+                            'utc_arrival_time': extract_str_utc_time(new_stu.arrival),
                         }
                         yield order, added_st
-                    elif st.departure_status in(ModificationType.delete.name,
-                                                ModificationType.deleted_for_detour.name) \
-                            or st.arrival_status in (ModificationType.delete.name,
-                                                     ModificationType.deleted_for_detour.name):
-                        # Check in Bdd if the stop time was added
-                        if db_trip_update is not None:
-
-                            is_deleteable = db_trip_update.deleteable(st.stop_id)
-                            if is_deleteable:
-                                # It is an added stop_time, create a new "fake" Navitia stop time
-                                deleted_st = {
-                                    'stop_point': st.navitia_stop,
-                                    'utc_departure_time': extract_str_utc_time(st.departure),
-                                    'utc_arrival_time': extract_str_utc_time(st.arrival),
-                                }
-                                yield order, deleted_st
-                            else:
-                                logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
-                                               "because it doesn't exist in kirin Bdd. "
-                                               "Nav vj {nav_id} - Company {comp_id}".format(
-                                                   stop_id=st.stop_id,
-                                                   nav_id=new_trip_update.vj.navitia_trip_id,
-                                                   comp_id=new_trip_update.company_id))
-                        else:
-                            logger.warning("Can't delete/delete_for_detour stop_time {stop_id}, "
-                                           "because it wasn't added before. "
-                                           "Nav vj {nav_id} - Company {comp_id}".format(
-                                               stop_id=st.stop_id,
-                                               nav_id=new_trip_update.vj.navitia_trip_id,
-                                               comp_id=new_trip_update.company_id))
         else:
             # Iterate on the theoretical VJ if the new trip update doesn't list all stop_times
             for order, vj_st in enumerate(navitia_vj.get('stop_times', [])):
@@ -425,7 +452,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
         new_st = new_trip_update.find_stop(stop_id, nav_order)
 
         # considering only served arrival
-        if is_stop_event_served(navitia_stop, nav_order, 'arrival', new_st, db_trip_update):
+        if is_stop_event_served(event_name='arrival', stop_id=stop_id, stop_order=nav_order,
+                                nav_stop=navitia_stop, db_tu=db_trip_update, new_stu=new_st):
             if utc_nav_arrival_time is not None:
                 if last_stop_event_time is not None and last_stop_event_time > utc_nav_arrival_time:
                     # last departure is after arrival, it's a past-midnight
@@ -435,7 +463,8 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
             last_stop_event_time = utc_nav_arrival_time
 
         # considering only served departure (same logic as before)
-        if is_stop_event_served(navitia_stop, nav_order, 'departure', new_st, db_trip_update):
+        if is_stop_event_served(event_name='departure', stop_id=stop_id, stop_order=nav_order,
+                                nav_stop=navitia_stop, db_tu=db_trip_update, new_stu=new_st):
             if utc_nav_departure_time is not None:
                 if last_stop_event_time is not None and last_stop_event_time > utc_nav_departure_time:
                     # departure is before arrival, it's a past-midnight
