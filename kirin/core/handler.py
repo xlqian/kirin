@@ -114,7 +114,7 @@ def manage_consistency(trip_update):
             log_stu_modif(trip_update, stu, "departure_delay = {v}".format(v=stu.departure_delay))
 
         # not considering deleted arrival
-        if stu.is_stop_event_served('arrival'):
+        if not stu.is_stop_event_deleted('arrival'):
             # if arrival is before previous stop-event's time:
             # push arrival time so that its delay is the same than for previous time
             if previous_stop_event.time is not None and previous_stop_event.time > stu.arrival:
@@ -128,7 +128,7 @@ def manage_consistency(trip_update):
             previous_stop_event = TimeDelayTuple(time=stu.arrival, delay=stu.arrival_delay)
 
         # not considering deleted departure (same logic as before)
-        if stu.is_stop_event_served('departure'):
+        if not stu.is_stop_event_deleted('departure'):
             # if departure is before previous stop-event's time:
             # push departure time so that its delay is the same than for previous time
             if previous_stop_event.time is not None and previous_stop_event.time > stu.departure:
@@ -283,12 +283,12 @@ def is_stop_event_served(event_name, stop_id, stop_order, nav_stop, db_tu, new_s
     """
     # the new_stu prevails if provided
     if new_stu is not None:
-        return new_stu.is_stop_event_served(event_name)
+        return not new_stu.is_stop_event_deleted(event_name)
     # 'undecided' if new_stu has no info about given stop, checking in previous TripUpdate
     if db_tu is not None:
         db_stu = db_tu.find_stop(stop_id, stop_order)
         if db_stu is not None:
-            return db_stu.is_stop_event_served(event_name)
+            return not db_stu.is_stop_event_deleted(event_name)
         # 'undecided' if StopTime is not part of the TripUpdate (may happen if whole trip is deleted)
 
     # on navitia's VJ simply test that the time field is provided
@@ -319,7 +319,7 @@ def is_stop_event_valid_new_add(event_name, stop_id, stop_order, nav_stop, db_tu
     if is_stop_event_served(event_name=event_name, stop_id=stop_id, stop_order=stop_order,
                             nav_stop=nav_stop, db_tu=db_tu, new_stu=None):
         logger.warning("Can't add stop_time {stop_id}, because it is ALREADY served in "
-                       "kirin db or Navitia base-schedule VJ.".format(stop_id=new_stu.stop_id))
+                       "kirin db or Navitia base-schedule VJ.".format(stop_id=stop_id))
         return False
     return True
 
@@ -344,7 +344,7 @@ def is_stop_event_valid_new_change(event_name, stop_id, stop_order, nav_stop, db
     if not is_stop_event_served(event_name=event_name, stop_id=stop_id, stop_order=stop_order,
                                 nav_stop=nav_stop, db_tu=db_tu, new_stu=None):
         logger.warning("Can't modify stop_time {stop_id}, because it is NOT served in "
-                       "kirin db nor in Navitia base-schedule VJ.".format(stop_id=new_stu.stop_id))
+                       "kirin db nor in Navitia base-schedule VJ.".format(stop_id=stop_id))
         return False
     return True
 
