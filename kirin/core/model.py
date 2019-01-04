@@ -93,7 +93,7 @@ def get_utc_timezoned_timestamp_safe(timestamp):
 
 class VehicleJourney(db.Model):
     """
-    Vehicle Journey
+    Base-schedule Vehicle Journey on a given day (navitia VJ + UTC datetime of first stop)
     """
     id = db.Column(postgresql.UUID, default=gen_uuid, primary_key=True)
     navitia_trip_id = db.Column(db.Text, nullable=False)
@@ -234,6 +234,19 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                 self.arrival_delay != other.arrival_delay or
                 self.arrival_status != other.arrival_status)
 
+    def _get_stop_event_status(self, event_name):
+        if not hasattr(self, '{}_status'.format(event_name)):
+            raise Exception('StopTimeUpdate has no attribute "{}_status"'.format(event_name))
+        return getattr(self, '{}_status'.format(event_name), ModificationType.none.name)
+
+    def is_stop_event_deleted(self, event_name):
+        status = self._get_stop_event_status(event_name)
+        return status in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
+
+    def is_stop_event_added(self, event_name):
+        status = self._get_stop_event_status(event_name)
+        return status in (ModificationType.add.name, ModificationType.added_for_detour.name)
+
 
 associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupdate',
                                     db.metadata,
@@ -251,7 +264,9 @@ associate_realtimeupdate_tripupdate = db.Table('associate_realtimeupdate_tripupd
 
 class TripUpdate(db.Model, TimestampMixin):
     """
-    Update information for Vehicule Journey
+    Update information for Vehicle Journey
+    In db, this contains a COMPLETE trip and associated RT information
+    (result of all received RT feeds on base trip)
     """
     vj_id = db.Column(postgresql.UUID,
                       db.ForeignKey('vehicle_journey.id', ondelete='CASCADE'),
@@ -323,8 +338,9 @@ class TripUpdate(db.Model, TimestampMixin):
         db.session.commit()
 
     def find_stop(self, stop_id, order=None):
-        # To handle a vj with the same stop served multiple times(lollipop) we search first with stop_id and order
-        # For IRE, since we don't care about the order, search only with stop_id if no element found
+        # To handle a vj with the same stop served multiple times (lollipop) we search first with
+        # stop_id and order.
+        # For COTS, since we don't care about the order, search only with stop_id if no element found
         # Note: if the trip_update stops list is not a strict ending sublist of stops list of navitia_vj
         # then the whole trip is ignored in model_maker.
         first = next((st for st in self.stop_time_updates
@@ -334,20 +350,6 @@ class TripUpdate(db.Model, TimestampMixin):
         return next((st for st in self.stop_time_updates
                      if st.stop_id == stop_id), None)
 
-    def deleteable(self, stop_id):
-        """
-        Stop_time is deleteable only if last stop_time.departure_status or stop_time.arrival_status is not
-        deleted
-        """
-        last = None
-        for st in self.stop_time_updates:
-            if  st.stop_id == stop_id:
-                last = st
-        if last is not None:
-            return not last.departure_status in ('delete', 'deleted_for_detour') \
-                    or last.arrival_status in ('delete', 'deleted_for_detour')
-        else:
-            return False
 
 class RealTimeUpdate(db.Model, TimestampMixin):
     """

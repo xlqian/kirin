@@ -555,11 +555,11 @@ def test_cots_added_stop_time():
         assert StopTimeUpdate.query.all()[3].departure_status == 'add'
         assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
 
-def test_cots_added_and_deleted_stop_time():
 
+def test_cots_added_and_deleted_stop_time():
     """
-    Aim : Highlighting the deleted mechanism.
-          Delete is possible only if the stop_time was there added before
+    Aim : Highlighting the delete mechanism.
+          Delete is possible only if the stop_time was there before
     """
 
     # If add wasn't done before, the deletion will not work
@@ -585,10 +585,9 @@ def test_cots_added_and_deleted_stop_time():
         assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
         assert StopTimeUpdate.query.all()[3].departure_status == 'add'
         assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
-        created_at_for_add =  StopTimeUpdate.query.all()[3].created_at
+        created_at_for_add = StopTimeUpdate.query.all()[3].created_at
 
-    # At this point the trip_update is valid. We adde new Stop_time in data base
-
+    # At this point the trip_update is valid. Adding a new Stop_time in data base
     cots_deleted_file = get_fixture_data('cots_train_96231_deleted.json')
     res = api_post('/cots', data=cots_deleted_file)
     assert res == 'OK'
@@ -601,8 +600,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
-        created_at_for_delete =  StopTimeUpdate.query.all()[3].created_at
-
+        created_at_for_delete = StopTimeUpdate.query.all()[3].created_at
 
     # At this point the trip_update is valid. Stop_time recently added will be deleted.
     assert created_at_for_add != created_at_for_delete
@@ -619,8 +617,9 @@ def test_cots_added_and_deleted_stop_time():
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
-        # It has already been deleted, so we are not allow to deleted once again.
+        # It has already been deleted, so it is not allowed to deleted once again.
         assert StopTimeUpdate.query.all()[3].created_at == created_at_for_delete
+
 
 def test_cots_added_stop_time_first_position():
     """
@@ -684,6 +683,29 @@ def test_cots_for_detour():
         assert stop_time_updates[3].departure == datetime(2015, 9, 21, 15, 58)
 
 
+def test_cots_for_detour_in_advance():
+    """
+    A new stop time is added for detour in the VJ 96231 at position 3 with arrival and departure
+    time earlier than deleted stop_time.
+    """
+    cots_add_file = get_fixture_data('cots_train_96231_added_for_detour_in_advance.json')
+    res = api_post('/cots', data=cots_add_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 1
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].status == 'update'
+        stop_time_updates = TripUpdate.query.all()[0].stop_time_updates
+        assert len(stop_time_updates) == 7
+        assert stop_time_updates[2].departure_status == 'deleted_for_detour'
+        assert stop_time_updates[2].arrival_status == 'deleted_for_detour'
+
+        assert stop_time_updates[3].departure_status == 'added_for_detour'
+        assert stop_time_updates[3].arrival_status == 'added_for_detour'
+        assert stop_time_updates[3].arrival == datetime(2015, 9, 21, 15, 48)
+        assert stop_time_updates[3].departure == datetime(2015, 9, 21, 15, 48)
+
+
 def test_cots_add_stop_time_without_delay():
     """
     A new stop time is added in the VJ 96231 without delay
@@ -719,4 +741,3 @@ def test_cots_added_stop_time_earlier_than_previous():
     with app.app_context():
         assert RealTimeUpdate.query.first().error == \
                'invalid cots: stop_point\'s(0087-713065-BV) time is not consistent'
-
