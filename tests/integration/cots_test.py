@@ -548,7 +548,7 @@ def test_cots_added_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
-        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
         assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
@@ -579,7 +579,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'MODIFIED_SERVICE'
-        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'add'
         assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
@@ -596,7 +596,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'REDUCED_SERVICE'
-        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
@@ -613,13 +613,22 @@ def test_cots_added_and_deleted_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].status == 'update'
         assert TripUpdate.query.all()[0].effect == 'REDUCED_SERVICE'
-        assert TripUpdate.query.all()[0].company_id == 'company:OCE:TH'
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
         # It has already been deleted, so it is not allowed to deleted once again.
         assert StopTimeUpdate.query.all()[3].created_at == created_at_for_delete
 
+    cots_delayed_file = get_fixture_data('cots_train_96231_delayed.json')
+    res = api_post('/cots', data=cots_delayed_file)
+    assert res == 'OK'
+    with app.app_context():
+        assert len(RealTimeUpdate.query.all()) == 5
+        assert len(TripUpdate.query.all()) == 1
+        assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
+        assert len(StopTimeUpdate.query.all()) == 6
+        check_db_96231_delayed(contributor='realtime.cots')
 
 def test_cots_added_stop_time_first_position():
     """
