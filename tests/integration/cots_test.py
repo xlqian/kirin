@@ -607,9 +607,7 @@ def test_cots_added_and_deleted_stop_time():
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
-        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
-        assert StopTimeUpdate.query.all()[3].departure == datetime(2015, 9, 21, 16, 4)
 
         created_at_for_delete = StopTimeUpdate.query.all()[3].created_at
 
@@ -627,7 +625,6 @@ def test_cots_added_and_deleted_stop_time():
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
-        assert StopTimeUpdate.query.all()[3].arrival == datetime(2015, 9, 21, 16, 2)
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
         # No change is stored in db (nothing sent to navitia) as the state is the same
         # It has already been deleted, so it is not allowed to deleted once again.
