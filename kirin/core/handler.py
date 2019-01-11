@@ -447,8 +447,7 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
 
         # we compute the arrival time and departure time on base schedule and take past mid-night into
         # consideration
-        base_arrival = utc_nav_arrival_time
-        base_departure = utc_nav_departure_time
+        base_arrival = base_departure = None
         stop_id = navitia_stop.get('stop_point', {}).get('id')
         new_st = new_trip_update.find_stop(stop_id, nav_order)
 
