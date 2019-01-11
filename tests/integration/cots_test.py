@@ -620,7 +620,7 @@ def test_cots_added_and_deleted_stop_time():
         # It has already been deleted, so it is not allowed to deleted once again.
         assert StopTimeUpdate.query.all()[3].created_at == created_at_for_delete
 
-    cots_delayed_file = get_fixture_data('cots_train_96231_delayed.json')
+    cots_delayed_file = get_fixture_data('cots_train_96231_deleted_and_delayed.json')
     res = api_post('/cots', data=cots_delayed_file)
     assert res == 'OK'
     with app.app_context():
@@ -628,7 +628,8 @@ def test_cots_added_and_deleted_stop_time():
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
         assert len(StopTimeUpdate.query.all()) == 6
-        check_db_96231_delayed(contributor='realtime.cots')
+        # when delete and delays exist, effect=REDUCED_SERVICE, because REDUCED_SERVICE > SIGNIFICANT_DELAYS
+        check_db_96231_delayed(contributor='realtime.cots', expected_effect='REDUCED_SERVICE')
 
 def test_cots_added_stop_time_first_position():
     """
