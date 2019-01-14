@@ -234,17 +234,17 @@ class StopTimeUpdate(db.Model, TimestampMixin):
                 self.arrival_delay != other.arrival_delay or
                 self.arrival_status != other.arrival_status)
 
-    def _get_stop_event_status(self, event_name):
+    def get_stop_event_status(self, event_name):
         if not hasattr(self, '{}_status'.format(event_name)):
             raise Exception('StopTimeUpdate has no attribute "{}_status"'.format(event_name))
         return getattr(self, '{}_status'.format(event_name), ModificationType.none.name)
 
     def is_stop_event_deleted(self, event_name):
-        status = self._get_stop_event_status(event_name)
+        status = self.get_stop_event_status(event_name)
         return status in (ModificationType.delete.name, ModificationType.deleted_for_detour.name)
 
     def is_stop_event_added(self, event_name):
-        status = self._get_stop_event_status(event_name)
+        status = self.get_stop_event_status(event_name)
         return status in (ModificationType.add.name, ModificationType.added_for_detour.name)
 
 

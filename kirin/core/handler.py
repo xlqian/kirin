@@ -316,6 +316,13 @@ def is_new_stop_event_valid(event_name, stop_id, stop_order, nav_stop, db_tu, ne
     if new_stu is None:
         return False
 
+    # Re-sending the same status is valid (COTS always re-send deleted or added stops)
+    if db_tu is not None:
+        db_stu = db_tu.find_stop(stop_id, stop_order)
+        if db_stu is not None and db_stu.get_stop_event_status(event_name) is not None and \
+                db_stu.get_stop_event_status(event_name) == new_stu.get_stop_event_status(event_name):
+            return True
+
     is_added_new = new_stu.is_stop_event_added(event_name)
     is_served_old = is_stop_event_served(event_name=event_name, stop_id=stop_id, stop_order=stop_order,
                                          nav_stop=nav_stop, db_tu=db_tu, new_stu=None)
