@@ -152,7 +152,9 @@ def test_cots_delayed_simple_post(mock_rabbitmq):
         db_trip_delayed = TripUpdate.find_by_dated_vj('trip:OCETrainTER-87212027-85000109-3:11859',
                                                       datetime(2015, 9, 21, 15, 21, tzinfo=utc))
         assert db_trip_delayed.stop_time_updates[4].message is None
-    check_db_96231_delayed(contributor='realtime.cots')
+    db_trip_delayed = check_db_96231_delayed()
+    assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+    assert len(db_trip_delayed.stop_time_updates) == 6
     assert mock_rabbitmq.call_count == 1
 
 
@@ -169,7 +171,9 @@ def test_cots_delayed_then_ok(mock_rabbitmq):
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
         assert RealTimeUpdate.query.first().status == 'OK'
-    check_db_96231_delayed(contributor='realtime.cots')
+    db_trip_delayed = check_db_96231_delayed()
+    assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+    assert len(db_trip_delayed.stop_time_updates) == 6
     assert mock_rabbitmq.call_count == 1
 
     cots_96231 = get_fixture_data('cots_train_96231_normal.json')
@@ -227,7 +231,9 @@ def test_cots_delayed_post_twice(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 1
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_delayed(contributor='realtime.cots')
+    db_trip_delayed = check_db_96231_delayed()
+    assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+    assert len(db_trip_delayed.stop_time_updates) == 6
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
 
@@ -361,7 +367,9 @@ def test_cots_delayed_and_trip_removal_post(mock_rabbitmq):
         assert len(RealTimeUpdate.query.all()) == 2
         assert len(TripUpdate.query.all()) == 2
         assert len(StopTimeUpdate.query.all()) == 6
-    check_db_96231_delayed(contributor='realtime.cots')
+    db_trip_delayed = check_db_96231_delayed()
+    assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
+    assert len(db_trip_delayed.stop_time_updates) == 6
     check_db_6113_trip_removal()
     # the rabbit mq has to have been called twice
     assert mock_rabbitmq.call_count == 2
@@ -617,7 +625,7 @@ def test_cots_added_and_deleted_stop_time():
         assert len(StopTimeUpdate.query.all()) == 7
         assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
         assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
-        # It has already been deleted, so it is not allowed to deleted once again.
+        # No change is stored in db (nothing sent to navitia) as the state is the same
         assert StopTimeUpdate.query.all()[3].created_at == created_at_for_delete
 
     cots_delayed_file = get_fixture_data('cots_train_96231_deleted_and_delayed.json')
@@ -627,9 +635,16 @@ def test_cots_added_and_deleted_stop_time():
         assert len(RealTimeUpdate.query.all()) == 5
         assert len(TripUpdate.query.all()) == 1
         assert TripUpdate.query.all()[0].company_id == 'company:OCE:SN'
-        assert len(StopTimeUpdate.query.all()) == 6
+        assert len(StopTimeUpdate.query.all()) == 7
+        assert StopTimeUpdate.query.all()[3].arrival_status == 'delete'
+        assert StopTimeUpdate.query.all()[3].departure_status == 'delete'
+        # It has already been deleted, but it's allowed to send deleted once again.
+        assert StopTimeUpdate.query.all()[3].created_at > created_at_for_delete
+        db_trip_delayed = check_db_96231_delayed()
         # when delete and delays exist, effect=REDUCED_SERVICE, because REDUCED_SERVICE > SIGNIFICANT_DELAYS
-        check_db_96231_delayed(contributor='realtime.cots', expected_effect='REDUCED_SERVICE')
+        assert db_trip_delayed.effect == 'REDUCED_SERVICE'
+        assert len(db_trip_delayed.stop_time_updates) == 7
+
 
 def test_cots_added_stop_time_first_position():
     """
