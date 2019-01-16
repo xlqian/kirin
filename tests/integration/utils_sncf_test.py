@@ -35,7 +35,7 @@ from datetime import timedelta, datetime
 from pytz import utc
 
 
-def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
+def check_db_96231_delayed(motif_externe_is_null=False):
     with app.app_context():
         assert len(RealTimeUpdate.query.all()) >= 1
         assert len(TripUpdate.query.all()) >= 1
@@ -49,10 +49,9 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         assert db_trip_delayed.vj_id == db_trip_delayed.vj.id
         assert db_trip_delayed.status == 'update'
         # Cots contain delayed stop_times only
-        assert db_trip_delayed.effect == 'SIGNIFICANT_DELAYS'
         assert db_trip_delayed.company_id == 'company:OCE:SN'
-        # 6 stop times must have been created
-        assert len(db_trip_delayed.stop_time_updates) == 6
+        # At least 6 stop times must have been created
+        assert len(db_trip_delayed.stop_time_updates) >= 6
 
         # the first stop (in Strasbourg) is not in the feed, only on navitia's base schedule
         # no delay then, only base schedule
@@ -82,7 +81,11 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
             assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
         assert db_trip_delayed.stop_time_updates[2].message == second_st.message
-        assert db_trip_delayed.stop_time_updates[3].message == second_st.message
+        if db_trip_delayed.stop_time_updates[3].arrival_status == 'delete':
+            # if there is a added/removed stop in the middle, skip it
+            assert db_trip_delayed.stop_time_updates[4].message == second_st.message
+        else:
+            assert db_trip_delayed.stop_time_updates[3].message == second_st.message
 
         # last stop is gare de Basel-SBB, delay's only at the arrival
         last_st = db_trip_delayed.stop_time_updates[-1]
@@ -99,7 +102,9 @@ def check_db_96231_delayed(contributor=None, motif_externe_is_null=False):
         else:
             assert second_st.message == 'Affluence exceptionnelle de voyageurs'
 
-        assert db_trip_delayed.contributor == contributor
+        assert db_trip_delayed.contributor == 'realtime.cots'
+
+        return db_trip_delayed  # for additional testing if needed
 
 
 def check_db_870154_partial_removal(contributor=None):
