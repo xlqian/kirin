@@ -125,18 +125,6 @@
           "idFuseauHoraire": "Europe/Paris",
           "nbJoursPasseMinuit": 0
         },
-        "horaireProductionArrivee": {
-          "idFuseauHoraire": "Europe/Paris",
-          "heureIncertaine": false,
-          "heureLocale": "16:30:00",
-          "nbJoursPasseMinuit": 0
-        },
-        "horaireVoyageurArrivee": {
-          "dateHeure": "2015-09-21T14:30:00+0000",
-          "heureLocale": "16:30:00",
-          "idFuseauHoraire": "Europe/Paris",
-          "nbJoursPasseMinuit": 0
-        },
         "listeHoraireProjeteArrivee": [
         ],
         "listeHoraireProjeteDepart": [
