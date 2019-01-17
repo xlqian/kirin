@@ -411,9 +411,9 @@ def merge(navitia_vj, db_trip_update, new_trip_update, is_new_complete=False):
                 else:
                     # selection of extra iterable stop-times
                     sp_id = new_stu.stop_id
-                    if is_new_stop_event_valid(event_name='arrival', stop_id=sp_id.encode('utf-8'), stop_order=order,
+                    if is_new_stop_event_valid(event_name='arrival', stop_id=sp_id, stop_order=order,
                                                nav_stop=None, db_tu=db_trip_update, new_stu=new_stu) or \
-                            is_new_stop_event_valid(event_name='departure', stop_id=sp_id.encode('utf-8'), stop_order=order,
+                            is_new_stop_event_valid(event_name='departure', stop_id=sp_id, stop_order=order,
                                                     nav_stop=None, db_tu=db_trip_update, new_stu=new_stu):
                         # It is an added stop_time or a modification on a previously added stop_time, create a
                         # new "fake" Navitia stop time (even if it's not in navitia kirin needs to iterate on it)
